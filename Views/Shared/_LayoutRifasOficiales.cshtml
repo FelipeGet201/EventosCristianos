@@ -1,0 +1,264 @@
+@using RedAJP.Globales
+@{
+    Layout = "~/Views/Shared/Principal.cshtml";
+    var accionActual = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    bool esAdmin = ViewBag.EsCreador ?? false;
+    string idRifaEncriptado = ViewBag.IdRifaActiva?.ToString() ?? "";
+    string urlImagenRifa = ViewBag.ImagenUrl ?? "";
+
+    // Generación dinámica y cifrada del enlace de compra oficial
+    string urlCompraPublica = !string.IsNullOrEmpty(idRifaEncriptado) ? Url.Action("Seleccion", "Rifas", new { id = idRifaEncriptado }, Context.Request.Scheme) : "";
+}
+
+<style>
+    :root {
+        --ro-primary: #4e73df;
+        --ro-bg-body: #f4f6f9;
+        --ro-bg-card: #ffffff;
+        --ro-header-bg: #1a202c;
+        --ro-text-main: #2d3748;
+        --ro-nav-bg: #ffffff;
+        --ro-nav-text: #4a5568;
+        --ro-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .app-oficial-wrapper {
+        background-color: var(--ro-bg-card);
+        border-radius: 24px;
+        box-shadow: var(--ro-shadow);
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.03);
+        margin-bottom: 2rem;
+    }
+
+    .app-header {
+        position: relative;
+        background-color: #1a202c;
+        color: #ffffff;
+        padding: 0.8rem 1.25rem;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .header-blur-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('@urlImagenRifa');
+        background-size: cover;
+        background-position: center;
+        filter: blur(12px) brightness(0.4);
+        transform: scale(1.15);
+        z-index: 0;
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .header-title {
+        font-size: clamp(1.1rem, 3vw, 1.3rem);
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .header-subtitle {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.75rem;
+        text-shadow: 0 1px 5px rgba(0,0,0,0.5);
+    }
+
+    .header-img {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        border: 2px solid rgba(255,255,255,0.3);
+        object-fit: cover;
+    }
+
+    .btn-volver-header {
+        background: rgba(255,255,255,0.1);
+        color: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        text-decoration: none;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+        .btn-volver-header:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+    /* Navegación Pills */
+    .app-nav-wrapper {
+        background-color: var(--ro-nav-bg);
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+    }
+
+    .app-nav-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .pill-menu {
+        color: var(--ro-nav-text);
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 50rem;
+        background-color: #f1f5f9;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+        .pill-menu:hover {
+            color: var(--ro-primary);
+            background-color: rgba(78, 115, 223, 0.1);
+        }
+
+        .pill-menu.active {
+            color: #ffffff;
+            background-color: var(--ro-primary);
+            box-shadow: 0 4px 6px -1px rgba(78, 115, 223, 0.3);
+        }
+</style>
+
+<div class="container py-3 fade-in">
+    <div class="app-oficial-wrapper mt-2">
+
+        <div class="app-header">
+            <div class="header-blur-bg"></div>
+
+            <div class="header-content d-flex justify-content-between align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 gap-md-3" style="min-width: 0;">
+
+                    <a href="@Url.Action("Index", "Rifas")" class="btn-volver-header shadow-sm" style="width: 36px; height: 36px; font-size: 0.9rem;" title="Volver">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+
+                    @if (!string.IsNullOrEmpty(urlImagenRifa))
+                    {
+                        <img src="@urlImagenRifa" alt="Rifa" class="header-img" />
+                    }
+                    else
+                    {
+                        <div class="header-img d-flex align-items-center justify-content-center bg-white bg-opacity-10"><i class="fa-solid fa-ticket-alt text-white-50"></i></div>
+                    }
+
+                    <div style="min-width: 0;">
+                        <h5 class="fw-bold mb-0 text-truncate text-white header-title">@ViewBag.TituloRifa</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="header-subtitle fw-bold text-uppercase tracking-wider" style="letter-spacing: 0.5px;">Panel de Gestión</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (esAdmin)
+                {
+                    <div class="d-flex align-items-center gap-2 bg-black bg-opacity-30 px-3 py-1.5 rounded-pill border border-white border-opacity-10 shadow-sm" style="backdrop-filter: blur(8px);">
+                        <div class="bg-primary rounded-circle" style="width: 8px; height: 8px; box-shadow: 0 0 10px #4e73df;"></div>
+                        <span class="fw-bold text-white tracking-tight" style="font-size: 0.75rem;">ADMIN</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="app-nav-wrapper">
+            <nav class="app-nav-bar">
+                @if (esAdmin)
+                {
+                    <a href="@Url.Action("Tablero", "Rifas", new { id = idRifaEncriptado })" class="pill-menu @(accionActual == "Tablero" ? "active" : "")">
+                        <i class="fa-solid fa-chart-pie me-2"></i> Tablero
+                    </a>
+
+                    <a href="@Url.Action("Asignaciones", "Rifas", new { id = idRifaEncriptado })" class="pill-menu @(accionActual == "Asignaciones" ? "active" : "")">
+                        <i class="fa-solid fa-users me-2"></i> Vendedores
+                    </a>
+
+                    <a href="@Url.Action("ImpresionBoletos", "Rifas", new { id = idRifaEncriptado })" class="pill-menu @(accionActual == "ImpresionBoletos" ? "active" : "")">
+                        <i class="fa-solid fa-print me-2"></i> Impresión
+                    </a>
+
+                    <a href="@Url.Action("SorteoDirectivos", "Rifas", new { id = idRifaEncriptado })" class="pill-menu @(accionActual == "SorteoDirectivos" ? "active" : "")">
+                        <i class="fa-solid fa-trophy me-2"></i> Sorteo / Ganador
+                    </a>
+                }
+
+                <a href="@Url.Action("MisBoletos", "Rifas", new { id = idRifaEncriptado })" class="pill-menu @(accionActual == "MisBoletos" ? "active" : "")">
+                    <i class="fa-solid fa-ticket-alt me-2"></i> Mis Boletos
+                </a>
+
+                <a href="@Url.Action("Resultados", "Rifas", new { id = idRifaEncriptado })" class="pill-menu @(accionActual == "Resultados" ? "active" : "")">
+                    <i class="fa-solid fa-trophy me-2"></i> Resultados
+                </a>
+
+                <button type="button" class="pill-menu border-0" data-bs-toggle="modal" data-bs-target="#modalEnlaceCompra">
+                    <i class="fa-solid fa-share-nodes text-primary me-2"></i> Enlace de Compra
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-3 p-md-4 p-lg-5 bg-white">
+            @RenderBody()
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEnlaceCompra" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-light border-0 p-4">
+                <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-link text-primary me-2"></i> Compartir Enlace de Venta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <p class="small text-muted mb-3">Copia este enlace directo para compartirlo con tus clientes o publicarlo en redes sociales para vender boletos en línea.</p>
+                <div class="input-group shadow-sm mb-2">
+                    <input type="text" id="txtLinkPublicoCopiar" class="form-control bg-white text-dark fw-bold border-0 p-3 rounded-start-3" readonly value="@urlCompraPublica" style="font-size: 0.85rem;" />
+                    <button class="btn btn-primary px-4 fw-bold rounded-end-3" type="button" onclick="copiarLinkModalLayout(this)">
+                        <i class="fa-regular fa-copy"></i> Copiar
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0 bg-light d-flex gap-2">
+                <button type="button" class="btn btn-light rounded-pill fw-bold flex-fill" data-bs-dismiss="modal">Cerrar</button>
+                <a href="@urlCompraPublica" target="_blank" class="btn btn-dark rounded-pill fw-bold flex-fill shadow"><i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Visitar Sitio</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copiarLinkModalLayout(btn) {
+        var input = document.getElementById('txtLinkPublicoCopiar');
+        navigator.clipboard.writeText(input.value).then(function() {
+            var htmlOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> ¡Copiado!';
+            btn.className = "btn btn-success px-4 fw-bold rounded-end-3";
+            setTimeout(function() {
+                btn.innerHTML = htmlOriginal;
+                btn.className = "btn btn-primary px-4 fw-bold rounded-end-3";
+            }, 2000);
+        }).catch(function(err) {
+            console.error("Error al intentar copiar el enlace: ", err);
+        });
+    }
+</script>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

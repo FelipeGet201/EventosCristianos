@@ -1,0 +1,240 @@
+﻿@using RedAJP.Services
+@inject ISolicitudesService SolicitudesSvc
+@{
+    Layout = "~/Views/Shared/Principal.cshtml";
+    var accionActual = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    bool esCreador = ViewBag.EsCreador ?? false;
+    int idRifa = ViewBag.IdRifaActiva ?? 0;
+    string tokenRifa = RedAJP.Globales.Funciones.EncriptarId(idRifa);
+    string urlImagenRifa = ViewBag.ImagenUrl ?? "";
+
+    // --- OBTENER CONTADORES ---
+    int nPagosPendientes = 0;
+    int nAccionesVendedor = 0;
+    
+    if (User.Identity.IsAuthenticated)
+    {
+        var claimId = User.FindFirst("IdUsuario");
+        if (claimId != null)
+        {
+            int userId = int.Parse(claimId.Value);
+            
+            // Si es creador, verificamos si tiene pagos de otros por aprobar
+            if (esCreador)
+            {
+                nPagosPendientes = await SolicitudesSvc.ObtenerContadorRifasPagosPendientesAsync(userId);
+            }
+            
+            // TODOS (incluyendo al creador) pueden ser vendedores, verificamos si deben algo
+            nAccionesVendedor = await SolicitudesSvc.ObtenerContadorRifasAsignadasAsync(userId);
+        }
+    }
+}
+
+<style>
+    /* Paleta de colores suave y moderna */
+    :root {
+        --rp-primary: #4e73df; /* Azul suave */
+        --rp-bg-body: #f4f6f9;
+        --rp-bg-card: #ffffff;
+        --rp-header-bg: #1a202c; /* Gris muy oscuro */
+        --rp-text-main: #2d3748;
+        --rp-text-muted: #718096;
+        --rp-nav-bg: #ffffff;
+        --rp-nav-text: #4a5568;
+        --rp-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .app-privada-wrapper {
+        background-color: var(--rp-bg-card);
+        border-radius: 24px;
+        box-shadow: var(--rp-shadow);
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.03);
+        margin-bottom: 2rem;
+    }
+
+    /* Cabecera compacta con fondo cinemático */
+    .app-header {
+        position: relative;
+        background-color: #1a202c; /* Color de respaldo si no hay imagen */
+        color: #ffffff;
+        padding: 0.8rem 1.25rem; /* Padding más ajustado para que no sea tan alto */
+        overflow: hidden;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Capa de fondo desenfocada */
+    .header-blur-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('@urlImagenRifa');
+        background-size: cover;
+        background-position: center;
+        /* Filtro más oscuro (0.4) para que el texto se lea perfecto */
+        filter: blur(12px) brightness(0.4);
+        transform: scale(1.15); /* Elimina bordes blancos */
+        z-index: 0;
+    }
+
+    /* Contenido siempre por encima */
+    .header-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Estilo de los textos con sombra para que "salten" del fondo */
+    .header-title {
+        font-size: clamp(1.1rem, 3vw, 1.3rem);
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .header-subtitle {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.75rem;
+        text-shadow: 0 1px 5px rgba(0,0,0,0.5);
+    }
+
+    /* Thumbnail de la rifa más estilizado */
+    .header-riffa-img {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        border: 2px solid rgba(255,255,255,0.3);
+        object-fit: cover;
+    }
+
+    /* ========================================================
+               SISTEMA DE MENÚ TIPO "PILLS" MULTILÍNEA
+               ======================================================== */
+    .app-nav-wrapper {
+        background-color: var(--rp-nav-bg);
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+    }
+
+    .app-nav-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .pill-menu {
+        color: var(--rp-nav-text);
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 50rem;
+        background-color: #f1f5f9;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+        .pill-menu:hover {
+            color: var(--rp-primary);
+            background-color: rgba(78, 115, 223, 0.1);
+        }
+
+        .pill-menu.active {
+            color: #ffffff;
+            background-color: var(--rp-primary);
+            box-shadow: 0 4px 6px -1px rgba(78, 115, 223, 0.3);
+        }
+
+        .pill-menu i {
+            font-size: 1rem;
+        }
+</style>
+
+<div class="container py-3 fade-in">
+    <div class="app-privada-wrapper mt-2">
+        
+        <div class="app-header">
+            <div class="header-blur-bg"></div>
+
+            <div class="header-content d-flex justify-content-between align-items-center gap-2">
+        
+                <div class="d-flex align-items-center gap-2 gap-md-3" style="min-width: 0;">
+            
+                    <a href="@Url.Action("Index", "RifasPersonales")" class="btn-volver-header shadow-sm" style="width: 36px; height: 36px; font-size: 0.9rem;" title="Volver">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+
+                    @if (!string.IsNullOrEmpty(urlImagenRifa))
+                    {
+                        <img src="@urlImagenRifa" alt="Rifa" class="header-riffa-img" />
+                    }
+                    else
+                    {
+                        <div class="header-icon-fallback d-none d-sm-flex bg-white bg-opacity-10 rounded-3" style="width:42px; height:42px; border:1px solid rgba(255,255,255,0.1); align-items:center; justify-content:center;">
+                            <i class="fa-solid fa-ticket-alt text-white-50"></i>
+                        </div>
+                    }
+            
+                    <div style="min-width: 0;">
+                        <h5 class="fw-bold mb-0 text-truncate text-white header-title">@ViewBag.TituloRifa</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-building-columns text-info d-md-none" style="font-size: 0.7rem;"></i>
+                            <span class="header-subtitle fw-bold text-uppercase tracking-wider" style="letter-spacing: 0.5px;">Panel de Gestión</span>
+                        </div>
+                    </div>
+                </div>
+        
+                @if (esCreador)
+                {
+                    <div class="d-flex align-items-center gap-2 bg-black bg-opacity-30 px-3 py-1.5 rounded-pill border border-white border-opacity-10 shadow-sm" style="backdrop-filter: blur(8px);">
+                        <div class="bg-primary rounded-circle" style="width: 8px; height: 8px; box-shadow: 0 0 10px #4e73df;"></div>
+                        <span class="fw-bold text-white tracking-tight" style="font-size: 0.75rem;">ADMIN</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="app-nav-wrapper">
+            <nav class="app-nav-bar">
+                @if (esCreador)
+                {
+                    <a href="@Url.Action("PanelAdministracion", "RifasPersonales", new { token = tokenRifa })" class="pill-menu @(accionActual == "PanelAdministracion" ? "active" : "")">
+                        <i class="fa-solid fa-chart-pie me-2"></i> Tablero
+                    </a>
+                    
+                    <a href="@Url.Action("Asignaciones", "RifasPersonales", new { token = tokenRifa })" class="pill-menu @(accionActual == "Asignaciones" ? "active" : "")">
+                        <i class="fa-solid fa-users me-2"></i> Vendedores
+                        @if (nPagosPendientes > 0)
+                        {
+                            <span class="badge rounded-pill bg-danger ms-2 shadow-sm" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nPagosPendientes</span>
+                        }
+                    </a>
+                }
+                
+                <a href="@Url.Action("PuntoDeVenta", "RifasPersonales", new { token = tokenRifa })" class="pill-menu @(accionActual == "PuntoDeVenta" ? "active" : "")">
+                    <i class="fa-solid fa-store me-2"></i> Punto de Venta
+                    @if (nAccionesVendedor > 0)
+                    {
+                        <span class="badge rounded-pill bg-danger ms-2 shadow-sm" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nAccionesVendedor</span>
+                    }
+                </a>
+                
+                <a href="@Url.Action("Resultados", "RifasPersonales", new { token = tokenRifa })" class="pill-menu @(accionActual == "Resultados" ? "active" : "")">
+                    <i class="fa-solid fa-trophy me-2"></i> Resultados
+                </a>
+            </nav>
+        </div>
+
+        <div class="p-3 p-md-4 p-lg-5 bg-white">
+            @RenderBody()
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

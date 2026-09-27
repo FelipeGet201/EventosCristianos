@@ -1,0 +1,499 @@
+﻿@model RedAJP.Models.RifaPublicaViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = Model.Titulo;
+    bool estaLogueado = User.Identity.IsAuthenticated;
+    bool estaFinalizada = Model.Estado == "Finalizada";
+    bool tieneEncuestasAsoc = ViewBag.TieneEncuestasAsociadas ?? false;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-rifas');
+        }
+    });
+</script>
+
+<style>
+    .ticket-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+        gap: 8px;
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 15px;
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #f0f0f0;
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .ticket-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #555;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        user-select: none;
+        box-shadow: 0 2px 0 #e0e0e0;
+    }
+
+        .ticket-number:hover {
+            border-color: #0d6efd;
+            color: #0d6efd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(13, 110, 253, 0.15);
+        }
+
+        .ticket-number.selected {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+            box-shadow: 0 4px 10px rgba(13, 110, 253, 0.4);
+            transform: scale(1.05);
+        }
+
+    .img-container {
+        width: 100%;
+        overflow: hidden;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .img-full-display {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .desc-text {
+        color: #2c3e50;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        font-weight: 400;
+    }
+
+    .price-badge {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
+    }
+
+    .btn-back-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #6c757d;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+    }
+
+        .btn-back-nav:hover {
+            color: #0d6efd;
+        }
+
+    /* Estilos nuevos más llamativos para el banner del folio */
+    .card-folio {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+    }
+    
+    .btn-canje-folio {
+        background: #ffffff;
+        color: #059669;
+        border: none;
+        font-weight: 800;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .btn-canje-folio:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            color: #047857;
+            background: #f8fafc;
+        }
+</style>
+
+<div class="container py-4 fade-in">
+    @if (estaLogueado)
+    {
+        <div class="row">
+            <div class="col-12">
+                <a href="@Url.Action("Index")" class="btn-back-nav">
+                    <i class="fa-solid fa-arrow-left"></i> Volver a Rifas
+                </a>
+            </div>
+        </div>
+    }
+
+    <div class="row g-5">
+        <div class="col-lg-5">
+            <div class="img-container mb-4 position-relative bg-white">
+                @if (!string.IsNullOrEmpty(Model.ImagenUrl))
+                {
+                    <img src="@Model.ImagenUrl" class="img-full-display" alt="@Model.Titulo">
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-image fa-4x mb-3 opacity-25"></i>
+                        <p>Sin imagen disponible</p>
+                    </div>
+                }
+            </div>
+
+            <h1 class="fw-bold text-dark mb-3 lh-sm">@Model.Titulo</h1>
+
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                <span class="badge price-badge rounded-pill fs-5 px-3 py-2">
+                    $@Model.CostoBoleto.ToString("N0") <small class="opacity-75">MXN</small>
+                </span>
+                <span class="text-secondary fw-bold bg-light px-3 py-2 rounded-pill border">
+                    <i class="fa-regular fa-calendar me-2"></i>
+                    Sorteo: @Model.FechaSorteo.ToString("dd MMM yyyy")
+                </span>
+            </div>
+
+            @* 1. DETALLES DEL SORTEO (Descripción arriba) *@
+            <div class="card border-0 bg-light rounded-4 mb-4 shadow-sm">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase text-muted small mb-2">Detalles del Sorteo</h6>
+                    <p class="desc-text mb-0" style="white-space: pre-line;">@Model.Descripcion</p>
+                </div>
+            </div>
+
+            @* 2. PANEL DE FOLIO (En medio y más llamativo) *@
+            @if (tieneEncuestasAsoc && !estaFinalizada)
+            {
+                <div class="card card-folio shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4 text-center">
+                        <h5 class="fw-bold text-white mb-2"><i class="fa-solid fa-gift me-2"></i>¿Tienes un Folio de Encuesta?</h5>
+                        <p class="small mb-4" style="color: rgba(255,255,255,0.9);">Si completaste una encuesta promocional, puedes reclamar <strong>1 boleto gratuito</strong> para este sorteo.</p>
+                        <button class="btn btn-canje-folio rounded-pill px-4 py-3 w-100 fs-6 shadow-sm" onclick="abrirCanjeFolio()">
+                            Canjear mi Folio
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @* 3. INSTRUCCIONES (Abajo) *@
+            @if (!estaFinalizada)
+            {
+                <div class="alert alert-info border-0 shadow-sm d-flex align-items-start gap-3 rounded-4 bg-opacity-10 bg-primary text-primary p-4">
+                    <i class="fa-solid fa-circle-info mt-1 fs-5"></i>
+                    <div>
+                        <strong>Instrucciones:</strong> Selecciona tus números en el panel. Tienes media hora para pagar una vez reservados los boletos.
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-7">
+            @if (estaFinalizada)
+            {
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden h-100 bg-white text-center p-4 p-md-5 d-flex flex-column justify-content-center align-items-center">
+                    <div class="mb-4 text-warning">
+                        <i class="fa-solid fa-trophy fa-5x"></i>
+                    </div>
+                    <h2 class="fw-bold text-dark mb-3">¡Sorteo Finalizado!</h2>
+                    <p class="text-muted fs-5 mb-4">Esta dinámica ha concluido. Agradecemos a todos por participar.</p>
+
+                    @if (ViewBag.NumeroGanador != null)
+                    {
+                        <div class="bg-light border border-warning rounded-4 p-4 shadow-sm w-100" style="max-width: 400px;">
+                            <span class="text-uppercase fw-bold text-muted small tracking-wider">Número Ganador</span>
+                            <div class="display-2 fw-bold text-primary mt-2">#@ViewBag.NumeroGanador</div>
+                            <div class="mt-3 text-success fw-bold fs-5">
+                                <i class="fa-solid fa-party-horn me-1"></i> ¡Felicidades al afortunado!
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden h-100">
+                    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-ticket me-2 text-primary"></i> Elige tu suerte</h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2" id="lblContador">0 seleccionados</span>
+                    </div>
+
+                    <div class="card-body p-4 bg-light">
+
+                        <div class="form-floating mb-3">
+                            <input type="number" id="txtBuscarBoleto" class="form-control rounded-3 border-0 shadow-sm" placeholder="Buscar..." onkeyup="filtrarBoletos()">
+                            <label for="txtBuscarBoleto" class="text-muted"><i class="fa-solid fa-magnifying-glass me-2"></i>Buscar número específico...</label>
+                        </div>
+
+                        <div class="ticket-grid mb-4" id="contenedorBoletos">
+                            @if (Model.NumerosDisponibles.Any())
+                            {
+                                @foreach (var num in Model.NumerosDisponibles)
+                                {
+                                    <div class="ticket-number" id="boleto_@num" data-numero="@num" onclick="toggleBoleto(@num)">
+                                        @num.ToString("000")
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="col-12 text-center py-5 text-muted">
+                                    <i class="fa-regular fa-face-sad-tear fa-3x mb-3"></i>
+                                    <h5>¡Lo sentimos!</h5>
+                                    <p>Ya no quedan boletos disponibles para esta rifa.</p>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="card border-0 rounded-4 shadow-sm bg-white">
+                            <div class="card-body p-4">
+                                <form action="@Url.Action("Reservar")" method="post" id="formReserva" onsubmit="return validarFormulario()">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idRifa" value="@Model.IdRifaEncriptado" />
+
+                                    <div id="inputsOcultos"></div>
+
+                                    <h6 class="fw-bold mb-3 text-secondary"><i class="fa-regular fa-id-card me-2"></i>Tus Datos</h6>
+
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-12">
+                                            <div class="form-floating">
+                                                <input type="text" name="nombre" class="form-control rounded-3" id="floatingName" placeholder="Nombre" required value="@(User.Identity.IsAuthenticated ? User.FindFirst("Nombre")?.Value : "")" />
+                                                <label for="floatingName">Nombre Completo</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="email" name="email" class="form-control rounded-3" id="floatingEmail" placeholder="Correo" required value="@(User.Identity.IsAuthenticated ? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value : "")" />
+                                                <label for="floatingEmail">Correo Electrónico</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input type="tel" name="telefono" class="form-control rounded-3" id="floatingTel" placeholder="Tel" required />
+                                                <label for="floatingTel">Teléfono (WhatsApp)</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                        <div>
+                                            <div class="small text-muted text-uppercase fw-bold">Total a Pagar</div>
+                                            <div class="fs-2 fw-bold text-dark" id="lblTotal">$0.00</div>
+                                        </div>
+                                        <button type="submit" class="btn btn-secondary rounded-pill px-5 py-3 fw-bold shadow-sm transition-all" id="btnReservar" disabled>
+                                            Reservar <i class="fa-solid fa-arrow-right ms-2"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Canjear Folio -->
+<div class="modal fade" id="modalCanjeFolio" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3 text-success"><i class="fa-solid fa-gift fa-3x"></i></div>
+                <h5 class="fw-bold text-dark mb-2">Canjear Folio</h5>
+                <p class="small text-muted mb-4">Ingresa el folio de tu encuesta. El sistema te asignará automáticamente un boleto participante de forma gratuita.</p>
+                
+                <input type="text" id="txtFolioCanje" class="form-control form-control-lg text-center fw-bold mb-3" placeholder="Ej. 000123" />
+                
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light rounded-pill fw-bold w-50 shadow-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success rounded-pill fw-bold w-50 shadow-sm" onclick="procesarCanjeFolio()">
+                        <span id="btnTextCanje">Reclamar</span>
+                        <div class="spinner-border spinner-border-sm text-light d-none" id="spinCanje" role="status"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        const estaLogueadoJS = @estaLogueado.ToString().ToLower();
+        const idRifaJS = '@Model.IdRifaEncriptado';
+        let seleccionados = [];
+        const precioUnitario = @Model.CostoBoleto.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        var modalCanje;
+
+        document.addEventListener('DOMContentLoaded', function() {
+        var elModal = document.getElementById('modalCanjeFolio');
+        if (elModal) {
+        modalCanje = new bootstrap.Modal(elModal);
+        }
+        });
+
+        function abrirCanjeFolio() {
+        if (!estaLogueadoJS) {
+        if(typeof mostrarMensaje === 'function') {
+        mostrarMensaje('Acceso Requerido', 'Para evitar abusos y llevar un control estricto, debes iniciar sesión o registrarte para reclamar un boleto de promoción.', 'info');
+        } else {
+        alert('Debes iniciar sesión para reclamar tu boleto gratuito.');
+        }
+        return;
+        }
+        document.getElementById('txtFolioCanje').value = "";
+        modalCanje.show();
+        }
+
+        function procesarCanjeFolio() {
+        const folio = document.getElementById('txtFolioCanje').value.trim();
+        if (!folio) {
+        if(typeof mostrarMensaje === 'function') mostrarMensaje('Atención', 'Ingresa tu número de folio.', 'alerta');
+        return;
+        }
+
+        const btnText = document.getElementById('btnTextCanje');
+        const spin = document.getElementById('spinCanje');
+            
+        btnText.classList.add('d-none');
+        spin.classList.remove('d-none');
+
+        // Token CSRF generado por MVC en Layout o Form
+        const tokenAjax = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        fetch('@Url.Action("CanjearFolio", "Rifas")', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+        '__RequestVerificationToken': tokenAjax,
+        'idRifa': idRifaJS,
+        'folio': folio
+        })
+        })
+        .then(res => res.json())
+        .then(data => {
+        btnText.classList.remove('d-none');
+        spin.classList.add('d-none');
+
+        if (data.exito) {
+        modalCanje.hide();
+        lanzarConfeti();
+                    
+        if(typeof mostrarMensaje === 'function') {
+        mostrarMensaje('¡Éxito!', data.mensaje, 'exito');
+        } else {
+        alert(data.mensaje);
+        }
+
+        // Lo mandamos al recibo oficial después de 2.5 seg
+        setTimeout(() => {
+        window.location.href = '/Rifas/TuPedido/' + data.token;
+        }, 2500);
+        } else {
+        if(typeof mostrarMensaje === 'function') {
+        mostrarMensaje('Folio Rechazado', data.mensaje, 'error');
+        } else {
+        alert(data.mensaje);
+        }
+        }
+        })
+        .catch(error => {
+        btnText.classList.remove('d-none');
+        spin.classList.add('d-none');
+        alert('Ocurrió un error de red. Intenta de nuevo.');
+        });
+        }
+
+        function lanzarConfeti() {
+        confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#20c997', '#198754', '#ffc107', '#ffffff']
+        });
+        }
+
+        function toggleBoleto(numero) {
+        const div = document.getElementById('boleto_' + numero);
+        const index = seleccionados.indexOf(numero);
+
+        if (index === -1) {
+        if (seleccionados.length >= 20) {
+        if(typeof mostrarMensaje === 'function') mostrarMensaje('Límite alcanzado', 'Puedes seleccionar un máximo de 20 boletos por operación.', 'alerta');
+        return;
+        }
+        seleccionados.push(numero);
+        div.classList.add('selected');
+        } else {
+        seleccionados.splice(index, 1);
+        div.classList.remove('selected');
+        }
+        actualizarUI();
+        }
+
+        function actualizarUI() {
+        document.getElementById('lblContador').innerText = seleccionados.length + " seleccionados";
+        const total = seleccionados.length * precioUnitario;
+        const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+        document.getElementById('lblTotal').innerText = formatter.format(total);
+        const btn = document.getElementById('btnReservar');
+        if (seleccionados.length > 0) {
+        btn.removeAttribute('disabled');
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-dark', 'shadow');
+        } else {
+        btn.setAttribute('disabled', 'disabled');
+        btn.classList.remove('btn-dark', 'shadow');
+        btn.classList.add('btn-secondary');
+        }
+
+        const contenedor = document.getElementById('inputsOcultos');
+        contenedor.innerHTML = '';
+        seleccionados.forEach(num => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'numerosSeleccionados';
+        input.value = num;
+        contenedor.appendChild(input);
+        });
+        }
+
+        function filtrarBoletos() {
+        const texto = document.getElementById('txtBuscarBoleto').value;
+        const elementos = document.querySelectorAll('.ticket-number');
+        elementos.forEach(el => {
+        if (el.dataset.numero.includes(texto)) {
+        el.style.display = 'flex';
+        } else {
+        el.style.display = 'none';
+        }
+        });
+        }
+
+        function validarFormulario() {
+        if (seleccionados.length === 0) {
+        if(typeof mostrarMensaje === 'function') mostrarMensaje('Selección vacía', 'Por favor selecciona al menos un boleto para continuar.', 'alerta');
+        return false;
+        }
+        return true;
+        }
+    </script>
+}

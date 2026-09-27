@@ -1,0 +1,476 @@
+﻿@using RedAJP.Models
+@model List<RevisionPagoViewModel>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Verificación de Pagos";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-transferencias');
+        }
+    });
+</script>
+
+<style>
+    /* Estilos base del Modal */
+    .modal-verification .modal-body {
+        padding: 0;
+        background-color: #f8f9fa;
+    }
+
+    .panel-evidence {
+        background-color: #212529;
+        position: relative;
+        height: 600px; /* Altura fija en escritorio */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+        .panel-evidence img {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s;
+        }
+
+    .panel-details {
+        padding: 2rem;
+        height: 600px;
+        /* Misma altura que la imagen para cuadrar */
+        overflow-y: auto;
+        background-color: white;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* --- RESPONSIVIDAD PARA MÓVILES --- */
+    @@media (max-width: 991px) {
+        .panel-evidence {
+            height: 300px;
+            /* Imagen más pequeña arriba */
+            background-color: #000;
+        }
+
+        .panel-details {
+            height: auto;
+            max-height: 50vh; /* Scroll si es muy largo */
+            padding: 1.5rem;
+        }
+
+        .modal-xl {
+            margin: 0;
+            max-width: 100%;
+        }
+
+        .modal-content {
+            border-radius: 0;
+            min-height: 100vh;
+        }
+    }
+</style>
+
+<div class="container py-5 fade-in">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="fa-solid fa-list-check me-2 text-primary"></i>Verificación de Pagos</h2>
+            <p class="text-muted mb-0">Revisa y dictamina las transferencias pendientes.</p>
+        </div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill">
+            <i class="fa-solid fa-arrow-left me-1"></i> Volver
+        </a>
+    </div>
+
+    @if (Model.Count > 0)
+    {
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-uppercase small text-muted">
+                        <tr>
+                            <th class="ps-4 py-3">Fecha</th>
+                            <th>Solicitante y Evento</th>
+                            <th>Monto</th>
+                            <th class="text-end pe-4">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">@item.FechaIntento.ToString("dd/MMM")</div>
+                                    <small class="text-muted">@item.FechaIntento.ToString("HH:mm")</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width:40px; height:40px;">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark text-truncate" style="max-width:250px;">@item.UsuarioSolicitante</div>
+                                            <small class="text-primary fw-bold d-block text-truncate" style="font-size:0.75rem; max-width:250px;"><i class="fa-solid fa-calendar-star me-1"></i>@item.TituloEvento</small>
+                                            <small class="text-muted d-block" style="font-size:0.75rem;">ID Trx: #@item.IdTransaccion</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 fs-6">
+                                        $@item.Monto.ToString("N2")
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm btn-sm"
+                                            onclick="abrirVerificador(@item.IdTransaccion)">
+                                        <i class="fa-solid fa-magnifying-glass me-2"></i> Verificar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+            <i class="fa-solid fa-clipboard-check fa-4x text-success opacity-25 mb-3"></i>
+            <h4 class="fw-bold text-dark">Todo al día</h4>
+            <p class="text-muted">No hay comprobantes pendientes de revisión.</p>
+        </div>
+    }
+</div>
+
+<div class="modal fade modal-verification" id="modalDashboard" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-dark text-white py-2">
+                <div class="d-flex align-items-center">
+                    <h6 class="modal-title mb-0"><i class="fa-solid fa-scale-balanced me-2 text-warning"></i> Dictamen</h6>
+                    <span class="mx-2 text-white-50">|</span>
+                    <small class="text-white-50" id="lblFolioModal">Folio #000</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form action="@Url.Action("DictaminarPago")" method="post" id="formDictamen" class="h-100 d-flex flex-column">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idTransaccion" id="hdnIdTransaccion" />
+                <input type="hidden" name="aprobado" id="hdnAprobado" value="false" />
+
+                <div class="modal-body">
+                    <div class="row g-0 h-100">
+
+                        <div class="col-lg-7 panel-evidence">
+                            <div id="loaderImg" class="text-white text-center">
+                                <div class="spinner-border text-warning mb-2" role="status"></div>
+                                <div class="small">Cargando imagen...</div>
+                            </div>
+
+                            <img id="imgComprobante" src="" class="d-none" onclick="window.open(this.src, '_blank')" style="cursor: zoom-in;" title="Clic para expandir">
+                            <iframe id="pdfComprobante" class="w-100 h-100 d-none bg-white"></iframe>
+
+                            <div class="position-absolute bottom-0 end-0 m-3">
+                                <a id="btnDescargar" href="#" target="_blank" class="btn btn-dark btn-sm border border-white shadow">
+                                    <i class="fa-solid fa-download me-1"></i> Original
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-5 panel-details">
+
+                            <div class="d-flex align-items-center mb-3 p-3 bg-light rounded-3 border">
+                                <div class="fs-1 me-3 text-secondary"><i class="fa-solid fa-circle-user"></i></div>
+                                <div>
+                                    <small class="text-uppercase text-muted fw-bold" style="font-size:0.7rem;">Solicitante</small>
+                                    <h5 class="fw-bold text-dark mb-0" id="lblSolicitante">-</h5>
+                                    <small class="text-primary fw-bold" id="lblEventoInfo"><i class="fa-solid fa-calendar-star me-1"></i> <span></span></small><br />
+                                    <small class="text-muted" id="lblFecha">-</small>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning d-flex align-items-center mb-3 p-2 border-warning border-opacity-50">
+                                <div class="fs-2 me-3 text-warning"><i class="fa-solid fa-key"></i></div>
+                                <div class="w-100">
+                                    <small class="text-uppercase fw-bold text-muted" style="font-size:0.65rem; display:block; line-height:1;">Concepto / Motivo Requerido</small>
+                                    <div class="fw-bold font-monospace fs-5 text-dark" id="lblReferenciaEsperada">Cargando...</div>
+                                    <small class="text-muted fst-italic" style="font-size:0.65rem; line-height:1;">Verifica que el comprobante tenga este texto exacto.</small>
+                                </div>
+                            </div>
+
+                            <div class="flex-grow-1 mb-3">
+                                <h6 class="text-uppercase text-muted small fw-bold mb-2">Desglose del Pago</h6>
+                                <div class="table-responsive border rounded-3">
+                                    <table class="table table-sm table-striped mb-0 small">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Asistente / Concepto</th>
+                                                <th class="text-end">Monto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tblDetallesBody"></tbody>
+                                        <tfoot class="table-group-divider">
+                                            <tr class="bg-success bg-opacity-10">
+                                                <td class="text-end fw-bold text-success">TOTAL:</td>
+                                                <td class="text-end fw-bold text-success fs-6" id="lblTotalModal">$0.00</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="alert alert-info d-flex align-items-center mb-3 p-2 border-info border-opacity-50">
+                                <div class="fs-2 me-3 text-info">
+                                    <i class="fa-solid fa-building-columns"></i>
+                                </div>
+                                <div class="w-100">
+                                    <small class="text-uppercase fw-bold text-muted" style="font-size:0.65rem; display:block; line-height:1;">
+                                        Cuenta de Recepción
+                                    </small>
+                                    <div class="fw-bold text-dark mb-1" style="font-size:0.85rem;" id="lblBancoReceptor">
+                                        -
+                                    </div>
+                                    <div class="text-dark small" style="font-size:0.8rem;">
+                                        <strong>Beneficiario:</strong> <span id="lblTitularReceptor">-</span>
+                                    </div>
+                                    <div class="text-dark small font-monospace fw-bold" style="font-size:0.8rem;">
+                                        <strong>CLABE:</strong> <span id="lblClabeReceptor">-</span>
+                                    </div>
+                                    <div class="text-dark small font-monospace" style="font-size:0.8rem;">
+                                        <strong>Cuenta:</strong> <span id="lblCuentaReceptor">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="mb-2">
+                                    <label class="form-label fw-bold small text-primary mb-1">Folio del Banco / Rastreabilidad (Obligatorio para aprobar)</label>
+                                    <input type="text" name="folioTransferencia" id="txtFolioTransferencia" class="form-control font-monospace bg-light border-primary border-opacity-25" placeholder="Ej. 123456789">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small mb-1">Comentario Adicional (Obligatorio para rechazar)</label>
+                                    <textarea name="comentarios" id="txtComentarios" class="form-control bg-light" rows="2" placeholder="Ej: Pago correcto o Motivo de rechazo..."></textarea>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <button type="button" class="btn btn-outline-danger flex-fill fw-bold py-2" onclick="validarYConfirmar(false)">
+                                        <i class="fa-solid fa-xmark me-2"></i> Rechazar
+                                    </button>
+                                    <button type="button" class="btn btn-success flex-fill fw-bold py-2 shadow-sm" onclick="validarYConfirmar(true)">
+                                        <i class="fa-solid fa-check me-2"></i> Aprobar
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" data-bs-backdrop="static" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3" id="iconConfirmacion"></div>
+                <h5 class="fw-bold mb-2" id="tituloConfirmacion">¿Estás seguro?</h5>
+                <p class="text-muted small mb-4" id="textoConfirmacion">Mensaje dinámico</p>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary rounded-pill fw-bold" id="btnAccionConfirmar">Confirmar</button>
+                    <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAlerta" tabindex="-1" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-body text-center p-4">
+                <div class="text-warning mb-2"><i class="fa-solid fa-triangle-exclamation fa-3x"></i></div>
+                <h6 class="fw-bold mb-2">Atención</h6>
+                <p class="text-muted small mb-4" id="textoAlerta">Mensaje de error</p>
+                <button type="button" class="btn btn-dark rounded-pill w-100 btn-sm" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. SERIALIZAMOS LOS DATOS AQUÍ DE FORMA SEGURA
+    var datosSolicitudes = @Html.Raw(Json.Serialize(Model));
+    var diccionarioCuentas = @Html.Raw(Json.Serialize(ViewBag.CuentasBancariasDic));
+    var modalDashboard = null;
+    var modalConfirmacion = null;
+    var modalAlerta = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var elDash = document.getElementById('modalDashboard');
+        if(elDash) modalDashboard = new bootstrap.Modal(elDash);
+
+        var elConf = document.getElementById('modalConfirmacion');
+        if(elConf) modalConfirmacion = new bootstrap.Modal(elConf);
+
+        var elAlert = document.getElementById('modalAlerta');
+        if(elAlert) modalAlerta = new bootstrap.Modal(elAlert);
+    });
+
+    function abrirVerificador(idTransaccion) {
+        var item = datosSolicitudes.find(x => x.idTransaccion === idTransaccion);
+        if (!item) {
+            mostrarAlerta("No se encontraron los datos de la transacción.");
+            return;
+        }
+
+        // Llenar UI
+        document.getElementById('hdnIdTransaccion').value = item.idTransaccion;
+        document.getElementById('lblFolioModal').innerText = "Folio #" + item.idTransaccion;
+        document.getElementById('lblSolicitante').innerText = item.usuarioSolicitante;
+        document.getElementById('lblEventoInfo').querySelector('span').innerText = item.tituloEvento;
+        document.getElementById('lblReferenciaEsperada').innerText = item.referenciaEsperada || "NO DISPONIBLE";
+
+        var fecha = new Date(item.fechaIntento);
+        document.getElementById('lblFecha').innerText = fecha.toLocaleDateString() + " " + fecha.toLocaleTimeString();
+        document.getElementById('lblTotalModal').innerText = "$" + item.monto.toLocaleString('es-MX', {minimumFractionDigits: 2});
+
+        // Llenar Tabla Detalles (Añadiendo la Modalidad)
+        var tbody = document.getElementById('tblDetallesBody');
+        tbody.innerHTML = "";
+        
+        var detalles = [];
+        try {
+            detalles = JSON.parse(item.jsonDetalles);
+        } catch(e) { console.error("Error parseando detalles", e); }
+
+        if(detalles && detalles.length > 0) {
+            detalles.forEach(d => {
+                var fila = `<tr>
+                    <td>
+                        <div class="fw-bold text-dark">${d.Persona}</div>
+                        <div class="text-primary fw-bold" style="font-size:0.7em"><i class="fa-solid fa-tag me-1"></i>${d.Modalidad}</div>
+                        <div class="text-muted" style="font-size:0.8em">${d.Concepto}</div>
+                    </td>
+                    <td class="text-end font-monospace align-middle">$${d.Monto.toFixed(2)}</td>
+                </tr>`;
+                tbody.innerHTML += fila;
+            });
+        } else {
+            tbody.innerHTML = "<tr><td colspan='2' class='text-center text-muted py-3'>Sin detalles disponibles</td></tr>";
+        }
+
+        // Fila de Cupón
+        if (item.montoDescuento > 0) {
+            var filaCupon = `
+            <tr class="bg-success bg-opacity-10 border-success border-opacity-25">
+                <td>
+                    <div class="fw-bold text-success"><i class="fa-solid fa-ticket me-1"></i> Cupón Aplicado</div>
+                    <div class="text-success small fw-bold font-monospace">${item.codigoCupon || "DESCUENTO"}</div>
+                </td>
+                <td class="text-end fw-bold text-success font-monospace align-middle">-$${item.montoDescuento.toFixed(2)}</td>
+            </tr>`;
+            tbody.innerHTML += filaCupon;
+        }
+
+        // Cargar Imagen
+        var urlImg = '@Url.Action("VerComprobanteImagen")/' + item.idArchivoComprobante;
+        var img = document.getElementById('imgComprobante');
+        var pdf = document.getElementById('pdfComprobante');
+        var loader = document.getElementById('loaderImg');
+        var btnDesc = document.getElementById('btnDescargar');
+
+        img.classList.add('d-none');
+        pdf.classList.add('d-none');
+        loader.style.display = 'block';
+        btnDesc.href = urlImg;
+
+        img.src = urlImg;
+        img.onload = function() {
+            loader.style.display = 'none';
+            img.classList.remove('d-none');
+        };
+        img.onerror = function() {
+            img.classList.add('d-none');
+            pdf.src = urlImg;
+            pdf.classList.remove('d-none');
+            loader.style.display = 'none';
+        };
+
+        var cuenta = diccionarioCuentas[idTransaccion];
+        if (cuenta) {
+            document.getElementById('lblBancoReceptor').innerText = cuenta.banco || cuenta.Banco || "-";
+            document.getElementById('lblTitularReceptor').innerText = cuenta.titular || cuenta.Titular || "-";
+            document.getElementById('lblClabeReceptor').innerText = cuenta.clabe || cuenta.Clabe || "-";
+            document.getElementById('lblCuentaReceptor').innerText = cuenta.cuenta || cuenta.Cuenta || "-";
+        }
+
+        // Reset inputs
+        document.getElementById('txtComentarios').value = "";
+        document.getElementById('txtFolioTransferencia').value = "";
+        
+        modalDashboard.show();
+    }
+
+    // VALIDAR Y MOSTRAR MODAL
+    function validarYConfirmar(esAprobado) {
+        document.getElementById('hdnAprobado').value = esAprobado;
+        
+        var comentario = document.getElementById('txtComentarios').value.trim();
+        var folio = document.getElementById('txtFolioTransferencia').value.trim();
+
+        // Validación de Rechazo
+        if (!esAprobado && comentario === "") {
+            mostrarAlerta("Para rechazar, es obligatorio escribir el motivo para que el usuario sepa qué corregir.");
+            setTimeout(() => document.getElementById('txtComentarios').focus(), 500);
+            return;
+        }
+
+        // Validación de Aprobación
+        if (esAprobado && folio === "") {
+            mostrarAlerta("Para aprobar, es obligatorio ingresar el Folio / Clave de Rastreabilidad del banco.");
+            setTimeout(() => document.getElementById('txtFolioTransferencia').focus(), 500);
+            return;
+        }
+
+        // Configurar Modal de Confirmación
+        var btn = document.getElementById('btnAccionConfirmar');
+        var iconDiv = document.getElementById('iconConfirmacion');
+        var titulo = document.getElementById('tituloConfirmacion');
+        var texto = document.getElementById('textoConfirmacion');
+        
+        if (esAprobado) {
+            titulo.innerText = "Aprobar Pago";
+            texto.innerText = "Se registrará el ingreso con el folio " + folio.toUpperCase() + " y se confirmarán las inscripciones asociadas.";
+            iconDiv.innerHTML = '<i class="fa-solid fa-circle-check fa-4x text-success"></i>';
+            btn.className = "btn btn-success rounded-pill fw-bold shadow";
+            btn.innerText = "Sí, Aprobar";
+        } else {
+            titulo.innerText = "Rechazar Pago";
+            texto.innerText = "Se notificará al usuario para que suba un nuevo comprobante.";
+            iconDiv.innerHTML = '<i class="fa-solid fa-circle-xmark fa-4x text-danger"></i>';
+            btn.className = "btn btn-danger rounded-pill fw-bold shadow";
+            btn.innerText = "Sí, Rechazar";
+        }
+
+        // Asignar acción al botón
+        btn.onclick = function() {
+            document.getElementById('formDictamen').submit();
+        };
+
+        modalConfirmacion.show();
+    }
+
+    function mostrarAlerta(mensaje) {
+        document.getElementById('textoAlerta').innerText = mensaje;
+        modalAlerta.show();
+    }
+</script>

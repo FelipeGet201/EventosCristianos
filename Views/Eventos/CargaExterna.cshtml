@@ -1,0 +1,99 @@
+﻿@model RedAJP.Models.EventoItemViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Carga Externa de Registros";
+}
+
+<div class="container-fluid py-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        
+        <a href="@Url.Action("PanelControl", "Eventos", new { sid = Model.Id_Encriptado_Evento })" class="btn bg-white shadow-sm rounded-pill px-4 py-2 text-secondary fw-bold d-inline-flex align-items-center text-decoration-none hover-lift">
+            <i class="fa-solid fa-arrow-left me-2"></i> Volver al Panel
+        </a>
+
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 py-4">
+            <h4 class="fw-bold m-0"><i class="fa-solid fa-users-viewfinder me-2 text-primary"></i>Carga Externa: @Model.Titulo</h4>
+            <p class="text-muted mt-2 mb-0">Registra asistentes externos mediante un archivo de Excel. Se les enviará un correo automático con su liga de pago.</p>
+        </div>
+        <div class="card-body p-4 bg-light rounded-bottom-4">
+            
+            <div class="row mb-5">
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                <i class="fa-solid fa-file-excel fa-2x text-primary"></i>
+                            </div>
+                            <h5 class="fw-bold">1. Descarga la Plantilla</h5>
+                            <p class="text-muted small">El archivo contiene las columnas exactas, validación inteligente (BUSCARV) y el catálogo de modalidades para este evento.</p>
+                            
+                            <a href="@Url.Action("DescargarPlantillaExterna", "Eventos", new { sid = Model.Id_Encriptado_Evento })" class="btn btn-outline-primary rounded-pill mt-2 fw-bold px-4">
+                                <i class="fa-solid fa-download me-2"></i>Descargar Layout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body text-center p-4">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                <i class="fa-solid fa-upload fa-2x text-success"></i>
+                            </div>
+                            <h5 class="fw-bold">2. Sube el Archivo</h5>
+                            <p class="text-muted small">Sube el archivo previamente llenado. El sistema procesará cada fila y enviará los correos de cobro automáticamente.</p>
+                            
+                            <form action="@Url.Action("ProcesarCargaExterna", "Eventos")" method="post" enctype="multipart/form-data" class="mt-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="sid" value="@Model.Id_Encriptado_Evento" />
+                                
+                                <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+                                    <input type="file" class="form-control border-0 bg-light" name="archivoExcel" accept=".xlsx" required>
+                                    <button class="btn btn-success px-4 fw-bold border-0" type="submit" onclick="mostrarLoader()">Subir y Procesar</button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center rounded-4">
+                <i class="fa-solid fa-triangle-exclamation fa-2x me-3"></i>
+                <div>
+                    <strong>Importante:</strong> Verifica que los correos electrónicos estén bien escritos en el archivo. El sistema enviará el enlace de cobro de Stripe/Transferencia a esas direcciones al terminar de procesar.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function mostrarLoader() {
+        var fileInput = document.querySelector('input[type="file"]');
+        if(fileInput.files.length > 0) {
+            Swal.fire({
+                title: 'Procesando registros...',
+                html: 'Por favor no cierres esta ventana. Se están validando las filas y enviando los correos.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+        }
+    }
+</script>
+
+<style>
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+</style>

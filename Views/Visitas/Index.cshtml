@@ -1,0 +1,358 @@
+﻿@model RedAJP.Models.VisitasViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Actividad del Sitio";
+    string valInicio = Model.FechaInicio.ToString("yyyy-MM-ddTHH:mm");
+    string valFin = Model.FechaFin.ToString("yyyy-MM-ddTHH:mm");
+}
+<script>
+    window.addEventListener('load', function() {
+        activarMenu('menu-herramientas', 'submenu-visitas');
+    });
+</script>
+<style>
+    /* Estilos base para la tabla (Computadora) */
+    .tabla-movil {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    /* Transformación a Tarjetas (Celulares) */
+    @@media (max-width: 767.98px) {
+        /* Esconder encabezado tradicional */
+        .tabla-movil thead {
+            display: none;
+        }
+        /* Convertir fila en tarjeta */
+        .tabla-movil tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            background-color: #fff;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        /* Alinear celdas como renglones */
+        .tabla-movil tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f8f9fa;
+            padding: 0.75rem 0.5rem;
+            text-align: right;
+        }
+            /* Quitar la línea inferior al último elemento de la tarjeta */
+            .tabla-movil tbody td:last-child {
+                border-bottom: none;
+            }
+            /* Inyectar el título desde el atributo data-label */
+            .tabla-movil tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #6c757d;
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                margin-right: 1rem;
+                text-align: left;
+            }
+    }
+</style>
+<div class="container py-5 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold m-0" style="color: var(--header-footer);"><i class="fa-solid fa-house-signal me-2 text-primary"></i> Actividad del Sitio</h2>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4 bg-light rounded-4">
+        <div class="card-body py-3">
+            <form method="get" action="@Url.Action("Index")" id="formFiltros">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted">Desde:</label>
+                        <input type="datetime-local" id="inputInicio" name="inicio" class="form-control border-0 bg-white shadow-sm" value="@valInicio">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted">Hasta:</label>
+                        <input type="datetime-local" id="inputFin" name="fin" class="form-control border-0 bg-white shadow-sm" value="@valFin">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill shadow-sm fw-bold">Actualizar</button>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2 justify-content-end">
+                        <button type="button" onclick="filtrarRapido('hoy')" class="btn btn-sm btn-outline-dark rounded-pill">Hoy</button>
+                        <button type="button" onclick="filtrarRapido('semana')" class="btn btn-sm btn-outline-dark rounded-pill">Semana</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100" style="background: linear-gradient(135deg, #002b36 0%, #004d40 100%); color: white; border-radius: 15px;">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <h6 class="text-uppercase opacity-75 small fw-bold mb-1">Visitas en el Rango</h6>
+                    <h1 class="display-4 fw-bold text-warning mb-0">@Model.TotalEnRango.ToString("N0")</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 15px;">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-1">Entradas Hoy</h6>
+                    <h1 class="display-4 fw-bold text-success mb-0">@Model.VisitasHoy</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 15px;">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-1">Acceso Principal</h6>
+                    <h3 class="fw-bold text-primary mb-0"><i class="fa-solid fa-@(Model.DispositivoTop == "Celular" ? "mobile-screen" : "desktop") me-2"></i>@Model.DispositivoTop</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 15px;">
+                <h6 class="fw-bold text-dark opacity-75 mb-3">Secciones más visitadas</h6>
+                <div style="height: 300px;"><canvas id="chartModulos"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 15px;">
+                <h6 class="fw-bold text-dark opacity-75 mb-3">Computadora vs Celular</h6>
+                <div style="height: 300px;"><canvas id="chartPie"></canvas></div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="card border-0 shadow-sm p-4" style="border-radius: 15px;">
+                <h6 class="fw-bold text-dark opacity-75 mb-3">Horas con mayor actividad</h6>
+                <div style="height: 150px;"><canvas id="chartHoras"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-5" style="border-radius: 15px; overflow: hidden;">
+        <div class="card-header bg-white py-3">
+            <h6 class="fw-bold m-0"><i class="fa-solid fa-list me-2 text-primary"></i> Registro Detallado de Entradas</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive-custom">
+                <table id="tablaVisitas" class="table table-hover align-middle w-100 tabla-movil">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Usuario</th>
+                            <th>Qué vio</th>
+                            <th>Desde qué</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in Model.UltimasVisitas)
+                        {
+                            <tr>
+                                <td data-label="Fecha:" class="small fw-bold">@v.Fecha</td>
+
+                                <td data-label="Usuario:">
+                                    <span class="badge @(v.Usuario == "Anónimo" ? "bg-light text-muted" : "bg-primary")">
+                                        @v.Usuario
+                                    </span>
+                                </td>
+
+                                <td data-label="Recorrido:">
+                                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill fw-bold"
+                                            onclick="verHistorial('@v.Ip', '@v.Fecha.Substring(0, 10)', '@v.Usuario')">
+                                        <i class="fa-solid fa-route me-1"></i> Ver @v.Pagina págs
+                                    </button>
+                                </td>
+
+                                <td data-label="Dispositivo:" class="small">@v.Dispositivo</td>
+                                <td data-label="IP:" class="text-muted font-monospace small">@v.Ip</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.LogBitacora.Any())
+    {
+        <div class="card border-0 shadow-sm mb-5" style="border-radius: 15px; overflow: hidden;">
+            <div class="card-header bg-dark text-white py-3">
+                <h6 class="m-0 fw-bold"><i class="fa-solid fa-fingerprint me-2 text-warning"></i> Bitácora de Movimientos Críticos</h6>
+            </div>
+            <div class="card-body">
+                <table id="tablaBitacora" class="table table-hover align-middle w-100">
+                    <thead class="table-light">
+                        <tr><th>Fecha</th><th>Módulo</th><th>Acción</th><th>Detalle</th><th>Usuario</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model.LogBitacora)
+                        {
+                            <tr><td class="small">@log.Fecha</td><td><span class="badge bg-info text-dark">@log.Modulo</span></td><td class="fw-bold">@log.Accion</td><td class="small">@log.Detalle</td><td class="small">@log.Usuario</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+<div class="modal fade" id="modalHistorial" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-info text-white border-0" style="background-color: #00838f !important;">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-shoe-prints me-2"></i> Recorrido del Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="bg-light p-3 border-bottom">
+                    <div class="small text-muted mb-1"><i class="fa-solid fa-user me-1"></i> <span id="lblHistorialUsu" class="fw-bold text-dark"></span></div>
+                    <div class="small text-muted"><i class="fa-solid fa-network-wired me-1"></i> <span id="lblHistorialIp"></span></div>
+                </div>
+
+                <div class="p-3">
+                    <div id="loadingHistorial" class="text-center py-4 text-muted" style="display: none;">
+                        <i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i><br>Rastreando pasos...
+                    </div>
+                    <ul id="listaHistorial" class="list-group list-group-flush"></ul>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const tableStyle = { responsive: true, language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }, order: [[0, 'desc']] };
+            $('#tablaVisitas').DataTable(tableStyle);
+            $('#tablaBitacora').DataTable(tableStyle);
+
+            // Gráfica de Módulos (Corregido: Sin undefined)
+            new Chart(document.getElementById('chartModulos'), {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.VisitasPorModulo.Keys)),
+                    datasets: [{
+                        label: 'Visitas',
+                        data: @Html.Raw(Json.Serialize(Model.VisitasPorModulo.Values)),
+                        backgroundColor: '#1565c0'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } } // Se oculta leyenda para evitar undefined
+                }
+            });
+
+            // Gráfica Circular
+            new Chart(document.getElementById('chartPie'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Computadora', 'Celular'],
+                    datasets: [{
+                        label: 'Dispositivos',
+                        data: [@Model.PcCount, @Model.MovilCount],
+                        backgroundColor: ['#263238', '#ffca28']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Gráfica de Horas (Corregido: Sin undefined)
+            new Chart(document.getElementById('chartHoras'), {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Visitas',
+                        data: @Html.Raw(Json.Serialize(Model.DataHoras)),
+                        backgroundColor: '#43a047'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } } // Se oculta leyenda para evitar undefined
+                }
+            });
+        });
+
+        function filtrarRapido(tipo) {
+            let inicio = new Date();
+            let fin = new Date();
+            if (tipo === 'hoy') { inicio.setHours(0,0,0,0); fin.setHours(23,59,59,999); }
+            else if (tipo === 'semana') {
+                const diff = inicio.getDate() - inicio.getDay() + (inicio.getDay() === 0 ? -6 : 1);
+                inicio.setDate(diff); inicio.setHours(0,0,0,0);
+            }
+            const fmt = (d) => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+            document.getElementById('inputInicio').value = fmt(inicio);
+            document.getElementById('inputFin').value = fmt(fin);
+            document.getElementById('formFiltros').submit();
+        }
+
+        function verHistorial(ip, fecha, usuario) {
+            // 1. Llenar los datos de cabecera en el modal
+            $('#lblHistorialUsu').text(usuario);
+            $('#lblHistorialIp').text(ip + ' (' + fecha + ')');
+
+            // 2. Limpiar modal y mostrar el loader
+            $('#listaHistorial').empty();
+            $('#loadingHistorial').show();
+
+            // 3. Abrir modal
+            new bootstrap.Modal(document.getElementById('modalHistorial')).show();
+
+            // 4. Hacer la petición AJAX
+            $.get('@Url.Action("ObtenerHistorialAjax", "Visitas")', { ip: ip, fecha: fecha }, function (res) {
+                $('#loadingHistorial').hide();
+
+                if (res.success) {
+                    if (res.data.length === 0) {
+                        $('#listaHistorial').append('<li class="list-group-item text-center text-muted border-0">No se encontraron registros.</li>');
+                        return;
+                    }
+
+                    // Recorrer los resultados e inyectarlos en la lista
+                    res.data.forEach(function (item, index) {
+                        let badgeColor = index === 0 ? 'bg-success' : (index === res.data.length - 1 ? 'bg-danger' : 'bg-secondary');
+                        let etiqueta = index === 0 ? 'Inicio' : (index === res.data.length - 1 ? 'Salida' : 'Paso ' + (index + 1));
+
+                        let html = `
+                            <li class="list-group-item d-flex justify-content-between align-items-start border-0 border-bottom pb-3">
+                                <div class="ms-2 me-auto text-break">
+                                    <div class="fw-bold text-primary mb-1">${item.url}</div>
+                                    <span class="badge ${badgeColor} rounded-pill me-1">${etiqueta}</span>
+                                </div>
+                                <span class="badge bg-light text-dark border"><i class="fa-regular fa-clock me-1"></i>${item.hora}</span>
+                            </li>`;
+                        $('#listaHistorial').append(html);
+                    });
+                } else {
+                    $('#listaHistorial').append('<li class="list-group-item text-danger border-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error: ' + res.message + '</li>');
+                }
+            }).fail(function() {
+                $('#loadingHistorial').hide();
+                $('#listaHistorial').append('<li class="list-group-item text-danger border-0">Error de conexión con el servidor.</li>');
+            });
+        }
+    </script>
+}

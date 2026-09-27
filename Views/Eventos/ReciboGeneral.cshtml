@@ -1,0 +1,272 @@
+﻿@model RedAJP.Models.ReciboGeneralViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Comprobante General - @Model.FolioGeneral</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+            body {
+                background-color: #525659;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 0.9rem;
+            }
+
+            .ticket-container {
+                max-width: 850px;
+                margin: 30px auto;
+                background: white;
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
+                border-radius: 0;
+                min-height: 900px; /* Reducido un poco para ajustar */
+            }
+
+            /* --- HEADER COMPACTO --- */
+            .header-ticket {
+                background: #111827;
+                color: white;
+                padding: 25px 40px; /* Menos altura */
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 4px solid #ffc107;
+            }
+
+            .logo-box img {
+                height: 60px;
+                border-radius: 50%;
+                border: 2px solid white;
+            }
+            /* Logo más chico */
+            .info-evento {
+                text-align: right;
+            }
+
+                .info-evento h2 {
+                    font-size: 1.5rem;
+                }
+            /* Título ajustado */
+
+            /* --- CUERPO --- */
+            .body-ticket {
+                padding: 30px 40px;
+            }
+
+            /* --- CAJA PARTICIPANTE COMPACTA --- */
+            .participant-box {
+                background-color: #f8f9fa;
+                border-left: 5px solid #111827;
+                padding: 12px 20px; /* Padding reducido */
+                margin-bottom: 20px; /* Margen reducido */
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            /* --- TABLA ULTRA COMPACTA --- */
+            .table-custom {
+                font-size: 0.85rem;
+            }
+
+                .table-custom th {
+                    background-color: #111827;
+                    color: white;
+                    text-transform: uppercase;
+                    font-size: 0.75rem;
+                    padding: 8px 10px; /* Cabecera delgada */
+                }
+
+                .table-custom td {
+                    padding: 6px 10px; /* Filas delgadas para que quepan más */
+                    border-bottom: 1px solid #eee;
+                    vertical-align: middle;
+                }
+
+                .table-custom tr:last-child td {
+                    border-bottom: 2px solid #111827;
+                }
+
+            /* --- TOTALES --- */
+            .total-section {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 15px;
+                align-items: center;
+            }
+
+            .total-display {
+                background: #ffc107;
+                color: #000;
+                padding: 8px 20px; /* Botón más delgado */
+                font-size: 1.2rem;
+                font-weight: 800;
+                border-radius: 6px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+
+            /* --- FOOTER --- */
+            .footer-ticket {
+                margin-top: 40px;
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                border-top: 1px dashed #ccc;
+                padding-top: 20px;
+            }
+
+            @@media print {
+                body {
+                    background: white;
+                    margin: 0;
+                }
+
+                .ticket-container {
+                    box-shadow: none;
+                    margin: 0;
+                    width: 100%;
+                    max-width: 100%;
+                    min-height: auto;
+                }
+
+                .btn-print {
+                    display: none !important;
+                }
+
+                .header-ticket {
+                    -webkit-print-color-adjust: exact;
+                    padding: 20px 30px;
+                }
+
+                .total-display {
+                    -webkit-print-color-adjust: exact;
+                }
+
+                .participant-box {
+                    -webkit-print-color-adjust: exact;
+                }
+
+                th {
+                    -webkit-print-color-adjust: exact;
+                }
+                /* Asegurar que la tabla no se corte feo si son muchas hojas */
+                tr {
+                    page-break-inside: avoid;
+                }
+            }
+    </style>
+</head>
+<body>
+
+    <button onclick="window.print()" class="btn btn-light position-fixed bottom-0 end-0 m-4 shadow-lg rounded-circle p-3 btn-print" style="z-index:999;">
+        <i class="fa-solid fa-print fa-2x"></i>
+    </button>
+
+    <div class="ticket-container">
+        <div class="header-ticket">
+            <div class="logo-box">
+                <img src="/Images/logo_ajp.jpg" alt="Logo">
+            </div>
+            <div class="info-evento">
+                <h5 class="text-uppercase text-white-50 mb-0 small" style="letter-spacing: 2px;">Comprobante General</h5>
+                <h2 class="fw-bold mb-0 text-white">@Model.Evento</h2>
+                <div class="mt-1 badge bg-light text-dark font-monospace">FOLIO: @Model.FolioGeneral</div>
+            </div>
+        </div>
+
+        <div class="body-ticket">
+
+            <div class="participant-box">
+                <div>
+                    <div class="text-uppercase text-muted" style="font-size: 0.65rem; font-weight: 700;">Participante Inscrito</div>
+                    <div class="fw-bold text-dark fs-5">@Model.Asistente</div>
+                    
+                    <div class="text-muted mt-1" style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-ticket text-secondary me-1"></i> Modalidad: <span class="fw-bold text-dark">@(string.IsNullOrEmpty(Model.Modalidad) ? "Entrada General" : Model.Modalidad)</span>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2">
+                        <i class="fa-solid fa-check-double me-1"></i> PAGADO 100%
+                    </div>
+                </div>
+            </div>
+
+            <table class="table table-custom w-100 mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Concepto</th>
+                        <th style="width: 30%;">Referencia</th>
+                        <th style="width: 15%;">Fecha</th>
+                        <th class="text-end" style="width: 15%;">Importe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Desglose)
+                    {
+                        <tr>
+                            <td class="fw-bold text-dark">@item.Concepto</td>
+                            <td class="small font-monospace text-muted text-truncate" style="max-width: 150px;">@item.Referencia</td>
+                            <td class="small">@item.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td class="text-end fw-bold text-dark">$@item.Monto.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (Model.TotalDescuentos > 0)
+            {
+                <div class="d-flex justify-content-end align-items-center mt-3 pe-2">
+                    <div class="text-end me-3">
+                        <div class="small text-success text-uppercase fw-bold" style="font-size: 0.7rem;">Ahorro por Cupones</div>
+                    </div>
+                    <div class="fw-bold text-success fs-5">
+                        -$@Model.TotalDescuentos.ToString("N2")
+                    </div>
+                </div>
+            }
+
+            <div class="total-section">
+                <div class="text-end me-3">
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Suma Total Cubierta</div>
+                </div>
+                <div class="total-display">
+                    $@Model.TotalPagado.ToString("N2") <span style="font-size: 0.8rem; font-weight: normal;">MXN</span>
+                </div>
+            </div>
+
+            <div class="footer-ticket">
+                <div class="text-muted small" style="max-width: 70%;">
+                    <p class="mb-1 fw-bold text-dark">Certificado de Autenticidad</p>
+                    <p style="line-height: 1.2;">Este documento es el comprobante oficial de que el participante ha cubierto el 100% del costo del evento. Es válido para el registro en mesa.</p>
+                    <p class="font-monospace mt-2 mb-0 text-secondary" style="font-size: 0.7rem;">Emitido: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+                <div class="p-1 bg-white border rounded">
+                    <div id="qrcode"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // SOLUCIÓN: Usar SOLO la URL.
+        // Es más ligero, escanea más rápido y evita el error de "overflow".
+        var textoQR = "@Html.Raw(Model.UrlValidacion)";
+
+        new QRCode(document.getElementById("qrcode"), {
+        text: textoQR,
+        width: 110,
+        height: 110,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.L // 'L' (Low) permite más datos que 'M' o 'H'
+        });
+    </script>
+</body>
+</html>

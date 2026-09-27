@@ -1,0 +1,253 @@
+﻿@using RedAJP.Globales
+@model RedAJP.Models.TianguisIndexViewModel
+@{
+    bool TienePermiso(string nombrePermiso)
+    {
+        if (!User.Identity!.IsAuthenticated) return false;
+        return User.Claims.Any(c => c.Type == "Permiso" && c.Value == nombrePermiso);
+    }
+    
+    bool p_Tianguis = User.TienePermiso(Parametros.Modulos.Tianguis, Parametros.Permisos.Crear);
+    Layout = "~/Views/Shared/Principal.cshtml"; 
+    ViewData["Title"] = "Tianguis Comunitario";
+
+    // Agrega esta línea para capturar las alertas
+    int cantAlertas = ViewBag.AlertasTianguis ?? 0;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-tienda');
+        }
+    });
+</script>
+
+<style>
+    /* ========================================== */
+    /* ESTILOS GLOBALES Y EFECTOS                 */
+    /* ========================================== */
+    .text-main { color: #073238 !important; }
+    
+    .card-hover-jump { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card-hover-jump:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(3,50,52,0.12) !important; }
+    .badge-mobile-safe { font-size: 0.65rem; padding: 0.3rem 0.6rem; max-width: 85%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ========================================== */
+    /* ENCABEZADO TIANGUIS (Ajuste de color)       */
+    /* ========================================== */
+    .tianguis-header-card {
+        background-color: #dbf6fa; 
+        border: 1px solid #bceef4; 
+        border-left: 5px solid #0e6e73 !important; 
+    }
+    
+    .tianguis-icon-wrapper {
+        background-color: #0e6e73; /* Fondo oscuro haciendo juego con el borde */
+        color: #ffffff; /* Ícono en blanco para contraste */
+        border-radius: 12px;
+        width: 52px; height: 52px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 10px rgba(14, 110, 115, 0.3); /* Sombra ajustada al tono teal */
+    }
+
+    /* ========================================== */
+    /* DISEÑO DE CATEGORÍAS (Píldoras Wrap)       */
+    /* ========================================== */
+    .categorias-container {
+        display: flex;
+        flex-wrap: wrap; 
+        gap: 0.5rem;
+    }
+
+    .categoria-pill {
+        white-space: nowrap;
+        border-radius: 50px;
+        padding: 0.4rem 1.2rem;
+        font-size: 0.85rem;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        background-color: #FFFFFF;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        box-shadow: 0 2px 4px rgba(3,50,52,0.04);
+    }
+    
+    .categoria-pill:hover { 
+        background-color: #f8f9fa; 
+        border-color: #0d6efd; 
+        color: #0d6efd; 
+    }
+    
+    .categoria-pill.active-pill {
+        background-color: #0d6efd; 
+        color: #FFFFFF !important;
+        border-color: #0d6efd;
+        font-weight: 700;
+        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);
+    }
+
+    /* ========================================== */
+    /* BADGES DE ESTADO                           */
+    /* ========================================== */
+    .badge-vendido { background-color: #28A745; color: #ffffff; }
+    .badge-reservada { background-color: #FFC107; color: #073238; }
+    .badge-activa { background-color: #00B8D4; color: #ffffff; }
+</style>
+
+<div class="fade-in py-3 py-md-4 mt-2">
+    
+    <div class="mb-3">
+        <a href="@Url.Action("Index", "Tienda")" class="text-decoration-none fw-bold text-main" style="font-size: 1rem;">
+            <i class="fa-solid fa-arrow-left me-2"></i> Volver a la Tienda Oficial
+        </a>
+    </div>
+
+    <div class="card overflow-hidden tianguis-header-card mb-4 shadow-sm rounded-4">
+        <div class="card-body p-3 p-md-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            
+            <div class="d-flex align-items-center">
+                <div class="rounded-3 shadow-sm d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; background-color: var(--acento-dorado); color: var(--header-footer);">
+                    <i class="fa-solid fa-shopping-bag fa-xl"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0 fw-bold text-main">
+                        Tianguis Comunitario
+                    </h3>
+                    <p class="mb-0 text-muted" style="font-size: 0.95rem;">Compra y venta anónima de segunda mano entre miembros.</p>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        @if (p_Tianguis) 
+        {
+            <a href="@Url.Action("Panel", "Tianguis")" class="btn btn-outline-secondary btn-sm rounded-pill px-4 fw-bold shadow-sm d-flex align-items-center position-relative">
+                <i class="fa-solid fa-user-tag me-2"></i> Mi Panel
+    
+                @if (cantAlertas > 0)
+                {
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-2 border-white shadow-sm" style="font-size: 0.65rem;">
+                        @cantAlertas
+                        <span class="visually-hidden">alertas no leídas</span>
+                    </span>
+                }
+            </a>
+            <a href="@Url.Action("Formulario", "Tianguis")" class="btn btn-dark btn-sm rounded-pill px-4 fw-bold shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-plus me-1"></i> Publicar Artículo
+            </a>
+        }
+        else
+        {
+            @* Alerta formal para usuarios sin permisos *@
+            <div class="alert alert-secondary py-2 px-3 mb-0 d-flex align-items-center shadow-sm rounded-pill border-0" style="font-size: 0.85rem; background-color: #f1f3f5; max-width: 400px;">
+                <i class="fa-solid fa-shield-halved text-muted me-2" style="font-size: 1.1rem;"></i>
+                <span class="text-muted">
+                    <strong>Acceso restringido.</strong> Por favor, solicite a sus directivos la activación de este módulo en su perfil para interactuar.
+                </span>
+            </div>
+        }
+    }
+    else
+    {                    
+        <a href="@Url.Action("Index", "Login")" class="btn btn-outline-dark rounded-pill mt-3 mx-auto fw-bold px-4">
+            <i class="fa-solid fas fa-sign-in-alt me-1"></i> Iniciar sesión
+        </a>
+    }
+</div>
+
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div class="categorias-container">
+            <a href="@Url.Action("Index", new { sCat = (string)null })" class="categoria-pill @(!Model.CategoriaActual.HasValue ? "active-pill" : "")">TODO</a>
+            
+            @foreach(var cat in Model.Categorias) {
+                <a href="@Url.Action("Index", new { sCat = cat.sIdCategoria })" class="categoria-pill @(Model.CategoriaActual == cat.IdCategoria ? "active-pill" : "")">@cat.Nombre</a>
+            }
+        </div>
+    </div>
+
+    @if (Model.Productos.Count == 0)
+    {
+        <div class="card bg-white border-0 shadow-sm rounded-4 p-5 text-center mb-4">
+            <div class="mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 100px; height: 100px; background-color: #E8F6F3;">
+                    <i class="fa-solid fa-box-open fa-3x" style="color: #A3D8CE;"></i>
+                </div>
+            </div>
+            <h4 class="fw-bold text-main mb-2">No hay publicaciones aquí</h4>
+            <p class="mx-auto mb-0 text-muted" style="max-width: 400px;">
+                Parece que aún no hay artículos en esta categoría. ¡Anímate y sé el primero en publicar algo!
+            </p>
+            
+            @if (Model.CategoriaActual.HasValue)
+            {
+                <div class="mt-4">
+                    <a href="@Url.Action("Index", "Tianguis")" class="btn btn-link fw-bold text-decoration-none" style="color: #0d6efd;">
+                        <i class="fa-solid fa-arrow-rotate-left me-1"></i> Ver todas las categorías
+                    </a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row g-2 g-md-4">
+            @foreach(var item in Model.Productos) {
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card h-100 bg-white border-0 shadow-sm rounded-4 overflow-hidden card-hover-jump">
+                        <a href="@Url.Action("Detalle", "Tianguis", new { sId = item.sIdPublicacion })" class="text-decoration-none d-block h-100 d-flex flex-column">
+                            <div class="position-relative text-center" style="background-color: #f8f9fa;">
+                                <img src="@item.ImagenUrl" class="card-img-top p-2" style="height: 160px; object-fit: contain; object-position: center; @(item.Estado != "ACT" ? "opacity: 0.7;" : "")">
+                                
+                                @if(item.Estado == "ACT") {
+                                    <span class="badge badge-mobile-safe position-absolute top-0 start-0 m-2 shadow-sm rounded-pill badge-activa">ACTIVA</span>
+                                } else if(item.Estado == "RES") {
+                                    <span class="badge badge-mobile-safe position-absolute top-0 start-0 m-2 shadow-sm rounded-pill badge-reservada"><i class="fa-solid fa-lock me-1"></i> RESERVADA</span>
+                                } else {
+                                    <span class="badge badge-mobile-safe position-absolute top-0 start-0 m-2 shadow-sm rounded-pill badge-vendido"><i class="fa-solid fa-check-circle me-1"></i> CERRADA</span>
+                                }
+
+                                <span class="badge badge-mobile-safe position-absolute bottom-0 end-0 m-2 shadow-sm bg-white border rounded-pill text-main">
+                                    @if (item.TipoVenta == "TIE" && item.PrecioBase == 0) {
+                                        <i class="fa-solid fa-hand-holding-heart text-danger"></i> <span class="ms-1 d-none d-sm-inline">Donación</span>
+                                    } else if(item.TipoVenta == "TIE") { 
+                                        <i class="fa-solid fa-cart-shopping" style="color: #0d6efd;"></i> <span class="ms-1 d-none d-sm-inline">Fijo</span> 
+                                    } else { 
+                                        <i class="fa-solid fa-gavel" style="color: #FFB74D;"></i> <span class="ms-1 d-none d-sm-inline">Subasta</span> 
+                                    }
+                                </span>
+                            </div>
+                            <div class="card-body d-flex flex-column p-2 p-md-3 flex-grow-1">
+                                <small class="text-uppercase fw-bold text-muted" style="font-size: 0.55rem; letter-spacing: 0.5px;">@item.Categoria</small>
+                                <h6 class="fw-bold text-truncate mb-1 mt-1 text-main" style="font-size: 0.85rem;" title="@item.Titulo">@item.Titulo</h6>
+                                <div class="mt-auto pt-2 d-flex flex-column gap-2">
+                                    <div class="mt-auto pt-2 d-flex flex-column gap-2">
+                                        <div>
+                                            @if (item.TipoVenta == "SUB" && item.PrecioActual > item.PrecioBase)
+                                            {
+                                                <del class="text-muted small me-1">$@item.PrecioBase.ToString("N2")</del>
+                                            }
+                                            @if (item.TipoVenta == "TIE" && item.PrecioActual == 0)
+                                            {
+                                                <span class="fw-bold text-success" style="font-size: 1.1rem;"><i class="fa-solid fa-gift me-1"></i> ¡GRATIS!</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="fw-bold" style="color: #0d6efd; font-size: 1.1rem;">$@item.PrecioActual.ToString("N2")</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="btn btn-outline-dark btn-sm rounded-pill px-2 shadow-sm w-100 fw-bold" style="font-size: 0.75rem;">Ver Artículo</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

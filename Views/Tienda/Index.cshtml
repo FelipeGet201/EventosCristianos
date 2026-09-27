@@ -1,0 +1,419 @@
+﻿@model RedAJP.Models.CatalogoViewModel
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Tienda Oficial";
+
+    int cantPublicaciones = ViewBag.TotalPubsTianguis ?? 0;
+    int cantAlertas = ViewBag.AlertasTianguis ?? 0;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-tienda');
+        }
+    });
+</script>
+
+<style>
+    /* Control de Devocionales / Formatos */
+    .card-devocionales-link {
+        background-color: #ffffff !important;
+        border: 1px solid #e2f4f5 !important;
+        border-radius: 12px; /* Más compacto en móvil */
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        text-decoration: none !important;
+        display: block;
+    }
+
+    @@media (min-width: 768px) {
+        .card-devocionales-link {
+            border-radius: 18px; /* Desktop */
+        }
+    }
+
+    .card-devocionales-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .icon-container-devocional {
+        background-color: #d5f0f0;
+        color: #0e6e73;
+        width: 36px; /* Icono más pequeño en móvil */
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    @@media (min-width: 768px) {
+        .icon-container-devocional {
+            width: 48px; /* Icono original en Desktop */
+            height: 48px;
+            border-radius: 14px;
+            font-size: 1.15rem;
+        }
+    }
+
+    .btn-devocional-entrar {
+        background-color: #40babb;
+        color: white;
+        padding: 0.5rem 1.25rem;
+        border-radius: 50px;
+        font-size: 0.95rem;
+        transition: background-color 0.2s, transform 0.2s;
+        display: inline-block;
+    }
+
+    .card-devocionales-link:hover .btn-devocional-entrar {
+        background-color: #349b9c;
+        transform: scale(1.02);
+        color: white;
+    }
+    /* Efectos de las tarjetas de productos */
+    .card-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+            .card-hover:hover img {
+                transform: scale(1.05);
+                transition: transform 0.3s ease;
+            }
+
+    .text-truncate {
+        max-width: 100%;
+        display: block;
+    }
+
+    /* Enlace compacto y elegante para el Tianguis (Desktop) - VERSIÓN CLARA */
+    .card-tianguis-link {
+        background-color: #dbf6fa !important;
+        border-left: 5px solid #0e6e73 !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+        .card-tianguis-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important;
+            background-color: #dbf6fa !important; /* Un gris muy sutil al pasar el mouse */
+        }
+
+    /* Banners de resumen en el Tianguis (Desktop) - VERSIÓN CLARA */
+    .tianguis-stats-banner {
+        background-color: rgba(0, 0, 0, 0.03); /* Fondo gris claro */
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+        flex: 1;
+        transition: background-color 0.2s;
+    }
+
+        .tianguis-stats-banner:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+</style>
+
+<div class="fade-in py-3 py-md-4">
+
+    <div class="text-center mb-4 mb-md-2">
+        <h1 class="display-5 fw-bold" style="color: var(--header-footer);">Tienda Oficial</h1>
+        <p class="lead text-muted small d-block d-md-none">Encuentra los mejores recursos.</p>
+        <p class="lead text-muted d-none d-md-block">Encuentra los mejores recursos y productos.</p>
+        <div style="width: 60px; height: 4px; background-color: var(--acento-dorado); margin: 0 auto; border-radius: 2px;"></div>
+    </div>
+    <div class="row mb-3 mb-md-4 justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-8">
+            <a href="/Formatos" class="card-devocionales-link p-2 p-md-3 px-md-4 shadow-sm d-flex flex-column flex-md-row align-items-center justify-content-between mx-auto">
+                
+                <div class="d-flex align-items-center gap-2 gap-md-3 w-100 mb-2 mb-md-0">
+                    <div class="icon-container-devocional flex-shrink-0">
+                        <i class="fa-solid fa-play"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 mb-md-1 fw-bold text-dark" style="font-size: 0.95rem;">¿Buscas nuestro contenido Devocional?</h5>
+                        <p class="mb-0 text-muted d-none d-md-block" style="font-size: 0.85rem; line-height: 1.3;">
+                            Explora enseñanzas, devocionales y más para tu crecimiento espiritual.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="d-none d-md-flex align-items-center ms-auto ps-4 border-start border-2 flex-shrink-0 h-100" style="border-color: #e2f4f5 !important;">
+                    <span class="btn-devocional-entrar fw-bold shadow-sm">
+                        Entra Aquí <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </span>
+                </div>
+                
+                <div class="d-block d-md-none w-100 mt-1">
+                    <span class="btn-devocional-entrar fw-bold shadow-sm w-100 text-center py-1" style="font-size: 0.9rem;">
+                        Entra Aquí <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </span>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="row g-3 g-md-4">
+
+        <div class="col-lg-3">
+            <div class="sticky-lg-top" style="top: 100px; z-index: 10;">
+
+                <div class="d-lg-none d-flex flex-wrap justify-content-center gap-2">
+
+                    <a href="@Url.Action("Index", "Tianguis")"
+                       class="btn btn-sm rounded-pill d-flex align-items-center px-3 border-0"
+                       style="background-color: #dbf6fa; color: var(--header-footer); box-shadow: -4px 0px 0px #0e6e73; transition: transform 0.2s, box-shadow 0.2s;">
+
+                        <i class="fa-solid fa-shopping-bag me-2"></i>
+                        <span class="fw-bold" style="letter-spacing: 0.5px;">Tianguis</span>
+
+                        <div class="ms-2 d-flex gap-1 align-items-center">
+                            <span class="badge rounded-pill d-flex align-items-center gap-1 shadow-sm"
+                                  style="background-color: var(--acento-dorado); color: var(--header-footer); font-size: 0.65rem;"
+                                  title="Publicaciones">
+                                <i class="fa-solid fa-shopping-bag"></i> @cantPublicaciones
+                            </span>
+
+                            @if (User.Identity != null && User.Identity.IsAuthenticated)
+                            {
+                                @if (cantAlertas > 0)
+                                {
+                                    <span class="badge bg-danger text-white rounded-pill shadow-sm position-relative d-flex align-items-center gap-1 border border-white"
+                                          style="font-size: 0.65rem;" title="Notificaciones">
+                                        <i class="fa-solid fa-bell"></i> @cantAlertas
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill d-flex align-items-center gap-1"
+                                          style="background-color: rgba(255, 255, 255, 0.4); color: var(--header-footer); font-size: 0.65rem;"
+                                          title="Sin Notificaciones">
+                                        <i class="fa-regular fa-bell"></i> 0
+                                    </span>
+                                }
+                            }
+                        </div>
+                    </a>
+
+                    <a href="@Url.Action("Index", new { cat = (int?)null })"
+                       class="btn btn-sm rounded-pill shadow-sm px-3 @(Model.CategoriaActual == null ? "btn-primary fw-bold" : "bg-white text-muted border border-light")">
+                        Todo
+                    </a>
+                    @foreach (dynamic c in Model.Categorias)
+                    {
+                        <a href="@Url.Action("Index", new { cat = c.Id })"
+                           class="btn btn-sm rounded-pill shadow-sm px-3 @(Model.CategoriaActual == c.Id ? "btn-primary fw-bold" : "bg-white text-muted border border-light")">
+                            @c.Nombre
+                        </a>
+                    }
+                </div>
+
+                <div class="d-none d-lg-block">
+
+                    <div class="card shadow-sm rounded-4 mb-4 overflow-hidden card-tianguis-link border-0">
+                        <div class="card-body p-3">
+                            <a href="@Url.Action("Index", "Tianguis")" class="text-decoration-none d-flex align-items-center mb-3">
+
+                                <div class="rounded-3 shadow-sm d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 45px; height: 45px; background-color: var(--acento-dorado); color: var(--header-footer);">
+                                    <i class="fa-solid fa-shopping-bag fa-lg"></i>
+                                </div>
+
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-0 text-dark" style="letter-spacing: 0.5px;">Tianguis</h6>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Mercado de la comunidad</small>
+                                </div>
+                                <i class="fa-solid fa-arrow-right text-dark opacity-50"></i>
+                            </a>
+
+                            <div class="d-flex gap-2 mt-2 border-top pt-3 mb-1" style="border-color: rgba(0,0,0,0.05) !important;">
+                                <a href="@Url.Action("Index", "Tianguis")" class="text-decoration-none tianguis-stats-banner">
+                                    <span class="d-block text-dark opacity-75 fw-bold mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Publicaciones</span>
+                                    <span class="badge rounded-pill shadow-sm" style="background-color: var(--header-footer); color: #ffffff;">@cantPublicaciones</span>
+                                </a>
+                                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                                {
+                                    <a href="@Url.Action("Panel", "Tianguis")" class="text-decoration-none tianguis-stats-banner position-relative">
+                                        <span class="d-block text-dark opacity-75 fw-bold mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Avisos</span>
+
+                                        @if (cantAlertas > 0)
+                                        {
+                                            <span class="badge bg-danger text-white rounded-pill shadow-sm">@cantAlertas</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill shadow-sm opacity-50" style="background-color: var(--header-footer); color: #ffffff;">0</span>
+                                        }
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="@Url.Action("Index", new { cat = (int?)null })"
+                           class="btn btn-sm rounded-pill shadow-sm px-3 @(Model.CategoriaActual == null ? "btn-primary fw-bold" : "bg-white text-muted border border-light")">
+                            TODO
+                        </a>
+                        @foreach (dynamic c in Model.Categorias)
+                        {
+                            <a href="@Url.Action("Index", new { cat = c.Id })"
+                               class="btn btn-sm rounded-pill shadow-sm px-3 @(Model.CategoriaActual == c.Id ? "btn-primary fw-bold" : "bg-white text-muted border border-light")">
+                                <i class="fa-solid @c.Icono me-1 opacity-50"></i> @c.Nombre
+                            </a>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            @if (Model.Productos.Count == 0 && (ViewBag.ProductosTianguis == null || ViewBag.ProductosTianguis.Count == 0))
+            {
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 400px;">
+                    <div class="mb-4 position-relative">
+                        <div class="bg-white shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 120px; height: 120px; border: 1px solid #f0f0f0;">
+                            <i class="fa-solid fa-shop fa-3x text-primary opacity-75"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-3">Catálogo en Actualización</h3>
+                    <p class="text-muted mb-4 lead fs-6" style="max-width: 450px;">
+                        Estamos seleccionando los mejores productos para esta sección. Pronto encontrarás nuevas opciones aquí.
+                    </p>
+                    <div class="d-flex gap-3">
+                        @if (Model.CategoriaActual != null)
+                        {
+                            <a href="@Url.Action("Index", new { cat = (int?)null })" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm">
+                                <i class="fa-solid fa-arrow-rotate-left me-2"></i> Ver Todo el Catálogo
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-2 g-md-3">
+                    
+                    @foreach (var item in Model.Productos)
+                    {
+                        <div class="col-6 col-md-4 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm card-hover rounded-4 overflow-hidden position-relative">
+
+                                <a href="@Url.Action("Detalle", new { id = item.Id_Producto })" class="d-block ratio ratio-1x1 bg-white border-bottom position-relative text-decoration-none">
+                                    @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                                    {
+                                        <img src="@item.ImagenUrl" class="img-fluid w-100 h-100 p-2 p-md-3" style="height: 160px; object-fit: contain; object-position: center;" alt="@item.Nombre">
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-muted"><i class="fa-regular fa-image fa-2x opacity-25"></i></div>
+                                    }
+
+                                    <div class="position-absolute top-0 start-0 w-100 p-1 p-md-2 d-flex justify-content-between align-items-start" style="z-index: 20;">
+                                        <div>
+                                            @if (item.Stock > 0)
+                                            {
+                                                <span class="badge bg-success shadow-sm rounded-pill border border-white px-2 py-1" style="font-size: 0.65rem;">Stock: @item.Stock</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger shadow-sm rounded-pill border border-white px-2 py-1" style="font-size: 0.65rem;">Agotado</span>
+                                            }
+                                        </div>
+                                        @if (item.Es_Personalizable)
+                                        {
+                                            <span class="badge bg-warning text-dark shadow-sm rounded-pill border border-white px-2 py-1" style="font-size: 0.65rem;">
+                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                            </span>
+                                        }
+                                    </div>
+                                </a>
+
+                                <div class="card-body d-flex flex-column p-2 p-md-3">
+                                    <div class="mb-1 d-none d-md-block">
+                                        <small class="text-uppercase fw-bold text-muted" style="font-size: 0.6rem; letter-spacing: 0.5px;">@item.Categoria</small>
+                                    </div>
+                                    <h6 class="card-title fw-bold text-dark mb-1 text-truncate" style="font-size: 0.85rem;" title="@item.Nombre">@item.Nombre</h6>
+                                    <div class="mt-auto pt-2 d-flex align-items-center justify-content-between">
+                                        <span class="fw-bold text-primary" style="font-size: 0.9rem;">$@item.Precio.ToString("N2")</span>
+                                        <a href="@Url.Action("Detalle", new { id = item.Id_Producto })" class="btn btn-dark rounded-pill px-2 py-1 shadow-sm btn-sm" style="font-size: 0.7rem;">
+                                            Ver <i class="fa-solid fa-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (ViewBag.ProductosTianguis != null)
+                    {
+                        foreach (var item in ViewBag.ProductosTianguis)
+                        {
+                            <div class="col-6 col-md-4 col-xl-3">
+                                <div class="card h-100 border-0 shadow-sm card-hover rounded-4 overflow-hidden position-relative" style="background-color: #fafbfc; border: 1px solid #dbf6fa !important;">
+                                    
+                                    <div class="position-absolute top-0 end-0 p-2" style="z-index: 25;">
+                                        <span class="badge rounded-pill shadow-sm" style="background-color: #0e6e73; color: #dbf6fa; font-size: 0.65rem; border: 1px solid white;">
+                                            <i class="fa-solid fa-shopping-bag me-1"></i>Tianguis
+                                        </span>
+                                    </div>
+
+                                    <a href="@Url.Action("Detalle", "Tianguis", new { sId = item.sId })" class="d-block ratio ratio-1x1 bg-white border-bottom position-relative text-decoration-none">
+                                        
+                                        <img src="@item.ImagenUrl" class="img-fluid w-100 h-100 p-2 p-md-3" style="height: 160px; object-fit: contain; object-position: center;" alt="@item.Nombre">
+
+                                        <div class="position-absolute top-0 start-0 w-100 p-1 p-md-2 d-flex justify-content-between align-items-start" style="z-index: 20;">
+                                            <div>
+                                                @if (item.TipoVenta == "TIE" && item.Precio == 0)
+                                                {
+                                                    <span class="badge bg-danger shadow-sm rounded-pill border border-white px-2 py-1" style="font-size: 0.65rem;">
+                                                        <i class="fa-solid fa-hand-holding-heart me-1"></i>Donación
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary shadow-sm rounded-pill border border-white px-2 py-1" style="font-size: 0.65rem;">
+                                                        @(item.TipoVenta == "SUB" ? "Subasta" : "Comunidad")
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </a>
+
+                                    <div class="card-body d-flex flex-column p-2 p-md-3">
+                                        <div class="mb-1 d-none d-md-block">
+                                            <small class="text-uppercase fw-bold text-muted" style="font-size: 0.6rem; letter-spacing: 0.5px;">@item.Categoria</small>
+                                        </div>
+                                        <h6 class="card-title fw-bold text-dark mb-1 text-truncate" style="font-size: 0.85rem;" title="@item.Nombre">@item.Nombre</h6>
+                                        <div class="mt-auto pt-2 d-flex align-items-center justify-content-between">
+                                            @if (item.TipoVenta == "TIE" && item.Precio == 0)
+                                            {
+                                                <span class="fw-bold text-success" style="font-size: 0.9rem;"><i class="fa-solid fa-gift me-1"></i>¡GRATIS!</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="fw-bold" style="font-size: 0.9rem; color: #0e6e73;">$@item.Precio.ToString("N2")</span>
+                                            }
+                                            
+                                            <a href="@Url.Action("Detalle", "Tianguis", new { sId = item.sId })" class="btn rounded-pill px-2 py-1 shadow-sm btn-sm text-white" style="font-size: 0.7rem; background-color: #0e6e73;">
+                                                Ver <i class="fa-solid fa-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+
+                </div>
+            }
+        </div>
+    </div>
+</div>

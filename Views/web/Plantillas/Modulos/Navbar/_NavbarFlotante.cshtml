@@ -1,0 +1,88 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<style>
+    .nav-flotante-wrapper {
+        position: fixed;
+        top: 20px;
+        left: 0;
+        width: 100%;
+        z-index: 1030;
+        pointer-events: none;
+    }
+
+    .nav-flotante-inner {
+        background: var(--theme-surface); /* Dinámico */
+        backdrop-filter: blur(10px);
+        border-radius: 50px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        pointer-events: auto;
+        padding: 0.8rem 2rem;
+        border: 1px solid rgba(128, 128, 128, 0.2); /* Borde adaptativo */
+        max-width: 900px;
+        width: 95%;
+        margin: 0 auto;
+    }
+
+    .nav-flotante-brand {
+        font-family: var(--theme-font-title);
+        color: var(--theme-primary);
+        font-weight: 800;
+        text-decoration: none;
+        font-size: 1.2rem;
+    }
+
+    .nav-flotante-link {
+        color: var(--theme-text-main);
+        font-family: var(--theme-font-body);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin: 0 12px;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+        .nav-flotante-link:hover {
+            color: var(--theme-accent);
+        }
+
+    .nav-flotante-btn {
+        border: 2px solid var(--theme-primary);
+        color: var(--theme-primary);
+        border-radius: 50px;
+        padding: 0.4rem 1.2rem;
+        font-weight: bold;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+
+        .nav-flotante-btn:hover {
+            background: var(--theme-primary);
+            color: var(--theme-bg); /* Contraste inteligente */
+        }
+</style>
+
+<div class="nav-flotante-wrapper fade-in-up">
+    <div class="nav-flotante-inner d-flex align-items-center justify-content-between">
+        <a href="#" class="nav-flotante-brand text-truncate" style="max-width: 200px;">
+            @(string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "Iglesia" : Model.NombreIglesia)
+        </a>
+        <div class="d-none d-md-flex align-items-center">
+            <a href="#actividad" class="nav-flotante-link">Actividades</a>
+            <a href="#nosotros" class="nav-flotante-link">Nosotros</a>
+            <a href="#galeria" class="nav-flotante-link">Multimedia</a>
+        </div>
+        <a href="#contacto" class="nav-flotante-btn d-none d-sm-block">Visítanos</a>
+        <button class="btn d-md-none border-0 p-0" type="button" data-bs-toggle="collapse" data-bs-target="#mobileFlotante">
+            <i class="fa-solid fa-bars fs-4" style="color: var(--theme-text-main);"></i>
+        </button>
+    </div>
+
+    <div class="container collapse d-md-none mt-2" id="mobileFlotante" style="pointer-events: auto;">
+        <div style="background: var(--theme-surface); border: 1px solid rgba(128, 128, 128, 0.2);" class="p-3 rounded-4 shadow-lg text-center d-flex flex-column gap-3 mx-auto w-100">
+            <a href="#actividad" class="nav-flotante-link m-0">Actividades</a>
+            <a href="#nosotros" class="nav-flotante-link m-0">Nosotros</a>
+            <a href="#contacto" class="nav-flotante-link m-0">Contacto</a>
+        </div>
+    </div>
+</div>

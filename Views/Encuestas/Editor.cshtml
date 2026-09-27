@@ -1,0 +1,661 @@
+@model RedAJP.Models.EncuestaEditorViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = Model.Id == 0 ? "Nueva Encuesta" : "Editar Encuesta";
+    var grupos = ViewBag.Grupos as List<dynamic> ?? new List<dynamic>();
+    var tipos = ViewBag.TiposPregunta as List<dynamic> ?? new List<dynamic>();
+}
+<style>
+    /* Quita el resplandor azul de foco en los switches/checkbox */
+    .form-check-input:focus {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: rgba(0, 0, 0, 0.25); /* Mantiene el borde gris original cuando está apagado */
+    }
+</style>
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-encuestas');
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<div class="container py-4 fade-in">
+    <form action="@Url.Action("Guardar")" method="post" id="formEditor" onsubmit="return prepararEnvio()">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+
+        <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+            <div class="card-body p-3">
+                <div class="row align-items-center g-3">
+                    
+                    <div class="col-12 col-lg">
+                        <a href="@Url.Action("Index")" class="text-decoration-none text-muted small fw-bold hover-scale d-inline-block mb-1">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Volver
+                        </a>
+                        <h3 class="fw-bold text-dark m-0">@ViewData["Title"]</h3>
+                    </div>
+
+                    <div class="col-12 col-lg-auto">
+                        <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-3">
+
+                            <div class="form-check form-switch bg-light p-2 ps-5 rounded-pill border d-flex align-items-center justify-content-center" style="min-width: 170px;">
+                                <input class="form-check-input" type="checkbox" id="chkActiva" name="Activa" value="true" @(Model.Activa ? "checked" : "") onchange="updateLabelActiva(this)" style="transform: scale(1.3); margin-left: -2.5em; margin-right: 0.5em; cursor: pointer;">
+                                <label class="form-check-label fw-bold small user-select-none" for="chkActiva" id="lblActiva">
+                                    @(Model.Activa ? "ESTADO: ACTIVA" : "ESTADO: INACTIVA")
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm hover-scale w-100 w-sm-auto">
+                                <i class="fa-solid fa-save me-2"></i> Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white border-top border-4 border-primary">
+                   
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="fw-bold m-0 text-primary"><i class="fa-solid fa-sliders me-2"></i>Configuración</h6>
+                    </div>
+                    <div class="card-body p-4">
+                       
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Título</label>
+                            <input type="text" name="Titulo" class="form-control fw-bold" value="@Model.Titulo" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">URL Amigable</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light text-muted">/E/</span>
+                                <input type="text" name="ClaveUrl" class="form-control fw-bold text-primary" value="@Model.ClaveUrl" required pattern="[A-Za-z0-9_-]+" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Descripción</label>
+                            <textarea name="Descripcion" class="form-control" rows="2">@Model.Descripcion</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Cierre Automático</label>
+                            <input type="datetime-local" name="FechaLimite" class="form-control form-control-sm" value="@(Model.FechaLimite?.ToString("yyyy-MM-ddTHH:mm"))" />
+                        </div>
+
+                        <div class="bg-light p-3 rounded-3 border">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input shadow-sm" type="checkbox" id="chkPrivada" name="EsPrivada" value="true" @(Model.EsPrivada ? "checked" : "") onchange="toggleGrupo(); actualizarUIPrivada();" style="transform: scale(1.3); margin-left: -2.5em; cursor: pointer;" @(Model.EsRequisitoDeEvento ? "disabled" : "")>
+                                @if (Model.EsRequisitoDeEvento && Model.EsPrivada)
+                                {
+                                    <input type="hidden" name="EsPrivada" value="true" />
+                                }
+                                <label class="form-check-label fw-bold ms-2" for="chkPrivada" style="cursor: pointer;">
+                                    <i class="fa-solid fa-lock text-secondary me-1"></i> Acceso Privado
+                                </label>
+                                @if (Model.EsRequisitoDeEvento)
+                                {
+                                    <div class="small text-danger fw-bold mt-1"><i class="fa-solid fa-circle-exclamation me-1"></i> No se puede desactivar porque es requisito de un evento.</div>
+                                }
+
+                                <div class="mt-2 p-3 rounded-3 bg-white border shadow-sm" style="font-size: 0.85rem;">
+                                    <div id="estadoPrivadaActivo" class="d-flex align-items-center mb-2 transition-fast">
+                                        <i id="iconoPrivadaActivo" class="fa-solid fa-check text-success me-2"></i>
+                                        <span id="textoPrivadaActivo" class="fw-bold text-dark">Exigirá iniciar sesión en el sistema.</span>
+                                    </div>
+                                    <div id="estadoPrivadaInactivo" class="d-flex align-items-center transition-fast">
+                                        <i id="iconoPrivadaInactivo" class="fa-solid fa-xmark text-danger me-2 opacity-50"></i>
+                                        <span id="textoPrivadaInactivo" class="text-muted text-decoration-line-through opacity-50">Cualquier persona con el link puede responder.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="divGrupo" style="display: @(Model.EsPrivada ? "block" : "none")" class="ms-4 mt-2 fade-in">
+                                <label class="small text-primary fw-bold mb-1"><i class="fa-solid fa-users me-1"></i> Limitar a un grupo (Opcional):</label>
+                                <select name="IdGrupoAcceso" class="form-select form-select-sm border-primary shadow-sm">
+                                    <option value="">-- Todos los usuarios registrados --</option>
+                                    @foreach (var g in grupos)
+                                    {
+                                        <option value="@g.Id" @(Model.IdGrupoAcceso == g.Id ? "selected" : "")>@g.Nombre</option>
+                                    }
+                                </select>
+                                <div class="text-muted mt-1" style="font-size: 0.7rem;">Deja esta opción en "Todos" si solo quieres exigir el inicio de sesión.</div>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input shadow-sm" type="checkbox" id="chkSolicitarIglesia" name="SolicitarIglesia" value="true" @(Model.SolicitarIglesia ? "checked" : "") style="transform: scale(1.3); margin-left: -2.5em; cursor: pointer;">
+                                <label class="form-check-label fw-bold ms-2" for="chkSolicitarIglesia" style="cursor: pointer;">
+                                    <i class="fa-solid fa-church text-secondary me-1"></i> Solicitar Iglesia
+                                </label>
+                                <div class="mt-2 p-3 rounded-3 bg-white border shadow-sm" style="font-size: 0.85rem;">
+                                    <span class="text-muted">Si se activa, se pedirá obligatoriamente que el usuario seleccione su iglesia al inicio de la encuesta.</span>
+                                </div>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input shadow-sm" type="checkbox" id="chkAnonima" name="EsAnonima" value="true" @(Model.EsAnonima ? "checked" : "") onchange="actualizarUIAnonima()" style="transform: scale(1.3); margin-left: -2.5em; cursor: pointer;">
+                                <label class="form-check-label fw-bold ms-2" for="chkAnonima" style="cursor: pointer;">
+                                    <i class="fa-solid fa-user-secret text-secondary me-1"></i> Respuestas Anónimas
+                                </label>
+
+                                <div class="mt-2 p-3 rounded-3 bg-white border shadow-sm" style="font-size: 0.85rem;">
+                                    <div id="estadoAnonimaActivo" class="d-flex align-items-center mb-2 transition-fast">
+                                        <i id="iconoAnonimaActivo" class="fa-solid fa-check text-success me-2"></i>
+                                        <span id="textoAnonimaActivo" class="fw-bold text-dark">No se pedirá ningún dato de identidad.</span>
+                                    </div>
+                                    <div id="estadoAnonimaInactivo" class="d-flex align-items-center transition-fast">
+                                        <i id="iconoAnonimaInactivo" class="fa-solid fa-xmark text-danger me-2 opacity-50"></i>
+                                        <span id="textoAnonimaInactivo" class="text-muted text-decoration-line-through opacity-50">Además de las Preguntas se Pedirá Nombre y Correo</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-list-check me-2"></i>Preguntas</h5>
+                    @if (!Model.TieneRespuestas)
+                    {
+                        <span class="badge bg-white text-muted border shadow-sm"><i class="fa-solid fa-grip-lines me-1"></i> Arrastra para ordenar</span>
+                    }
+                </div>
+
+                @if (Model.TieneRespuestas)
+                {
+                    <div class="alert alert-warning border-0 shadow-sm rounded-3 d-flex align-items-center mb-4">
+                        <i class="fa-solid fa-lock fa-2x me-3 opacity-50"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Edición Bloqueada</h6>
+                            <p class="mb-0 small">Esta encuesta ya tiene respuestas. No se pueden agregar, borrar ni modificar preguntas para proteger los datos existentes.</p>
+                        </div>
+                    </div>
+                }
+
+                <div id="contenedorPreguntas">
+                    @for (int i = 0; i < Model.Preguntas.Count; i++)
+                    {
+                        var p = Model.Preguntas[i];
+                        // Solo mostramos si no está eliminada visualmente
+                        if (!p.Eliminada)
+                        {
+                            <div class="card border-0 shadow-sm rounded-4 mb-3 fila-pregunta draggable-item border-start border-4 border-warning" id="card_@i">
+                                <div class="card-body p-4 position-relative">
+
+                                    @if (!Model.TieneRespuestas)
+                                    {
+                                        <div class="position-absolute top-0 start-0 h-100 d-flex align-items-center justify-content-center bg-light rounded-start-4 handle-drag" style="width: 25px; cursor: move;">
+                                            <i class="fa-solid fa-grip-vertical text-muted opacity-50 small"></i>
+                                        </div>
+                                    }
+
+                                    <div class="ps-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="fw-bold text-primary m-0 small text-uppercase">Pregunta <span class="num-visual">@(i + 1)</span></h6>
+
+                                            @if (!Model.TieneRespuestas)
+                                            {
+                                                <button type="button" class="btn btn-sm text-danger p-0" onclick="eliminarPregunta(this)"><i class="fa-solid fa-trash"></i></button>
+                                            }
+                                        </div>
+
+                                        <input type="hidden" name="Preguntas[@i].Id_Pregunta" value="@p.Id_Pregunta" class="inp-id" />
+                                        <input type="hidden" name="Preguntas[@i].Eliminada" value="false" class="inp-eliminada" />
+                                        <input type="hidden" name="Preguntas[@i].Orden" value="@p.Orden" class="inp-orden" />
+                                        <input type="hidden" name="Preguntas[@i].Configuracion" class="inp-config-final" value="@p.Configuracion" />
+
+                                        <div class="row g-2">
+                                            <div class="col-8">
+                                                <input type="text" name="Preguntas[@i].Texto" class="form-control fw-bold inp-texto"
+                                                       value="@p.Texto" placeholder="¿Qué quieres preguntar?" required
+                                                @(Model.TieneRespuestas ? "readonly" : "") />
+                                            </div>
+                                            <div class="col-4">
+                                                <select name="Preguntas[@i].Tipo" class="form-select sel-tipo inp-tipo bg-light"
+                                                        onchange="cambioTipo(this)"
+                                                        style="@(Model.TieneRespuestas ? "pointer-events: none; background-color: #e9ecef;" : "")">
+                                                    @foreach (var t in tipos)
+                                                    {
+                                                        <option value="@t.Id" @(p.Tipo == t.Id ? "selected" : "")>@t.Nombre</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 panel-opciones" style="display: @(p.Tipo == "Opcion" || p.Tipo == "Casillas" ? "block" : "none")">
+                                            <label class="small text-muted fw-bold mb-2">Opciones de respuesta:</label>
+                                            <div class="builder-opciones"></div>
+
+                                            @if (!Model.TieneRespuestas)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-light text-primary mt-2 border rounded-pill" onclick="addOpcionUI(this)">
+                                                    <i class="fa-solid fa-plus me-1"></i> Agregar Opción
+                                                </button>
+                                            }
+                                        </div>
+
+                                        <div class="mt-3 panel-rango" style="display: @(p.Tipo == "RangoNumerico" ? "block" : "none")">
+                                            <div class="bg-light p-3 rounded-3 border">
+                                                <h6 class="small fw-bold text-muted mb-2">Configuración del Rango</h6>
+                                                <div class="row g-2">
+                                                    <div class="col-6 col-md-3">
+                                                        <label class="small text-muted">Mínimo</label>
+                                                        <input type="number" class="form-control form-control-sm r-min" placeholder="0" onkeypress="return noPipe(event)" @(Model.TieneRespuestas ? "readonly" : "")>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <label class="small text-muted">Máximo</label>
+                                                        <input type="number" class="form-control form-control-sm r-max" placeholder="10" onkeypress="return noPipe(event)" @(Model.TieneRespuestas ? "readonly" : "")>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <label class="small text-muted">Etiq. Min</label>
+                                                        <input type="text" class="form-control form-control-sm r-lmin" placeholder="Poco" onkeypress="return noPipe(event)" @(Model.TieneRespuestas ? "readonly" : "")>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <label class="small text-muted">Etiq. Max</label>
+                                                        <input type="text" class="form-control form-control-sm r-lmax" placeholder="Mucho" onkeypress="return noPipe(event)" @(Model.TieneRespuestas ? "readonly" : "")>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 panel-archivo" style="display: @(p.Tipo == "Archivo" ? "block" : "none")">
+                                            <div class="bg-light p-3 rounded-3 border">
+                                                <h6 class="small fw-bold text-muted mb-2"><i class="fa-solid fa-file-shield me-1"></i> Extensiones Permitidas</h6>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @{
+                                                        // Lógica para pre-marcar los checks en preguntas existentes
+                                                        var exts = p.Configuracion?.Split('|') ?? new string[] { ".pdf" };
+                                                    }
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input check-ext" type="checkbox" value=".pdf" @(exts.Contains(".pdf") ? "checked" : "")>
+                                                        <label class="form-check-label small">PDF</label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input check-ext" type="checkbox" value=".jpg" @(exts.Contains(".jpg") ? "checked" : "")>
+                                                        <label class="form-check-label small">JPG</label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input check-ext" type="checkbox" value=".png" @(exts.Contains(".png") ? "checked" : "")>
+                                                        <label class="form-check-label small">PNG</label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input check-ext" type="checkbox" value=".docx" @(exts.Contains(".docx") ? "checked" : "")>
+                                                        <label class="form-check-label small">DOCX</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-check mt-3">
+                                            <input class="form-check-input inp-req" type="checkbox" name="Preguntas[@i].Requerida" value="true" @(p.Requerida ? "checked" : "") @(Model.TieneRespuestas ? "disabled" : "")>
+                                            <label class="form-check-label small text-muted">Obligatoria</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                @if (!Model.TieneRespuestas)
+                {
+                    <div class="text-center mt-3 mb-5">
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 fw-bold dashed-border" onclick="agregarPregunta()">
+                            <i class="fa-solid fa-plus me-2"></i> Agregar Pregunta
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </form>
+</div>
+
+<template id="tplPregunta">
+    <div class="card border-0 shadow-sm rounded-4 mb-3 fila-pregunta draggable-item border-start border-4 border-warning fade-in">
+        <div class="card-body p-4 position-relative">
+            <div class="position-absolute top-0 start-0 h-100 d-flex align-items-center justify-content-center bg-light rounded-start-4 handle-drag" style="width: 25px; cursor: move;">
+                <i class="fa-solid fa-grip-vertical text-muted opacity-50 small"></i>
+            </div>
+            <div class="ps-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-primary m-0 small text-uppercase">Nueva Pregunta</h6>
+                    <button type="button" class="btn btn-sm text-danger p-0" onclick="eliminarPregunta(this)"><i class="fa-solid fa-trash"></i></button>
+                </div>
+
+                <input type="hidden" name="Preguntas[999].Id_Pregunta" value="0" class="inp-id" />
+                <input type="hidden" name="Preguntas[999].Eliminada" value="false" class="inp-eliminada" />
+                <input type="hidden" name="Preguntas[999].Orden" value="0" class="inp-orden" />
+                <input type="hidden" name="Preguntas[999].Configuracion" class="inp-config-final" value="" />
+
+                <div class="row g-2">
+                    <div class="col-8">
+                        <input type="text" name="Preguntas[999].Texto" class="form-control fw-bold inp-texto" placeholder="Escribe tu pregunta..." required />
+                    </div>
+                    <div class="col-4">
+                        <select name="Preguntas[999].Tipo" class="form-select sel-tipo inp-tipo bg-light" onchange="cambioTipo(this)">
+                            @foreach (var t in tipos)
+                            {
+                                <option value="@t.Id">@t.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-3 panel-opciones" style="display: none">
+                    <label class="small text-muted fw-bold mb-2">Opciones de respuesta:</label>
+                    <div class="builder-opciones"></div>
+                    <button type="button" class="btn btn-sm btn-light text-primary mt-2 border rounded-pill" onclick="addOpcionUI(this)">
+                        <i class="fa-solid fa-plus me-1"></i> Agregar Opción
+                    </button>
+                </div>
+
+                <div class="mt-3 panel-rango" style="display: none">
+                    <div class="bg-light p-3 rounded-3 border">
+                        <h6 class="small fw-bold text-muted mb-2">Configuración del Rango</h6>
+                        <div class="row g-2">
+                            <div class="col-6 col-md-3"><label class="small text-muted">Min</label><input type="number" class="form-control form-control-sm r-min" placeholder="0" onkeypress="return noPipe(event)"></div>
+                            <div class="col-6 col-md-3"><label class="small text-muted">Max</label><input type="number" class="form-control form-control-sm r-max" placeholder="10" onkeypress="return noPipe(event)"></div>
+                            <div class="col-6 col-md-3"><label class="small text-muted">Etiq. Min</label><input type="text" class="form-control form-control-sm r-lmin" placeholder="Poco" onkeypress="return noPipe(event)"></div>
+                            <div class="col-6 col-md-3"><label class="small text-muted">Etiq. Max</label><input type="text" class="form-control form-control-sm r-lmax" placeholder="Mucho" onkeypress="return noPipe(event)"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 panel-archivo" style="display: none">
+                    <div class="bg-light p-3 rounded-3 border">
+                        <h6 class="small fw-bold text-muted mb-2"><i class="fa-solid fa-file-shield me-1"></i> Extensiones Permitidas</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input check-ext" type="checkbox" value=".pdf">
+                                <label class="form-check-label small">PDF</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input check-ext" type="checkbox" value=".jpg">
+                                <label class="form-check-label small">JPG</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input check-ext" type="checkbox" value=".png">
+                                <label class="form-check-label small">PNG</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input check-ext" type="checkbox" value=".docx">
+                                <label class="form-check-label small">DOCX</label>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-0 mt-2" style="font-size: 0.7rem;">
+                            * El límite por archivo está fijado en **2 MB**.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="form-check mt-3">
+                    <input class="form-check-input inp-req" type="checkbox" name="Preguntas[999].Requerida" value="true" checked>
+                    <label class="form-check-label small text-muted">Obligatoria</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    function actualizarUIAnonima() {
+    var chk = document.getElementById('chkAnonima');
+    // Elementos del estado "Anónimo" (Activo)
+    var iconActivo = document.getElementById('iconoAnonimaActivo');
+    var textActivo = document.getElementById('textoAnonimaActivo');
+
+    // Elementos del estado "Pide Datos" (Inactivo)
+    var iconInactivo = document.getElementById('iconoAnonimaInactivo');
+    var textInactivo = document.getElementById('textoAnonimaInactivo');
+
+    if (chk.checked) {
+    // Modo Anónimo ON
+    iconActivo.className = "fa-solid fa-check text-success me-2";
+    textActivo.className = "fw-bold text-dark";
+
+    iconInactivo.className = "fa-solid fa-xmark text-danger me-2 opacity-50";
+    textInactivo.className = "text-muted text-decoration-line-through opacity-50";
+    } else {
+    // Modo Anónimo OFF (Pide Nombre y Correo)
+    iconActivo.className = "fa-solid fa-xmark text-danger me-2 opacity-50";
+    textActivo.className = "text-muted text-decoration-line-through opacity-50";
+
+    iconInactivo.className = "fa-solid fa-check text-success me-2";
+    textInactivo.className = "fw-bold text-dark";
+    }
+    }
+
+    function actualizarUIPrivada() {
+    var chk = document.getElementById('chkPrivada');
+    // Elementos del estado "Privado" (Activo)
+    var iconActivo = document.getElementById('iconoPrivadaActivo');
+    var textActivo = document.getElementById('textoPrivadaActivo');
+
+    // Elementos del estado "Público" (Inactivo)
+    var iconInactivo = document.getElementById('iconoPrivadaInactivo');
+    var textInactivo = document.getElementById('textoPrivadaInactivo');
+
+    if (chk.checked) {
+    // Modo Privado ON
+    iconActivo.className = "fa-solid fa-check text-success me-2";
+    textActivo.className = "fw-bold text-dark";
+
+    iconInactivo.className = "fa-solid fa-xmark text-danger me-2 opacity-50";
+    textInactivo.className = "text-muted text-decoration-line-through opacity-50";
+    } else {
+    // Modo Privado OFF (Público)
+    iconActivo.className = "fa-solid fa-xmark text-danger me-2 opacity-50";
+    textActivo.className = "text-muted text-decoration-line-through opacity-50";
+
+    iconInactivo.className = "fa-solid fa-check text-success me-2";
+    textInactivo.className = "fw-bold text-dark";
+    }
+    }
+
+    // IMPORTANTE: Ejecutar ambas funciones al cargar la página para que
+    // los estilos coincidan con el valor inicial de la base de datos.
+    document.addEventListener('DOMContentLoaded', function() {
+    actualizarUIAnonima();
+    actualizarUIPrivada();
+    });
+
+    // Variable global para saber si está bloqueado desde Razor
+    var isLocked = @(Model.TieneRespuestas.ToString().ToLower());
+    document.addEventListener('DOMContentLoaded', function() {
+    // Solo activamos Sortable si NO está bloqueado
+    var container = document.getElementById('contenedorPreguntas');
+    if (container && !isLocked) {
+    Sortable.create(container, {
+    handle: '.handle-drag', animation: 150, onEnd: renumerarIndices
+    });
+    }
+
+    // Inicializar Builders
+    document.querySelectorAll('.fila-pregunta').forEach(fila => initBuilder(fila));
+    });
+
+    // --- LÓGICA VISUAL ---
+
+    function initBuilder(fila) {
+    var tipo = fila.querySelector('.sel-tipo').value;
+    var configVal = fila.querySelector('.inp-config-final').value;
+    var containerOps = fila.querySelector('.builder-opciones');
+
+    containerOps.innerHTML = '';
+    if (tipo === 'Opcion' || tipo === 'Casillas') {
+    var ops = configVal ? configVal.split('|') : ['Opción 1', 'Opción 2'];
+    ops.forEach(op => appendOpcionInput(containerOps, op));
+    }
+
+    if (tipo === 'RangoNumerico') {
+    var parts = configVal ? configVal.split('|') : ['0','10','Min','Max'];
+    if(parts.length >= 4) {
+    var rMin = fila.querySelector('.r-min'); if(rMin) rMin.value = parts[0];
+    var rMax = fila.querySelector('.r-max'); if(rMax) rMax.value = parts[1];
+    var rLmin = fila.querySelector('.r-lmin'); if(rLmin) rLmin.value = parts[2];
+    var rLmax = fila.querySelector('.r-lmax'); if(rLmax) rLmax.value = parts[3];
+    }
+    }
+
+    if (tipo === 'Archivo') {
+    var extensions = configVal ? configVal.split('|') : ['.pdf'];
+    fila.querySelectorAll('.check-ext').forEach(chk => {
+    chk.checked = extensions.includes(chk.value);
+    // Bloqueo de seguridad si la encuesta ya tiene respuestas
+    if(isLocked) chk.disabled = true;
+    });
+    }
+    }
+
+    function appendOpcionInput(container, value) {
+    var div = document.createElement('div');
+    div.className = 'input-group input-group-sm mb-2 fade-in';
+    // Si está bloqueado, input readonly y sin botón borrar
+    var readonlyAttr = isLocked ? "readonly" : "";
+    var btnHtml = isLocked ? "" : `<button type="button" class="btn btn-outline-danger border-start-0" onclick="this.closest('.input-group').remove()"><i class="fa-solid fa-xmark"></i></button>`;
+    div.innerHTML = `
+    <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-circle-dot text-muted small"></i></span>
+    <input type="text" class="form-control border-start-0 op-val" value="${value}" onkeypress="return noPipe(event)" placeholder="Opción..." ${readonlyAttr}>
+    ${btnHtml}
+    `;
+    container.appendChild(div);
+    }
+
+    function addOpcionUI(btn) {
+    if(isLocked) return;
+    appendOpcionInput(btn.previousElementSibling, '');
+    }
+
+    function noPipe(evt) {
+    if (evt.key === '|') { evt.preventDefault(); return false; }
+    return true;
+    }
+
+    function cambioTipo(sel) {
+    var fila = sel.closest('.fila-pregunta');
+    var tipo = sel.value;
+
+    // Ocultar todos los paneles primero
+    fila.querySelector('.panel-opciones').style.display = 'none';
+    fila.querySelector('.panel-rango').style.display = 'none';
+    fila.querySelector('.panel-archivo').style.display = 'none';
+
+    if (tipo === 'Opcion' || tipo === 'Casillas') {
+    fila.querySelector('.panel-opciones').style.display = 'block';
+    var container = fila.querySelector('.builder-opciones');
+    if(container.children.length === 0) initBuilder(fila);
+    }
+    else if (tipo === 'RangoNumerico') {
+    fila.querySelector('.panel-rango').style.display = 'block';
+    var rMin = fila.querySelector('.r-min');
+    if(rMin && !rMin.value) initBuilder(fila);
+    }
+    else if (tipo === 'Archivo') {
+    fila.querySelector('.panel-archivo').style.display = 'block';
+    // Si no hay nada marcado, podemos marcar PDF por defecto
+    var checks = fila.querySelectorAll('.check-ext');
+    var algunoMarcado = Array.from(checks).some(c => c.checked);
+    if(!algunoMarcado) initBuilder(fila);
+    }
+    }
+
+    // --- EMPAQUETADO ---
+    function prepararEnvio() {
+    document.querySelectorAll('.fila-pregunta').forEach(fila => {
+    if(fila.style.display === 'none') return;
+
+    var tipo = fila.querySelector('.sel-tipo').value;
+    var hidden = fila.querySelector('.inp-config-final');
+
+    if (tipo === 'Opcion' || tipo === 'Casillas')
+    {
+    var vals = [];
+    fila.querySelectorAll('.op-val').forEach(inp => { if(inp.value.trim()) vals.push(inp.value.trim()); });
+    hidden.value = vals.join('|');
+    }
+    else if (tipo === 'RangoNumerico') {
+             
+    var min = fila.querySelector('.r-min').value || '0';
+    var max = fila.querySelector('.r-max').value || '10';
+    var lmin = fila.querySelector('.r-lmin').value || 'Min';
+    var lmax = fila.querySelector('.r-lmax').value || 'Max';
+    hidden.value = `${min}|${max}|${lmin}|${lmax}`;
+    }
+    else if (tipo === 'Archivo') {
+    var exts = [];
+    fila.querySelectorAll('.check-ext:checked').forEach(chk => exts.push(chk.value));
+    hidden.value = exts.join('|');
+    }
+    else {
+    hidden.value = '';
+    }
+    });
+    return true;
+    }
+
+    // --- GESTIÓN ---
+
+    function agregarPregunta() {
+    if(isLocked) return; // Seguridad extra JS
+
+    var idx = document.querySelectorAll('.fila-pregunta').length;
+    var tpl = document.getElementById('tplPregunta').innerHTML.replace(/999/g, idx);
+    document.getElementById('contenedorPreguntas').insertAdjacentHTML('beforeend', tpl);
+    var nuevaFila = document.getElementById('contenedorPreguntas').lastElementChild;
+
+    initBuilder(nuevaFila);
+    renumerarIndices();
+    }
+
+    function renumerarIndices() {
+    document.querySelectorAll('.fila-pregunta').forEach((fila, index) => {
+    var numSpan = fila.querySelector('.num-visual');
+    if(numSpan) numSpan.textContent = index + 1;
+
+    fila.querySelectorAll('input, select').forEach(inp => {
+    var name = inp.getAttribute('name');
+    if (name) inp.setAttribute('name', name.replace(/Preguntas\[\d+\]/, `Preguntas[${index}]`));
+    });
+    });
+    }
+
+    function eliminarPregunta(btn) {
+    if(isLocked) return;
+
+    var card = btn.closest('.fila-pregunta');
+    var inpId = card.querySelector('.inp-id');
+
+    if (inpId && inpId.value == "0") card.remove();
+    else {
+    card.style.display = 'none';
+    card.querySelector('.inp-eliminada').value = "true";
+    }
+    renumerarIndices();
+    }
+
+    function updateLabelActiva(chk) {
+    var lbl = document.getElementById('lblActiva');
+    if(chk.checked) {
+    lbl.textContent = "ESTADO: ACTIVA";
+    lbl.className = "form-check-label fw-bold small text-success user-select-none";
+    } else {
+    lbl.textContent = "ESTADO: INACTIVA";
+    lbl.className = "form-check-label fw-bold small text-secondary user-select-none";
+    }
+    }
+
+    function toggleGrupo() {
+    var chk = document.getElementById('chkPrivada');
+    var div = document.getElementById('divGrupo');
+    if(div) div.style.display = chk.checked ? 'block' : 'none';
+    }
+</script>

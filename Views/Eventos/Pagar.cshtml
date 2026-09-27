@@ -1,0 +1,880 @@
+@using RedAJP.Globales
+@model RedAJP.Models.ConfirmarPagoViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Portal de Pagos";
+
+    // Contexto
+    string token = ViewBag.Token as string;
+    bool esInvitado = !string.IsNullOrEmpty(token);
+    bool esTransferencia = ViewBag.EsTransferencia == true;
+    bool permitirTarjeta = ViewBag.PermitirTarjeta == true;
+
+    // Estado Retorno de Pasarela
+    string estadoPago = ViewBag.EstadoPago as string;
+    bool esRetorno = !string.IsNullOrEmpty(estadoPago);
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-eventos');
+        }
+        var metodoGuardado = sessionStorage.getItem('metodoPagoPreferido');
+        if (metodoGuardado) {
+            setMetodoPago(metodoGuardado);
+        }
+    });
+</script>
+<style>
+    /* Contenedor principal centrado */
+    .payment-container {
+        max-width: 1000px; /* Un poco más ancho para que quepan 2 columnas */
+        margin: 0 auto;
+    }
+
+    /* Tarjeta de Usuario (Estilo Original "Estado de Cuenta") */
+    .user-card {
+        background-color: #fff;
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        height: 100%; /* Para que tengan la misma altura en fila */
+        transition: transform 0.2s;
+    }
+
+        .user-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+    /* Encabezado azulito del usuario */
+    .user-header {
+        background-color: #e3f2fd; /* Azul muy suave */
+        color: #0d47a1;
+        padding: 1rem;
+        border-radius: 15px 15px 0 0;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Tarjeta Oscura del Evento */
+    .event-card {
+        background-color: #212529;
+        color: white;
+        border-radius: 15px;
+        text-align: center;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+
+    /* Switch de Futuros (Estilo Original Transparente) */
+    .switch-panel {
+        background-color: rgba(255, 255, 255, 0.6); /* Semitransparente */
+        backdrop-filter: blur(5px);
+        border-radius: 50px;
+        padding: 0.5rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.85rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .total-bar {
+
+        position: relative; /* Para que respete el flujo normal */
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08); /* Sombra más suave */
+        padding: 1.5rem;
+        margin-top: 3rem; /* Separación superior */
+        margin-bottom: 3rem; /* Separación inferior para que no pegue con el footer */
+
+        border: 1px solid rgba(0,0,0,0.05);
+        /* animation: slideUp 0.4s ease-out; <-- OPCIONAL: Puedes quitar la animación si quieres */
+    }
+
+    @@keyframes slideUp {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .chk-pago {
+        width: 1.3em;
+        height: 1.3em;
+        cursor: pointer;
+    }
+
+    .vencido-text {
+        color: #dc3545;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    .normal-text {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+
+    .logo-img {
+        height: 52px;
+        border-radius: 50%;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        margin-bottom: 0.4rem;
+    }
+</style>
+
+<div class="container py-3 py-md-4 fade-in payment-container">
+
+    <div class="text-center mb-3">
+        <img src="~/Images/logo_ajp.jpg" class="logo-img">
+        <h2 class="fw-bold text-dark drop-shadow-sm mb-0 fs-3">Portal de Pagos</h2>
+        <div class="mt-2">
+            @if (esTransferencia && permitirTarjeta)
+            {
+                <div class="bg-white p-1 rounded-pill d-inline-flex border shadow-sm">
+                    <button type="button" class="btn btn-sm rounded-pill fw-bold px-4 active btn-primary" id="btnTabTarjeta" onclick="setMetodoPago('tarjeta')" style="transition: all 0.2s;">
+                        <i class="fa-regular fa-credit-card me-1"></i> Tarjeta
+                    </button>
+                    <button type="button" class="btn btn-sm rounded-pill fw-bold px-4 text-muted" id="btnTabTransferencia" onclick="setMetodoPago('transferencia')" style="transition: all 0.2s; background: transparent;">
+                        <i class="fa-solid fa-building-columns me-1"></i> Transferencia
+                    </button>
+                </div>
+            }
+            else if (permitirTarjeta)
+            {
+                <span class="badge bg-white text-secondary border shadow-sm px-3 py-1-5 rounded-pill">
+                    <i class="fa-regular fa-credit-card me-1 text-primary"></i> Pago Seguro con Tarjeta
+                </span>
+            }
+            else if (esTransferencia)
+            {
+                <span class="badge bg-white text-secondary border shadow-sm px-3 py-1-5 rounded-pill">
+                    <i class="fa-solid fa-building-columns me-1 text-dark"></i> Transferencia Bancaria
+                </span>
+            }
+        </div>
+
+        <!-- BARRA DISCRETA DE ACCIONES LEGALES Y QR -->
+        <div class="mt-2 d-flex justify-content-center align-items-center flex-wrap gap-2">
+            @if (!string.IsNullOrEmpty(ViewBag.UrlTerminos as string))
+            {
+                <button type="button" class="btn btn-sm bg-white text-secondary border shadow-xs rounded-pill px-3 py-1 fw-semibold small" onclick="abrirLectorPDF('Términos y Condiciones', '@ViewBag.UrlTerminos')" title="Ver Términos y Condiciones">
+                    <i class="fa-solid fa-scale-balanced text-warning me-1"></i> Términos
+                </button>
+            }
+            @if (!string.IsNullOrEmpty(ViewBag.UrlPrivacidad as string))
+            {
+                <button type="button" class="btn btn-sm bg-white text-secondary border shadow-xs rounded-pill px-3 py-1 fw-semibold small" onclick="abrirLectorPDF('Aviso de Privacidad', '@ViewBag.UrlPrivacidad')" title="Ver Aviso de Privacidad">
+                    <i class="fa-solid fa-shield-halved text-info me-1"></i> Privacidad
+                </button>
+            }
+            <button type="button" class="btn btn-sm bg-white text-dark border shadow-xs rounded-pill px-3 py-1 fw-semibold small" onclick="mostrarQRPagar('@token', '@Html.Raw((Model != null ? Model.TituloEvento : "Evento").Replace("'", "\\'"))', @((Model != null && Model.ListadoPorUsuario != null && Model.ListadoPorUsuario.Any() && Model.ListadoPorUsuario.All(u => u.EstaTotalmentePagado)).ToString().ToLower()))">
+                <i class="fa-solid fa-qrcode text-primary me-1"></i> Código QR
+            </button>
+        </div>
+    </div>
+
+    @if (esRetorno)
+    {
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4 bg-white text-center p-5">
+            @if (estadoPago == "approved")
+            {
+                <div class="mb-3 text-success"><i class="fa-solid fa-circle-check fa-5x"></i></div>
+                <h3 class="fw-bold text-dark">¡Pago Exitoso!</h3>
+                <p class="text-muted">Tu registro se ha actualizado.</p>
+            }
+            else if (estadoPago == "pending")
+            {
+                <div class="mb-3 text-warning"><i class="fa-solid fa-clock fa-5x"></i></div>
+                <h3 class="fw-bold text-dark">En Revisión</h3>
+            }
+            else
+            {
+                <div class="mb-3 text-danger"><i class="fa-solid fa-circle-xmark fa-5x"></i></div>
+                <h3 class="fw-bold text-dark">No Completado</h3>
+            }
+            <div class="mt-4">
+                <a href="@Url.Action("Pagar")" class="btn btn-outline-primary rounded-pill px-4">Volver</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <form method="get" action="@Url.Action("Pagar")" id="formFiltros">
+            <input type="hidden" name="filtroAplicado" value="1" /> 
+            <input type="hidden" name="token" value="@ViewBag.Token" />
+            @if (ViewBag.IdsSeleccionados != null)
+            {
+                foreach (int id in ViewBag.IdsSeleccionados)
+                {
+                    <input type="hidden" name="idsSeleccionados" value="@id" />
+                }
+            }
+
+            <div class="switch-panel">
+                <div>
+                    <h6 class="fw-bold text-primary mb-0"><i class="fa-solid fa-calendar-plus me-2"></i>Ver pagos futuros</h6>
+                    <small class="text-muted lh-1 d-none d-sm-block">Visualiza conceptos pendientes de fecha futura.</small>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="swFuturos" name="mostrarFuturos" value="true"
+                           style="width: 3em; height: 1.5em; cursor:pointer;"
+                           onchange="document.getElementById('formFiltros').submit()"
+                           @(Model.MostrarPagosFuturos ? "checked" : "")>
+                </div>
+            </div>
+        </form>
+
+        <div class="event-card position-relative overflow-hidden text-center rounded-4 shadow-sm" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem; color: white; background-color: #212529; border: none;">
+            
+            <div class="position-absolute top-0 start-0 w-100 h-100"
+                 style="background-image: url('@(string.IsNullOrEmpty(ViewBag.ImagenEvento as string) ? "/Images/logo_ajp.jpg" : ViewBag.ImagenEvento)');
+                        background-size: cover;
+                        background-position: center;
+                        filter: blur(15px);
+                        transform: scale(1.1);
+                        z-index: 0;">
+            </div>
+            
+            <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark" style="opacity: 0.7; z-index: 1;"></div>
+
+            <div class="position-relative" style="z-index: 2;">
+                <h3 class="fw-bold mb-2 text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.5);">@Model.TituloEvento</h3>
+                <div class="opacity-75 text-white">
+                    <i class="fa-regular fa-calendar me-2"></i> @Model.FechaEvento.ToString("D", new System.Globalization.CultureInfo("es-MX"))
+                </div>
+            </div>
+        </div>
+
+        @if (Model.ListadoPorUsuario.Count > 0)
+        {
+            <div class="row g-4">
+                @foreach (var usuario in Model.ListadoPorUsuario)
+                {
+                    <div class="col-lg-6 col-12">
+                        <div class="user-card">
+                            <div class="user-header">
+                                <i class="fa-solid fa-user-circle fs-4"></i>
+                                <span class="text-uppercase small">@usuario.NombreAsistente</span>
+
+                                @if (usuario.EstaTotalmentePagado)
+                                {
+                                    <span class="ms-auto badge bg-success rounded-pill shadow-sm">
+                                        <i class="fa-solid fa-check-double me-1"></i> COMPLETADO
+                                    </span>
+                                }
+                            </div>
+
+                            @if (usuario.EstaTotalmentePagado)
+                            {
+                                <div class="p-3 bg-light border-bottom text-center">
+                                    @if (esInvitado)
+                                    {
+                                        <a href="@Url.Action("ReciboGeneral", "Eventos", new { token = token })"
+                                           target="_blank"
+                                           class="btn btn-warning w-100 rounded-pill fw-bold text-dark shadow-sm">
+                                            <i class="fa-solid fa-certificate me-2"></i> Descargar Comprobante General
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Action("ReciboGeneral", "Eventos", new { token = usuario.TokenExterno })"
+                                           target="_blank"
+                                           class="btn btn-warning w-100 rounded-pill fw-bold text-dark shadow-sm">
+                                            <i class="fa-solid fa-certificate me-2"></i> Descargar Comprobante General
+                                        </a>
+                                    }
+                                    <small class="text-muted mt-1 d-block" style="font-size: 0.7rem;">Incluye todos los pagos realizados</small>
+                                </div>
+                            }
+
+                            <div class="list-group list-group-flush rounded-bottom">
+                                @foreach (var pago in usuario.Pagos)
+                                {
+                                    if (pago.EsPagado)
+                                    {
+                                        /* ITEM PAGADO (Verde) */
+                                        <div class="list-group-item bg-success bg-opacity-10 d-flex justify-content-between align-items-center py-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                                                <div>
+                                                    <div class="fw-bold text-success text-decoration-line-through small">@pago.Concepto</div>
+                                                    <span class="badge bg-success" style="font-size:0.6rem;">PAGADO</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="text-end">
+                                                <div class="text-success fw-bold small mb-1">$@pago.Monto.ToString("N2")</div>
+                                                <a href="@Url.Action("Recibo", "Eventos", new { 
+                                                            token = esInvitado ? token : usuario.TokenExterno, 
+                                                            idCuenta = pago.IdCalendario 
+                                                        })"
+                                                    target="_blank" 
+                                                    class="btn btn-sm btn-outline-success rounded-pill border-0 px-2 py-0" 
+                                                    style="font-size: 0.75rem;">
+                                                    <i class="fa-solid fa-print"></i> Recibo
+                                                </a>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        /* ITEM PENDIENTE */
+                                        <label class="list-group-item d-flex justify-content-between align-items-center py-3 cursor-pointer" style="cursor: pointer;">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <input class="form-check-input chk-pago shadow-sm" type="checkbox"
+                                                       value="@pago.UniqueId"
+                                                       data-monto="@pago.Monto"
+                                                       @(pago.EstaSeleccionado ? "checked" : "")
+                                                       onchange="enviarCambios()">
+
+                                                <div>
+                                                    <div class="fw-bold text-dark small">@pago.Concepto</div>
+                                                    @if (pago.EsVencido)
+                                                    {
+                                                        <div class="vencido-text"><i class="fa-solid fa-circle-exclamation me-1"></i> Vence: @pago.FechaLimite.ToString("dd/MMM")</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="normal-text">Vence: @pago.FechaLimite.ToString("dd/MMM")</div>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="fs-6 fw-bold text-dark">$@pago.Monto.ToString("N2")</div>
+                                        </label>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (Model.TotalPagar > 0)
+            {
+                <div class="total-bar shadow-lg border-0 p-4" style="margin-top: 2rem; margin-bottom: 4rem; border-radius: 20px;">
+                    <div class="row align-items-center g-3">
+
+                        <div class="col-md-5 col-lg-4">
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light border-0 text-muted ps-3 rounded-start-pill"><i class="fa-solid fa-ticket"></i></span>
+                                    <input type="text" id="txtCupon" name="CodigoCuponAplicado" class="form-control bg-light border-0 text-uppercase fw-bold text-secondary" placeholder="¿TIENES UN CÓDIGO?" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                                    <button class="btn btn-secondary px-3 fw-bold rounded-end-pill" type="button" onclick="validarCupon()" style="font-size: 0.75rem;">USAR</button>
+                                </div>
+                                <div id="msgCupon" class="mt-1 ms-2 fw-bold" style="display:none; font-size: 0.7rem;"></div>
+                            }
+                            else
+                            {
+                                <div class="text-muted small fst-italic">
+                                    <i class="fa-solid fa-info-circle me-1"></i> <a href="/Login" class="text-decoration-none text-muted fw-bold">Inicia Sesión</a> para usar cupones.
+                                </div>
+                            }
+                        </div>
+
+                        <div class="col-md-7 col-lg-8" style="min-height: 7rem;">
+                            <div class="d-flex justify-content-end align-items-center gap-3">
+
+                                <div class="text-end text-nowrap">
+                                    <div class="small text-muted mb-1" style="font-size: 0.8rem;">
+                                        Importe Base: <span class="fw-bold text-dark" id="lblSubtotal">$@Model.SubTotal.ToString("N2")</span>
+                                    </div>
+
+                                    <div id="rowDescuento" class="text-success small fw-bold mb-1" style="display:@(Model.DescuentoAplicado > 0 ? "block" : "none"); font-size: 0.8rem;">
+                                        Descuento: <span id="lblDescuento">-$@Model.DescuentoAplicado.ToString("N2")</span>
+                                    </div>
+
+                                    <div id="rowComision" class="text-muted small mb-2" style="display:@(permitirTarjeta && Model.ComisionPlataforma > 0 ? "block" : "none"); font-size: 0.8rem;">
+                                        Gastos Gestión: <span id="lblComision" class="fw-bold text-dark">$@Model.ComisionPlataforma.ToString("N2")</span>
+                                    </div>
+
+                                    <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 1px; line-height: 1;">Total a Pagar</div>
+                                    <div class="fs-2 fw-bold text-dark lh-1" id="lblTotalDisplay">$@(permitirTarjeta ? Model.TotalPagar.ToString("N2") : Model.SubTotal.ToString("N2"))</div>
+                                </div>
+
+                                <div style="width: 240px; flex-shrink: 0;"> 
+            
+                                    <div id="containerFormStripe" style="display:@(permitirTarjeta ? "block" : "none");">
+                                        @if (permitirTarjeta)
+                                        {
+                                            <form action="@Url.Action("IniciarPagoStripe")" method="post" id="formStripe" onsubmit="prepararEnvioStripe(event)" class="m-0">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="token" value="@ViewBag.Token" />
+                                                <input type="hidden" name="idEvento" value="@Model.IdEvento" />
+                                                <input type="hidden" name="CodigoCuponAplicado" id="hdnCuponStripe" />
+                                                <button type="submit" class="btn btn-primary rounded-pill fw-bold w-100 py-3 shadow-sm px-4" style="background-color: #0f4c5c; border:none;">
+                                                    <i class="fa-regular fa-credit-card me-2"></i> Pagar Ahora
+                                                </button>
+                                            </form>
+                                            <div id="noticeComision" class="text-center mt-2 px-2" style="display:@(Model.CobrarComisionExtra && Model.ComisionPlataforma > 0 ? "block" : "none");">
+                                                <i class="fa-brands fa-stripe fa-lg mb-1" style="color: #635bff; opacity: 0.8;"></i>
+                                                <small class="text-muted d-block opacity-75" style="font-size: 0.65rem; line-height: 1.2; text-align: justify; text-align-last: center;">
+                                                    Los <strong>Gastos de Gestión</strong> son la comisión cobrada por el proveedor por el uso de pagos vía web. Este cargo es operativo y ajeno a la AJP, sin relación alguna con algún miembro de la directiva ni la alianza.
+                                                </small>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div id="containerFormTransferencia" style="display:@(!permitirTarjeta && esTransferencia ? "block" : "none");">
+                                        @if (esTransferencia)
+                                        {
+                                            <form action="@Url.Action("GenerarIntentoTransferencia")" method="post" id="formTransferencia" onsubmit="prepararEnvio(event)" class="m-0">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="token" value="@ViewBag.Token" />
+                                                <input type="hidden" name="idEvento" value="@Model.IdEvento" />
+                                                <input type="hidden" name="codigoCupon" id="hdnCuponTransfer" />
+                                                <button type="submit" class="btn btn-dark rounded-pill fw-bold w-100 py-3 shadow-sm px-4">
+                                                    Transferir Pago <i class="fa-solid fa-arrow-right ms-2"></i>
+                                                </button>
+                                            </form>
+                                            <div class="text-center mt-1">
+                                                <small class="text-muted d-block lh-sm" style="font-size: 0.7rem;"><i class="fa-solid fa-clock-rotate-left"></i> Requiere subir comprobante y esperar validación manual</small>
+                                            </div>
+                                        }
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-light text-center mt-4 border shadow-sm rounded-4 py-4">
+                    <i class="fa-solid fa-clipboard-check text-muted mb-2 fs-3 opacity-50"></i>
+                    <p class="mb-0 text-muted small fw-bold">No hay pagos pendientes seleccionados.</p>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5 bg-white bg-opacity-50 rounded-4">
+                <i class="fa-solid fa-folder-open fa-4x text-muted mb-3 opacity-50"></i>
+                <h5 class="fw-bold text-muted">Todo al día</h5>
+                <p class="small text-muted">No se encontraron deudas pendientes.</p>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    // 1. Inyector de IDs para el botón Negro (Transferencia)
+    // Este se mantiene igual para cuando den click en "Transferir Pago"
+    function prepararEnvio(e) {
+        var form = document.getElementById('formTransferencia');
+
+        // Limpieza preventiva
+        form.querySelectorAll('input[name="idsPagosSeleccionados"]').forEach(x => x.remove());
+
+        var checkboxes = document.querySelectorAll('.chk-pago:checked');
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert("Por favor, selecciona al menos un concepto.");
+            return false;
+        }
+
+        checkboxes.forEach(chk => {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'idsPagosSeleccionados';
+            input.value = chk.value;
+            form.appendChild(input);
+        });
+    }
+
+    // 2. NUEVO: Envío automático al hacer click en un checkbox
+    // Esto recarga la página enviando la nueva selección al servidor
+    function enviarCambios() {
+        // Usamos el formulario de filtros (GET) que ya tienes arriba
+        var form = document.getElementById('formFiltros');
+
+        // Limpiamos inputs viejos para evitar duplicados
+        form.querySelectorAll('input[name="pagosSeleccionados"]').forEach(x => x.remove());
+        form.querySelectorAll('input[name="idsSeleccionados"]').forEach(x => x.remove());
+
+        // Recopilamos todos los marcados actualmente
+        var checkboxes = document.querySelectorAll('.chk-pago:checked');
+
+        // Los inyectamos en el formulario
+        checkboxes.forEach(chk => {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'pagosSeleccionados'; // Coincide con la lista en el Controller
+            input.value = chk.value;
+            form.appendChild(input);
+        });
+
+        // Enviamos (Refresh del servidor)
+        form.submit();
+    }
+
+    // Misma lógica que transferencia pero para el form de Stripe
+    function prepararEnvioStripe(e) {
+        var form = document.getElementById('formStripe');
+        // Limpieza preventiva
+        form.querySelectorAll('input[name="idsPagosSeleccionados"]').forEach(x => x.remove());
+
+        var checkboxes = document.querySelectorAll('.chk-pago:checked');
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert("Por favor, selecciona al menos un concepto.");
+            return false;
+        }
+
+        checkboxes.forEach(chk => {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'idsPagosSeleccionados';
+            input.value = chk.value;
+            form.appendChild(input);
+        });
+    }
+
+    // ==========================================
+    // LÓGICA DE TABS DUALES Y CUPONES
+    // ==========================================
+
+    // Variables globales para mantener el estado matemático de la vista
+    var estadoTotales = {
+        subtotal: @Model.SubTotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+        comision: @Model.ComisionPlataforma.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+        totalStripe: @Model.TotalPagar.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+        descuento: @Model.DescuentoAplicado.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
+    };
+
+    var metodoActual = '@(permitirTarjeta ? "tarjeta" : "transferencia")';
+
+    // Función para cambiar de Tab y actualizar la vista
+    function setMetodoPago(metodo) {
+        metodoActual = metodo;
+        var btnTarjeta = document.getElementById('btnTabTarjeta');
+        var btnTransferencia = document.getElementById('btnTabTransferencia');
+        var rowComision = document.getElementById('rowComision');
+        var lblTotal = document.getElementById('lblTotalDisplay');
+        var containerStripe = document.getElementById('containerFormStripe');
+        var containerTransferencia = document.getElementById('containerFormTransferencia');
+
+        if (metodo === 'tarjeta') {
+            if (btnTarjeta) {
+                // Activar Tarjeta
+                btnTarjeta.classList.add('active', 'btn-primary');
+                btnTarjeta.classList.remove('text-muted');
+                btnTarjeta.style.background = ''; 
+
+                // Desactivar Transferencia
+                btnTransferencia.classList.remove('active', 'btn-primary');
+                btnTransferencia.classList.add('text-muted');
+                btnTransferencia.style.background = 'transparent';
+            }
+            if (estadoTotales.comision > 0) rowComision.style.display = 'block';
+            var noticeComision = document.getElementById('noticeComision');
+            if (noticeComision) noticeComision.style.display = estadoTotales.comision > 0 ? 'block' : 'none';
+        
+            lblTotal.innerText = "$" + estadoTotales.totalStripe.toFixed(2);
+        
+            if (containerStripe) containerStripe.style.display = 'block';
+            if (containerTransferencia) containerTransferencia.style.display = 'none';
+        
+        } else {
+            if (btnTransferencia) {
+                // Activar Transferencia
+                btnTransferencia.classList.add('active', 'btn-primary'); 
+                btnTransferencia.classList.remove('text-muted');
+                btnTransferencia.style.background = ''; // Quitamos el fondo transparente
+
+                // Desactivar Tarjeta
+                btnTarjeta.classList.remove('active', 'btn-primary');
+                btnTarjeta.classList.add('text-muted');
+                btnTarjeta.style.background = 'transparent';
+            }
+            rowComision.style.display = 'none';
+        
+            var totalTransferencia = estadoTotales.subtotal - estadoTotales.descuento;
+            if (totalTransferencia < 0) totalTransferencia = 0;
+        
+            lblTotal.innerText = "$" + totalTransferencia.toFixed(2);
+        
+            if (containerStripe) containerStripe.style.display = 'none';
+            if (containerTransferencia) containerTransferencia.style.display = 'block';
+        }
+
+        // GUARDAR EN MEMORIA
+        sessionStorage.setItem('metodoPagoPreferido', metodo);
+    }
+
+    // Función de cupones adaptada a los Tabs
+    function validarCupon() {
+        var codigo = document.getElementById('txtCupon').value;
+        var idEvento = @Model.IdEvento;
+
+        if(!codigo) return;
+
+        // Pedimos toda la matemática al backend aplicando comisión
+        fetch('/Eventos/ValidarCuponEventos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `codigo=${encodeURIComponent(codigo)}&montoCompra=${estadoTotales.subtotal}&idEvento=${idEvento}&aplicarComision=true`
+        })
+        .then(response => response.json())
+        .then(data => {
+            var lblMsg = document.getElementById('msgCupon');
+            lblMsg.style.display = 'block';
+
+            if (data.valido) {
+                lblMsg.className = "mt-1 ms-2 fw-bold text-success";
+                lblMsg.style.fontSize = "0.7rem";
+                lblMsg.innerHTML = `<i class="fa-solid fa-check me-1"></i> ${data.mensaje}`;
+
+                // 1. Actualizar el estado global
+                estadoTotales.descuento = data.descuento;
+                estadoTotales.comision = data.comision;
+                estadoTotales.totalStripe = data.nuevoTotal;
+
+                // 2. Refrescar textos en la vista
+                document.getElementById('rowDescuento').style.display = 'block';
+                document.getElementById('lblDescuento').innerText = "-$" + data.descuento.toFixed(2);
+                document.getElementById('lblComision').innerText = "$" + data.comision.toFixed(2);
+                document.getElementById('rowComision').style.display = data.comision > 0 ? 'block' : 'none';
+
+                // 3. Forzar refresco de la pestaña activa para actualizar el Total Final
+                setMetodoPago(metodoActual);
+
+                // 4. Inyectar código secreto a los formularios de pago
+                var inputTransf = document.getElementById('hdnCuponTransfer');
+                if(inputTransf) inputTransf.value = codigo;
+
+                var inputStripe = document.getElementById('hdnCuponStripe');
+                if(inputStripe) inputStripe.value = codigo;
+
+            } else {
+                lblMsg.className = "mt-1 ms-2 fw-bold text-danger";
+                lblMsg.style.fontSize = "0.7rem";
+                lblMsg.innerHTML = `<i class="fa-solid fa-xmark me-1"></i> ${data.mensaje}`;
+                if(data.requiereLogin) {
+                    var returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+                    lblMsg.innerHTML += ` <a href='/Login?returnUrl=${returnUrl}' class='text-danger text-decoration-underline ms-1'>Iniciar Sesión</a>`;
+                }
+            }
+        });
+    }
+
+    function abrirLectorPDF(titulo, url) {
+        const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+        if (esMovil) {
+            window.open(url, '_blank');
+        } else {
+            document.getElementById('pdfModalTitle').textContent = titulo;
+            document.getElementById('pdfIframe').src = url;
+            document.getElementById('btnPdfDownloadModal').href = url;
+            new bootstrap.Modal(document.getElementById('modalLectorPDF')).show();
+        }
+    }
+
+    function crearTarjetaCompositeQR(qrCanvas, nombre, esPagado, subtexto) {
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+
+        var width = 360;
+        var height = 400;
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(2, 2, width - 4, height - 4);
+
+        ctx.fillStyle = esPagado ? '#F0FDF4' : '#FEF2F2';
+        ctx.fillRect(4, 4, width - 8, 80);
+
+        ctx.save();
+        if (esPagado) {
+            ctx.fillStyle = '#16A34A';
+            ctx.beginPath();
+            ctx.arc(36, 44, 20, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✓', 36, 44);
+        } else {
+            ctx.fillStyle = '#DC2626';
+            ctx.beginPath();
+            ctx.arc(36, 44, 20, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✕', 36, 44);
+        }
+        ctx.restore();
+
+        ctx.fillStyle = '#0F172A';
+        var fontSize = 15;
+        var nombreTexto = (nombre || 'EVENTO').trim();
+        if (nombreTexto.length > 32) fontSize = 12;
+        else if (nombreTexto.length > 24) fontSize = 13;
+
+        ctx.font = 'bold ' + fontSize + 'px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+
+        var palabras = nombreTexto.split(' ');
+        var linea1 = '';
+        var linea2 = '';
+        var maxAnchoTexto = 295;
+
+        for (var i = 0; i < palabras.length; i++) {
+            var prueba = linea1 + (linea1 ? ' ' : '') + palabras[i];
+            if (ctx.measureText(prueba).width <= maxAnchoTexto) {
+                linea1 = prueba;
+            } else {
+                linea2 = palabras.slice(i).join(' ');
+                break;
+            }
+        }
+
+        if (linea2) {
+            ctx.fillText(linea1, 68, 14);
+            ctx.fillText(linea2, 68, 14 + fontSize + 2);
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillStyle = esPagado ? '#15803D' : '#B91C1C';
+            ctx.fillText(esPagado ? '✓ PAGADO / LIQUIDADO' : '✕ PAGO PENDIENTE', 68, 14 + (fontSize + 2) * 2 + 2);
+        } else {
+            ctx.fillText(linea1, 68, 20);
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillStyle = esPagado ? '#15803D' : '#B91C1C';
+            ctx.fillText(esPagado ? '✓ PAGADO / LIQUIDADO' : '✕ PAGO PENDIENTE', 68, 46);
+        }
+
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(10, 84);
+        ctx.lineTo(width - 10, 84);
+        ctx.stroke();
+
+        var qrSize = 240;
+        var qrX = (width - qrSize) / 2;
+        var qrY = 100;
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+        ctx.fillStyle = '#64748B';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        if (subtexto) {
+            ctx.fillText(subtexto, width / 2, height - 26);
+        }
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#334155';
+        ctx.fillText('CÓDIGO DE ACCESO OFICIAL - RED AJP', width / 2, height - 10);
+
+        return canvas;
+    }
+
+    function mostrarQRPagar(token, titulo, esPagado) {
+        var qrContainer = document.getElementById('qrCodeContainerPagar');
+        qrContainer.innerHTML = '';
+        
+        var tempDiv = document.createElement('div');
+        tempDiv.style.display = 'none';
+        document.body.appendChild(tempDiv);
+
+        var urlCompleto = window.location.href;
+
+        new QRCode(tempDiv, {
+            text: urlCompleto,
+            width: 250,
+            height: 250,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+
+        setTimeout(() => {
+            var rawCanvas = tempDiv.querySelector('canvas');
+            var btnDownload = document.getElementById('btnDownloadQRPagar');
+            if (rawCanvas) {
+                var finalCanvas = crearTarjetaCompositeQR(rawCanvas, titulo, !!esPagado, 'PORTAL DE PAGOS');
+                finalCanvas.style.maxWidth = '100%';
+                finalCanvas.style.height = 'auto';
+                finalCanvas.style.borderRadius = '16px';
+                
+                qrContainer.appendChild(finalCanvas);
+                
+                btnDownload.href = finalCanvas.toDataURL('image/png');
+                btnDownload.download = (esPagado ? 'QR_PAGADO_' : 'QR_PENDIENTE_') + 'PORTAL_PAGOS.png';
+                btnDownload.style.display = 'inline-block';
+            }
+            document.body.removeChild(tempDiv);
+        }, 150);
+
+        new bootstrap.Modal(document.getElementById('modalQRPagar')).show();
+    }
+</script>
+
+<!-- Librería para generar el QR al vuelo -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- Modal QR Pagar -->
+<div class="modal fade" id="modalQRPagar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content border-0 rounded-4 shadow p-3">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-qrcode me-2 text-primary"></i>Código de Acceso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-3">
+                <div class="d-inline-block w-100 mb-3" id="qrCodeContainerPagar">
+                    <!-- Canvas QR Composite -->
+                </div>
+
+                <a id="btnDownloadQRPagar" class="btn btn-primary rounded-pill w-100 fw-bold shadow-sm py-2 fs-6" style="display:none;">
+                    <i class="fa-solid fa-download me-2"></i>Descargar QR
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Lector PDF Adaptativo -->
+<div class="modal fade" id="modalLectorPDF" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl h-100 my-0 py-4">
+        <div class="modal-content rounded-4 border-0 shadow-lg h-100 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="pdfModalTitle">Visor de Documento</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <a id="btnPdfDownloadModal" href="#" target="_blank" download class="btn btn-sm btn-outline-light rounded-pill px-3">
+                        <i class="fa-solid fa-download me-1"></i> Descargar
+                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100">
+                <iframe id="pdfIframe" src="" class="w-100 h-100 border-0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>

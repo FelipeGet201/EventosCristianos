@@ -1,0 +1,466 @@
+﻿@model List<dynamic>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Gestión de Registros Externos";
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-eventos');
+    });
+</script>
+<div class="container-fluid py-4 fade-in">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div class="d-flex align-items-center gap-4">
+            <a href="@Url.Action("PanelControl", "Eventos", new { sid = ViewBag.IdEventoEncriptado })" class="btn bg-white shadow-sm rounded-pill px-4 py-2 text-secondary fw-bold d-inline-flex align-items-center text-decoration-none hover-lift">
+                <i class="fa-solid fa-arrow-left me-2"></i> Volver al Panel
+            </a>
+            <h3 class="fw-bold m-0 text-dark" style="letter-spacing: -0.5px;">Registros Externos</h3>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+        <div id="toastNotificacion" class="toast align-items-center text-bg-dark border-0 rounded-4 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center fw-semibold px-4 py-3">
+                    <i class="fa-solid fa-check-circle text-success me-3 fs-5" id="toastIcono"></i>
+                    <span id="toastMensaje">¡Enlace copiado al portapapeles!</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-3 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-bottom py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                    <i class="fa-solid fa-users text-primary"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold m-0 text-dark">Asistentes Importados</h6>
+                    <small class="text-muted">Total de registros: <span class="fw-bold text-primary">@Model.Count</span></small>
+                </div>
+            </div>
+
+            <div class="position-relative" style="max-width: 300px; width: 100%;">
+                <i class="fa-solid fa-search position-absolute text-muted" style="top: 50%; left: 15px; transform: translateY(-50%);"></i>
+                <input type="text" id="buscadorTabla" class="form-control rounded-pill ps-5 bg-light border-0" placeholder="Buscar por nombre o correo...">
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive d-none d-lg-block">
+                <table class="table table-hover align-middle mb-0" id="tablaExternos">
+                    <thead class="bg-light text-secondary text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                        <tr>
+                            <th class="ps-4 py-3 border-0">Nombre Completo</th>
+                            <th class="py-3 border-0">Contacto</th>
+                            <th class="py-3 border-0">Modalidad / Costo</th>
+                            <th class="py-3 border-0">Fecha Carga</th>
+                            <th class="py-3 border-0">Admin Carga</th>
+                            <th class="text-center py-3 border-0">Estado</th>
+                            <th class="text-end pe-4 py-3 border-0">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        @if (Model.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="text-muted mb-2"><i class="fa-solid fa-folder-open fa-3x opacity-50"></i></div>
+                                    <h6 class="fw-bold text-dark">No hay registros externos</h6>
+                                    <p class="small text-muted mb-0">No se ha subido ningún archivo de Excel para este evento aún.</p>
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var item in Model)
+                        {
+                            <tr class="elemento-busqueda fila-registro" style="transition: background-color 0.2s;">
+                                <td class="ps-4 py-3">
+                                    <div class="fw-bold text-dark fs-6 mb-1 nombre-busqueda">@item.Nombre</div>
+                                    <div class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-family: monospace; font-size: 0.75rem;">
+                                        <i class="fa-solid fa-key me-1 text-primary"></i>@item.Token
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fa-regular fa-envelope text-muted me-2" style="width: 15px;"></i>
+                                        <span class="text-dark correo-busqueda">@item.Correo</span>
+                                    </div>
+                                    <div class="d-flex align-items-center small text-muted">
+                                        <i class="fa-solid fa-phone text-muted me-2" style="width: 15px;"></i>
+                                        <span>@item.Telefono</span>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge bg-secondary mb-1">@item.Modalidad</span><br />
+                                    <span class="text-dark fw-bold">@item.Costo.ToString("C2", cultura)</span>
+                                </td>
+                                <td class="py-3 text-muted small">
+                                    <div>@item.Fecha.ToString("dd MMM yyyy")</div>
+                                    <div>@item.Fecha.ToString("HH:mm") hrs</div>
+                                </td>
+                                <td class="py-3">
+                                    <div class="d-flex align-items-center text-muted small">
+                                        <i class="fa-solid fa-user-shield me-2 text-info"></i>@item.AdminCarga
+                                    </div>
+                                </td>
+                                <td class="text-center py-3">
+                                    @if (item.EsPagado)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fw-bold">
+                                            <i class="fa-solid fa-check-circle me-1"></i>Liquidado
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2 fw-bold">
+                                            <i class="fa-solid fa-clock me-1"></i>Pendiente
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4 py-3">
+                                    @if (!item.EsPagado)
+                                    {
+                                        <div class="dropdown">
+                                            <button class="btn btn-light border shadow-sm btn-sm rounded-pill px-3 fw-bold text-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="window">
+                                                <i class="fa-solid fa-gear me-1"></i>Opciones
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-lg rounded-4 text-sm" style="z-index: 1050; background-color: #ffffff !important; border: 1px solid #dee2e6 !important;">
+                                                <li>
+                                                    <button class="dropdown-item py-2 px-3 fw-semibold d-flex align-items-center btn-menu-blanco" style="color: #212529 !important;" type="button" onclick="copiarLink('@Url.Action("Pagar", "Eventos", new { token = item.Token }, Context.Request.Scheme)')">
+                                                        <div class="bg-light rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; border: 1px solid #e9ecef;">
+                                                            <i class="fa-solid fa-link text-secondary"></i>
+                                                        </div>
+                                                        Copiar Link de Pago
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item py-2 px-3 fw-semibold d-flex align-items-center btn-menu-blanco" style="color: #0d6efd !important;" onclick="abrirModalReenviar(@item.IdAsistente, '@item.Nombre', '@item.Correo')">
+                                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                                            <i class="fa-solid fa-paper-plane text-primary"></i>
+                                                        </div>
+                                                        Reenviar Correo
+                                                    </button>
+                                                </li>
+                                                <li><hr class="dropdown-divider opacity-25 my-1" style="border-top-color: #dee2e6;"></li>
+                                                <li>
+                                                    <button class="dropdown-item py-2 px-3 fw-bold d-flex align-items-center btn-menu-blanco" style="color: #dc3545 !important;" type="button" onclick="abrirModalBorrar(@item.IdAsistente, '@item.Nombre')">
+                                                        <div class="bg-danger bg-opacity-10 rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                                            <i class="fa-solid fa-trash text-danger"></i>
+                                                        </div>
+                                                        Eliminar Registro
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-light border btn-sm rounded-pill px-3 text-secondary disabled" title="No se puede modificar un registro pagado">
+                                            <i class="fa-solid fa-lock me-1"></i>Cerrado
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-block d-lg-none p-3 bg-light">
+                @if (Model.Count == 0)
+                {
+                    <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+                        <div class="text-muted mb-2"><i class="fa-solid fa-folder-open fa-3x opacity-50"></i></div>
+                        <h6 class="fw-bold text-dark">No hay registros externos</h6>
+                        <p class="small text-muted mb-0">No se ha subido ningún archivo.</p>
+                    </div>
+                }
+
+                <div class="accordion accordion-flush" id="accordionMovilRegistros">
+                    @foreach (var item in Model)
+                    {
+                        <div class="accordion-item bg-transparent border-0 mb-3 elemento-busqueda item-tarjeta">
+                            <h2 class="accordion-header" id="heading_@item.IdAsistente">
+                                <button class="accordion-button collapsed bg-white rounded-4 shadow-sm p-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_@item.IdAsistente" aria-expanded="false" aria-controls="collapse_@item.IdAsistente">
+                                    <div class="d-flex flex-column w-100 pe-2">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="fw-bold text-dark fs-6 nombre-busqueda">@item.Nombre</span>
+                                            @if (item.EsPagado)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill ms-2" style="font-size: 0.7rem;">Liquidado</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill ms-2" style="font-size: 0.7rem;">Pendiente</span>
+                                            }
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-family: monospace; font-size: 0.7rem;">
+                                                <i class="fa-solid fa-key me-1 text-primary"></i>@item.Token
+                                            </div>
+                                            <span class="text-dark fw-bold text-end">@item.Costo.ToString("C2", cultura)</span>
+                                        </div>
+                                        <span class="d-none correo-busqueda">@item.Correo</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse_@item.IdAsistente" class="accordion-collapse collapse" aria-labelledby="heading_@item.IdAsistente" data-bs-parent="#accordionMovilRegistros">
+                                <div class="accordion-body bg-white rounded-bottom-4 shadow-sm border-top border-light mt-n2 pt-4 pb-3 px-3">
+
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 32px; height: 32px;"><i class="fa-regular fa-envelope text-muted"></i></div>
+                                            <span class="text-dark text-break small">@item.Correo</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 32px; height: 32px;"><i class="fa-solid fa-phone text-muted"></i></div>
+                                            <span class="text-dark small">@item.Telefono</span>
+                                        </div>
+                                    </div>
+
+                                    <hr class="text-muted opacity-25">
+
+                                    <div class="row g-2 mb-3 small">
+                                        <div class="col-6">
+                                            <span class="text-muted d-block" style="font-size: 0.7rem;">MODALIDAD</span>
+                                            <span class="fw-semibold text-dark">@item.Modalidad</span>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="text-muted d-block" style="font-size: 0.7rem;">FECHA CARGA</span>
+                                            <span class="fw-semibold text-dark">@item.Fecha.ToString("dd/MMM/yy HH:mm")</span>
+                                        </div>
+                                        <div class="col-12 mt-2">
+                                            <span class="text-muted d-block" style="font-size: 0.7rem;">ADMINISTRADOR</span>
+                                            <span class="text-info fw-semibold"><i class="fa-solid fa-user-shield me-1"></i>@item.AdminCarga</span>
+                                        </div>
+                                    </div>
+
+                                    @if (!item.EsPagado)
+                                    {
+                                        <div class="d-grid gap-2 mt-3 pt-2 border-top">
+                                            <button class="btn btn-outline-secondary rounded-pill fw-bold btn-sm py-2 d-flex justify-content-center align-items-center" onclick="copiarLink('@Url.Action("Pagar", "Eventos", new { token = item.Token }, Context.Request.Scheme)')">
+                                                <i class="fa-solid fa-link me-2"></i> Copiar Link
+                                            </button>
+
+                                            <button type="button" class="btn btn-primary rounded-pill fw-bold w-100 btn-sm py-2 d-flex justify-content-center align-items-center bg-opacity-10 text-primary border-0" style="background-color: rgba(13, 110, 253, 0.1);" onclick="abrirModalReenviar(@item.IdAsistente, '@item.Nombre', '@item.Correo')">
+                                                <i class="fa-solid fa-paper-plane me-2"></i> Reenviar Correo
+                                            </button>
+
+                                            <button class="btn btn-danger rounded-pill fw-bold btn-sm py-2 d-flex justify-content-center align-items-center bg-opacity-10 text-danger border-0 mt-1" style="background-color: rgba(220, 53, 69, 0.1);" onclick="abrirModalBorrar(@item.IdAsistente, '@item.Nombre')">
+                                                <i class="fa-solid fa-trash me-2"></i> Eliminar Registro
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-success mt-3 mb-0 p-2 text-center rounded-3 border-0 small">
+                                            <i class="fa-solid fa-lock me-1"></i> Este registro ya está pagado y cerrado.
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div id="sinResultados" class="text-center py-5 d-none">
+                <h5 class="text-muted fw-bold">No se encontraron resultados</h5>
+                <p class="text-muted small">Intenta buscar con otro nombre o correo electrónico.</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarExterno" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-danger text-white border-0 px-4 py-3">
+                <h5 class="modal-title fw-bold" id="modalEliminarLabel"><i class="fa-solid fa-triangle-exclamation me-2"></i>Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center bg-white">
+                <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                    <i class="fa-solid fa-trash-can fa-2x text-danger"></i>
+                </div>
+                <p class="mb-2 fs-5">Estás a punto de eliminar a:</p>
+                <h3 class="fw-bold text-dark mb-3" id="lblNombreBorrar"></h3>
+                <p class="text-muted small mb-0 px-3">Se eliminará su registro y deudas. Ya no podrá pagar utilizando el enlace que se le envió. <strong class="text-dark">Esta acción es irreversible.</strong></p>
+            </div>
+            <div class="modal-footer bg-light border-0 d-flex justify-content-between p-3">
+                <button type="button" class="btn btn-white border shadow-sm rounded-pill px-4 fw-bold text-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" action="@Url.Action("EliminarRegistroExterno", "Eventos")" method="post" class="m-0 p-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idAsistente" id="hiddenIdAsistenteBorrar" value="" />
+                    <input type="hidden" name="sid" value="@ViewBag.IdEventoEncriptado" />
+                    <button type="submit" class="btn btn-danger shadow-sm rounded-pill px-4 fw-bold" onclick="this.innerHTML='<i class=\'fa-solid fa-spinner fa-spin me-2\'></i>Eliminando...'; this.disabled=true; this.form.submit();">
+                        <i class="fa-solid fa-trash me-2"></i>Sí, Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalReenviarCorreo" tabindex="-1" aria-labelledby="modalReenviarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-primary text-white border-0 px-4 py-3">
+                <h5 class="modal-title fw-bold" id="modalReenviarLabel"><i class="fa-solid fa-paper-plane me-2"></i>Confirmar Reenvío</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center bg-white">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                    <i class="fa-regular fa-envelope fa-2x text-primary"></i>
+                </div>
+                <p class="mb-2 fs-5">¿Deseas reenviar el correo a:</p>
+                <h4 class="fw-bold text-dark mb-1" id="lblNombreReenviar"></h4>
+                <p class="text-muted fw-semibold mb-3" id="lblCorreoReenviar"></p>
+                <p class="text-muted small mb-0 px-3">Se enviará nuevamente el enlace de pago con los detalles a esta dirección.</p>
+            </div>
+            <div class="modal-footer bg-light border-0 d-flex justify-content-between p-3">
+                <button type="button" class="btn btn-white border shadow-sm rounded-pill px-4 fw-bold text-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formReenviar" action="@Url.Action("ReenviarCorreoExterno", "Eventos")" method="post" class="m-0 p-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idAsistente" id="hiddenIdAsistenteReenviar" value="" />
+                    <input type="hidden" name="sid" value="@ViewBag.IdEventoEncriptado" />
+                    <button type="submit" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold" onclick="this.innerHTML='<i class=\'fa-solid fa-spinner fa-spin me-2\'></i>Enviando...'; this.disabled=true; this.form.submit();">
+                        <i class="fa-solid fa-paper-plane me-2"></i>Sí, Reenviar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('buscadorTabla').addEventListener('keyup', function() {
+        var filtro = this.value.toLowerCase();
+
+        // Seleccionamos tanto las filas de escritorio como las tarjetas de móvil
+        var elementos = document.querySelectorAll('.elemento-busqueda');
+        var mostrados = 0;
+
+        elementos.forEach(function(elemento) {
+            // Buscamos específicamente en los campos de nombre y correo para mayor precisión
+            var nombre = elemento.querySelector('.nombre-busqueda').textContent.toLowerCase();
+            var correo = elemento.querySelector('.correo-busqueda').textContent.toLowerCase();
+
+            if(nombre.includes(filtro) || correo.includes(filtro)) {
+                // Restauramos el display correcto según si es fila (table-row) o tarjeta (block)
+                if(elemento.classList.contains('fila-registro')) {
+                    elemento.style.display = 'table-row';
+                } else {
+                    elemento.style.display = 'block';
+                }
+                mostrados++;
+            } else {
+                elemento.style.display = 'none';
+            }
+        });
+
+        var divSinResultados = document.getElementById('sinResultados');
+        if (elementos.length > 0 && mostrados === 0) {
+            divSinResultados.classList.remove('d-none');
+        } else {
+            divSinResultados.classList.add('d-none');
+        }
+    });
+
+    // Función auxiliar para mostrar el Toast de Bootstrap
+    function mostrarToast(mensaje, esError = false) {
+        var toastEl = document.getElementById('toastNotificacion');
+        var toastIcono = document.getElementById('toastIcono');
+        var toastMensajeText = document.getElementById('toastMensaje');
+
+        toastMensajeText.innerText = mensaje;
+
+        if (esError) {
+            toastIcono.className = 'fa-solid fa-triangle-exclamation text-warning me-3 fs-5';
+        } else {
+            toastIcono.className = 'fa-solid fa-check-circle text-success me-3 fs-5';
+        }
+
+        var toast = new bootstrap.Toast(toastEl, { delay: 3500 });
+        toast.show();
+    }
+
+    function copiarLink(url) {
+        navigator.clipboard.writeText(url).then(function() {
+            mostrarToast('¡Enlace de pago copiado al portapapeles!');
+        }).catch(function(err) {
+            console.error('Error al copiar: ', err);
+            mostrarToast('No se pudo copiar el enlace automáticamente.', true);
+        });
+    }
+
+    function abrirModalBorrar(idAsistente, nombre) {
+        document.getElementById('lblNombreBorrar').innerText = nombre;
+        document.getElementById('hiddenIdAsistenteBorrar').value = idAsistente;
+        var modalInstance = new bootstrap.Modal(document.getElementById('modalEliminarExterno'));
+        modalInstance.show();
+    }
+
+    function abrirModalReenviar(idAsistente, nombre, correo) {
+        document.getElementById('lblNombreReenviar').innerText = nombre;
+        document.getElementById('lblCorreoReenviar').innerText = correo;
+        document.getElementById('hiddenIdAsistenteReenviar').value = idAsistente;
+        var modalInstance = new bootstrap.Modal(document.getElementById('modalReenviarCorreo'));
+        modalInstance.show();
+    }
+</script>
+
+<style>
+    .fade-in {
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+    }
+
+    .btn-menu-blanco:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    /* Corrección de z-index para acordeón móvil y botón */
+    .accordion-button:not(.collapsed) {
+        background-color: #ffffff;
+        box-shadow: none;
+    }
+
+    .accordion-button:focus {
+        border-color: rgba(0,0,0,.125);
+        box-shadow: none;
+    }
+
+    /* Evitar que dropdown se corte en la tabla (Ajuste previo) */
+    @@media (min-width: 992px) {
+        .table-responsive {
+            overflow: visible !important;
+        }
+    }
+</style>

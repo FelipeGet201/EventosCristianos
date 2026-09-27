@@ -1,0 +1,65 @@
+﻿@model RedAJP.Controllers.MaterialesController.EditorMaterialViewModel
+@{
+    Layout = "Principal";
+    bool esEdicion = Model.Id_Archivo > 0;
+    ViewData["Title"] = esEdicion ? "Editar Material" : "Publicar Material";
+}
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-material');
+        }
+    });
+</script>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white border-0 pt-4 pb-3 px-4">
+                    <h4 class="fw-bold mb-0"><i class="fa-solid fa-book-open me-2 text-warning"></i> @ViewData["Title"]</h4>
+                </div>
+                <div class="card-body p-4 bg-white">
+
+                    <form action="@Url.Action("Guardar", "Materiales")" method="post" enctype="multipart/form-data">
+
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id_Archivo" value="@Model.Id_Archivo" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Título del Recurso</label>
+                            <input type="text" name="Titulo" class="form-control form-control-lg" value="@Model.Titulo" required placeholder="Nombre del Recurso" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Descripción</label>
+                            <textarea name="Descripcion" class="form-control" rows="3" placeholder="Descripción breve del contenido...">@Model.Descripcion</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Archivo (PDF, Imagen, Word)</label>
+                            <input type="file" name="Archivo" class="form-control" @(esEdicion ? "" : "required") />
+
+                            @if (esEdicion)
+                            {
+                                <div class="alert alert-info d-flex align-items-center mt-2 p-2 small border-0 bg-info bg-opacity-10 text-info rounded-3">
+                                    <i class="fa-solid fa-circle-check me-2"></i>
+                                    <div>@Model.NombreArchivoActual</div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-dark rounded-pill fw-bold py-3 shadow-sm">
+                                <i class="fa-solid fa-cloud-arrow-up me-2"></i> Publicar Material
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill border-0">Cancelar</a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,861 @@
+﻿@using RedAJP.Controllers
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Donaciones";
+    var cuentas = GlobalController.DatosBancarios.ObtenerCuentasParaDonaciones();
+    var proyectos = ViewBag.Proyectos as List<dynamic>;
+    bool tieneProyectos = proyectos != null && proyectos.Count > 0;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-donaciones');
+    });
+</script>
+
+<div class="donations-wrapper fade-in container py-4 py-md-5">
+    
+    <!-- HEADER SECTION -->
+    <div class="row justify-content-center text-center mb-5">
+        <div class="col-12 col-lg-8">
+            <div class="icon-glow-container mb-3">
+                <div class="icon-glow-bg"></div>
+                <i class="fa-solid fa-heart icon-glow"></i>
+            </div>
+            <h2 class="fw-black mb-4 title-gradient">Aportación Voluntaria</h2>
+
+            <div class="quote-card p-4 p-md-5 mx-auto">
+                <i class="fa-solid fa-quote-left quote-icon-left"></i>
+                <p class="quote-text mb-0">
+                    Cada uno dé como propuso en su corazón: no con tristeza, ni por necesidad, porque Dios ama al dador alegre. Y poderoso es Dios para hacer que abunde en vosotros toda gracia, a fin de que, teniendo siempre en todas las cosas todo lo suficiente, abundéis para toda buena obra;
+                </p>
+                <div class="quote-author mt-4">— 2 Corintios 9:7-8</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CAUSAS / PROYECTOS -->
+    @if (tieneProyectos)
+    {
+        <div class="row justify-content-center mb-5">
+            <div class="col-12 col-xl-10">
+                <div class="section-title-wrapper mb-4">
+                    <h5 class="section-title"><i class="fa-solid fa-heart-circle-plus"></i> ¿Qué causa deseas apoyar hoy?</h5>
+                </div>
+                
+                <div class="row g-4 justify-content-center">
+                    <div class="col-md-6">
+                        <label class="causa-selector-card w-100 h-100">
+                            <input type="radio" name="proyectoSeleccionado" value="" checked>
+                            <div class="causa-card h-100 p-4">
+                                <div class="causa-badge-check"><i class="fa-solid fa-circle-check"></i></div>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="causa-icon-wrapper"><i class="fa-solid fa-users fs-5"></i></div>
+                                    <h6 class="causa-title mb-0">Fondo de Apoyo AJP</h6>
+                                </div>
+                                <p class="causa-desc mb-0">Tu Donación ayuda a sostener actividades juveniles, eventos y proyectos de la AJP, permitiendo que más jóvenes puedan participar y que los costos finales sean más accesibles para todos.<br />
+                                    Gracias por sembrar en comunidad, formación y Reino. 🤍</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    @foreach (var p in proyectos)
+                    {
+                        <div class="col-md-6">
+                            <label class="causa-selector-card w-100 h-100">
+                                <input type="radio" name="proyectoSeleccionado" value="@p.Id">
+                                <div class="causa-card h-100 p-4">
+                                    <div class="causa-badge-check"><i class="fa-solid fa-circle-check"></i></div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="causa-icon-wrapper"><i class="fa-solid fas fa-hand-holding-heart fs-5"></i></div>
+                                        <h6 class="causa-title mb-0">@p.Titulo</h6>
+                                    </div>
+                                    <p class="text-muted" style="white-space: pre-line;">@p.Descripcion</p>
+                                </div>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- SECCIÓN PRINCIPAL DE PAGO -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="main-payment-card card border-0 overflow-hidden bg-white">
+                <div class="card-gradient-bar"></div>
+
+                <div class="card-body p-4 p-md-5">
+                    
+                    <!-- PASO 1: MONTO -->
+                    <div class="step-indicator mb-4">
+                        <span class="step-number">1</span>
+                        <h5 class="step-title">Selecciona el monto a aportar</h5>
+                    </div>
+                    
+                    <div class="row g-3 justify-content-center mb-4">
+                        <div class="col-6 col-md-3">
+                            <button type="button" class="btn-monto-grid btn-monto" data-valor="100">
+                                <span class="currency">$</span>100
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button type="button" class="btn-monto-grid btn-monto" data-valor="200">
+                                <span class="currency">$</span>200
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button type="button" class="btn-monto-grid btn-monto" data-valor="500">
+                                <span class="currency">$</span>500
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button type="button" class="btn-monto-grid btn-monto active" id="btnMontoLibre" data-valor="libre">
+                                <i class="fa-solid fa-pen custom-icon me-1"></i> Otro
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-center mb-5" id="contenedorMontoLibre">
+                        <div class="col-md-8">
+                            <div class="custom-amount-wrapper">
+                                <span class="custom-amount-symbol">$</span>
+                                <input type="number" id="inputMontoPersonalizado" class="custom-amount-input" placeholder="0" min="50" step="1">
+                                <span class="custom-amount-currency">MXN</span>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span class="badge bg-light text-muted border border-secondary border-opacity-25 px-3 py-2 rounded-pill fw-normal shadow-sm">
+                                    <i class="fa-solid fa-info-circle me-1"></i> Monto mínimo sugerido: $50.00 MXN
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comentario-box mb-5">
+                        <label class="comentario-label"><i class="fa-regular fa-comment-dots me-2"></i> Dedicatoria o Mensaje (Opcional)</label>
+                        <textarea id="comentarioGlobal" maxlength="500" class="comentario-input form-control" rows="2" placeholder="Si lo deseas, déjanos un mensaje especial aquí..."></textarea>
+                    </div>
+
+                    <!-- PASO 2: MÉTODO DE PAGO -->
+                    <div class="step-indicator mb-4 mt-5">
+                        <span class="step-number">2</span>
+                        <h5 class="step-title">Elige tu método de pago</h5>
+                    </div>
+
+                    <div class="segmented-control mb-4" id="metodosPagoTab" role="tablist">
+                        <button class="nav-link active" id="tarjeta-tab" data-bs-toggle="tab" data-bs-target="#tarjeta" type="button" role="tab">
+                            <i class="fa-regular fa-credit-card me-2"></i> Tarjeta Bancaria
+                        </button>
+                        <button class="nav-link" id="transferencia-tab" data-bs-toggle="tab" data-bs-target="#transferencia" type="button" role="tab">
+                            <i class="fa-solid fa-building-columns me-2"></i> Depósito / SPEI
+                        </button>
+                    </div>
+
+                    <div class="tab-content payment-tab-content" id="metodosPagoContent">
+                        
+                        <!-- TAB: TARJETA -->
+                        <div class="tab-pane fade show active" id="tarjeta" role="tabpanel" tabindex="0">
+                            <div class="stripe-callout text-center p-4 p-md-5">
+                                <i class="fa-brands fa-stripe stripe-logo mb-3"></i>
+                                <h4 class="fw-bold text-dark mb-3">Tu Pago es 100% Seguro</h4>
+                                <p class="text-secondary mx-auto mb-5">
+                                    Serás redirigido a la página de cobros de <strong>Stripe</strong>.
+                                </p>
+                                
+                                <form action="@Url.Action("IniciarPagoTarjeta", "Donaciones")" method="post" id="formStripe">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" id="hiddenMontoStripe" name="montoAportacion" value="0" />
+                                    <input type="hidden" id="hiddenComentarioStripe" name="comentarioDonante" value="" />
+                                    <input type="hidden" id="hiddenProyectoStripe" name="idProyectoAsignado" value="" />
+                                    
+                                    <button type="submit" class="btn-checkout w-100" id="btnIrAPagar">
+                                        <span>Proceder a donar</span>
+                                        <div class="btn-checkout-amount">
+                                            <span id="txtBotonPagar">$0.00</span>
+                                            <i class="fa-solid fa-arrow-right ms-2"></i>
+                                        </div>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- TAB: TRANSFERENCIA -->
+                        <div class="tab-pane fade" id="transferencia" role="tabpanel" tabindex="0">
+                            
+                            <div class="transfer-alert-box mb-4">
+                                <div class="transfer-alert-icon">
+                                    <i class="fa-solid fa-pencil"></i>
+                                </div>
+                                <div class="transfer-alert-content">
+                                    <h6>Concepto Obligatorio</h6>
+                                    <p>Por favor, usa este código exacto como <strong>Concepto de Pago</strong> o <strong>Referencia</strong> para que el sistema asigne tu donación automáticamente:</p>
+                                    <div class="copy-input-group mt-3">
+                                        <input type="text" id="codigoTransfer" class="copy-input font-monospace text-primary fw-bold" value="@ViewBag.PrefijoTransfer" readonly>
+                                        <button class="btn-copiar" type="button" data-clipboard-target="#codigoTransfer" title="Copiar">
+                                            <i class="fa-regular fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="cuentas-title mb-3 mt-5">Cuentas Autorizadas</h6>
+                            @foreach (var cuenta in cuentas)
+                            {
+                                var esBBVA = cuenta.Banco.ToUpper().Contains("BBVA");
+                                <div class="bank-card @(esBBVA ? "bank-card-primary" : "") mb-3">
+                                    <div class="bank-card-header">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bank-icon"><i class="fa-solid fa-building-columns"></i></div>
+                                            <h5 class="mb-0 fw-bold">@cuenta.Banco</h5>
+                                        </div>
+                                    </div>
+                                    <div class="bank-card-body row g-3">
+                                        <div class="col-12">
+                                            <span class="bank-label">Titular / Beneficiario</span>
+                                            <div class="bank-value titular">@cuenta.Titular</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <span class="bank-label">Número de Cuenta</span>
+                                            <div class="copy-input-group-sm">
+                                                <input type="text" class="copy-input-sm font-monospace" value="@cuenta.Cuenta" id="acc-@cuenta.Cuenta" readonly>
+                                                <button class="btn-copiar btn-copiar-sm" type="button" data-clipboard-target="#acc-@cuenta.Cuenta">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <span class="bank-label">CLABE Interbancaria</span>
+                                            <div class="copy-input-group-sm">
+                                                <input type="text" class="copy-input-sm font-monospace" value="@cuenta.Clabe" id="clabe-@cuenta.Clabe" readonly>
+                                                <button class="btn-copiar btn-copiar-sm" type="button" data-clipboard-target="#clabe-@cuenta.Clabe">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- REPORTE DE COMPROBANTE -->
+                            <div class="upload-receipt-card mt-5">
+                                <div class="row align-items-center">
+                                    <div class="col-md-7 mb-3 mb-md-0 text-center text-md-start">
+                                        <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-receipt text-primary me-2"></i>¿Ya realizaste tu depósito?</h5>
+                                        <p class="text-secondary small mb-0">Por favor sube un comprobante para ayudarnos en el control de ingresos.</p>
+                                    </div>
+                                    <div class="col-md-5 text-center text-md-end">
+                                        <button class="btn-upload w-100" data-bs-toggle="modal" data-bs-target="#modalReporte" id="btnDispararModalReporte">
+                                            <i class="fa-solid fa-cloud-arrow-up me-2"></i> Subir Comprobante
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="warning-callout mt-4">
+                                <div class="warning-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                <div class="warning-text">
+                                    <strong>Nota:</strong> Toda transferencia que no sea reportada mediante esta plataforma no podrá ser conciliada. ¡Gracias por tu cooperación!
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: SUBIR COMPROBANTE -->
+<div class="modal fade modern-modal" id="modalReporte" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-file-invoice-dollar text-primary me-2"></i> Registrar Comprobante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="@Url.Action("SubirComprobante", "Donaciones")" method="post" enctype="multipart/form-data" id="formTransfer">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="hiddenMontoTransfer" name="montoDonado" value="" />
+                <input type="hidden" id="hiddenComentarioTransfer" name="comentarioDonante" value="" />
+                <input type="hidden" id="hiddenProyectoTransfer" name="idProyectoAsignado" value="" />
+
+                <div class="modal-body p-4">
+                    <p class="text-muted text-center mb-4">Selecciona el archivo digital. La información es estrictamente confidencial.</p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark mb-3">Comprobante de Pago <span class="text-danger">*</span></label>
+                        <div class="custom-file-upload">
+                            <input type="file" id="archivoComprobante" name="archivoComprobante" class="form-control" accept=".jpg,.jpeg,.png,.webp" required>
+                        </div>
+
+                        <div id="previewContainer" class="image-preview-wrapper d-none mt-3">
+                            <span class="preview-badge">Vista Previa</span>
+                            <img id="imagePreview" src="#" alt="Vista previa">
+                        </div>
+                    </div>
+                </div>
+               <div class="modal-footer p-3">
+                    <button type="submit" class="btn-checkout w-100 py-3 d-flex justify-content-center align-items-center">
+                        Confirmar
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: STATUS NOTIFICACIÓN -->
+<div class="modal fade modern-modal" id="modalStatus" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center p-4 p-md-5">
+            <div id="statusIconContainer" class="mb-4 animate-bounce"></div>
+            <h4 class="fw-bold text-dark mb-2" id="statusTitle">Notificación</h4>
+            <p class="text-secondary mb-4" id="statusMessage">Mensaje por defecto.</p>
+            <button type="button" class="btn btn-dark w-100 rounded-pill py-2 fw-bold" data-bs-dismiss="modal">Entendido</button>
+        </div>
+    </div>
+</div>
+
+<!-- NUEVOS ESTILOS SUPER PREMIUM -->
+<style>
+    :root {
+        --primary-color: #0b4e8a;
+        --primary-light: #e6f0fa;
+        --accent-color: #ff7f50;
+        --bg-body: #f7f9fc;
+        --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        --transition-base: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    /* General */
+    .donations-wrapper {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    
+    /* Titulo Glow */
+    .icon-glow-container {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+    }
+    .icon-glow-bg {
+        position: absolute;
+        inset: 0;
+        background: var(--accent-color);
+        opacity: 0.15;
+        border-radius: 50%;
+        filter: blur(10px);
+    }
+    .icon-glow {
+        position: relative;
+        font-size: 2.5rem;
+        color: var(--accent-color);
+        z-index: 1;
+    }
+    .title-gradient {
+        background: linear-gradient(135deg, #1a202c, var(--primary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
+    }
+
+    /* Quote Card */
+    .quote-card {
+        position: relative;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.8);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+        text-align: left;
+    }
+    .quote-icon-left {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 3rem;
+        color: var(--primary-color);
+        opacity: 0.08;
+    }
+    .quote-text {
+        font-style: italic;
+        color: #4a5568;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        position: relative;
+        z-index: 2;
+    }
+    .quote-author {
+        text-align: right;
+        font-weight: 700;
+        color: var(--primary-color);
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    /* Radio Cards (Proyectos) */
+    .section-title-wrapper { text-align: center; }
+    .section-title {
+        display: inline-block;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-size: 0.9rem;
+        color: #4a5568;
+        background: #fff;
+        padding: 8px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .text-primary-custom { color: var(--primary-color); }
+    
+    .causa-selector-card { display: block; cursor: pointer; }
+    .causa-selector-card input[type="radio"] { display: none; }
+    
+    /* Tarjeta por defecto (Estado NO seleccionado) */
+    .causa-card {
+        background: #ffffff;
+        border: 2px solid transparent;
+        border-radius: 20px;
+        box-shadow: var(--card-shadow);
+        transition: var(--transition-base);
+        position: relative;
+        overflow: hidden;
+        opacity: 0.5; /* <--- Hace que se vea semitransparente / opaca */
+        transform: scale(0.96); /* <--- La hace un 4% más pequeña para quitarle protagonismo */
+    }
+
+    /* Efecto al pasar el mouse por encima (Hover) */
+    .causa-card:hover { 
+        transform: translateY(-4px) scale(0.98); 
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06); 
+        opacity: 0.8; /* <--- Se aclara un poco al pasar el cursor */
+    }
+    
+    /* Estado SELECCIONADO (Checked) */
+    .causa-selector-card input[type="radio"]:checked + .causa-card {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(11, 78, 138, 0.1);
+        opacity: 1; /* <--- Vuelve a ser 100% visible y sólida */
+        transform: scale(1); /* <--- Retoma su tamaño original completo */
+    }
+    .causa-card:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06); }
+    
+    .causa-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-light);
+        color: var(--primary-color);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        transition: var(--transition-base);
+    }
+    .causa-title { font-weight: 700; color: #2d3748; line-height: 1.4; padding-right: 20px;}
+    .causa-desc { color: #718096; font-size: 0.85rem; line-height: 1.6; }
+    .causa-badge-check {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: transparent;
+        font-size: 1.25rem;
+        transform: scale(0.5);
+        transition: var(--transition-base);
+    }
+
+    /* Checked State */
+    .causa-selector-card input[type="radio"]:checked + .causa-card {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(11, 78, 138, 0.1);
+    }
+    .causa-selector-card input[type="radio"]:checked + .causa-card .causa-icon-wrapper {
+        background: var(--primary-color);
+        color: #fff;
+    }
+    .causa-selector-card input[type="radio"]:checked + .causa-card .causa-badge-check {
+        color: var(--primary-color);
+        transform: scale(1);
+    }
+
+    /* Main Card */
+    .main-payment-card {
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+    .card-gradient-bar {
+        height: 6px;
+        width: 100%;
+        background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+    }
+
+    /* Steps */
+    .step-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .step-number {
+        width: 28px;
+        height: 28px;
+        background: var(--primary-light);
+        color: var(--primary-color);
+        font-weight: 800;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+    .step-title {
+        margin: 0;
+        font-weight: 700;
+        color: #2d3748;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 1rem;
+    }
+
+    /* Monto Botones */
+    .btn-monto-grid {
+        width: 100%;
+        padding: 18px 10px;
+        background: #fff;
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #4a5568;
+        transition: var(--transition-base);
+        outline: none;
+    }
+    .btn-monto-grid .currency { font-size: 0.9rem; margin-right: 2px; color: #a0aec0; }
+    .btn-monto-grid:hover { border-color: #cbd5e0; background: #f8fafc; }
+    .btn-monto-grid.active {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+        box-shadow: 0 8px 20px rgba(11, 78, 138, 0.25);
+        transform: translateY(-2px);
+    }
+    .btn-monto-grid.active .currency, .btn-monto-grid.active .custom-icon { color: rgba(255,255,255,0.8); }
+    
+    @@keyframes popIn {
+        0% { transform: scale(0.95); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Monto Input */
+    .custom-amount-wrapper {
+        display: flex;
+        align-items: center;
+        background: #fff;
+        border: 2px solid var(--primary-color);
+        border-radius: 20px;
+        padding: 10px 25px;
+        box-shadow: 0 10px 25px rgba(11, 78, 138, 0.1);
+        animation: popIn 0.3s ease forwards;
+    }
+    .custom-amount-symbol { font-size: 2rem; font-weight: 700; color: #a0aec0; }
+    .custom-amount-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        outline: none;
+        padding: 0 10px;
+        width: 100%;
+    }
+    .custom-amount-input::placeholder { color: #cbd5e0; }
+    .custom-amount-currency { font-weight: 700; color: #a0aec0; letter-spacing: 1px; }
+
+    /* Textarea */
+    .comentario-box { background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px solid #edf2f7; }
+    .comentario-label { font-size: 0.85rem; font-weight: 700; color: #718096; text-transform: uppercase; margin-bottom: 10px; display: block; letter-spacing: 0.5px;}
+    .comentario-input { border: 1px solid #e2e8f0; border-radius: 12px; resize: none; box-shadow: none !important; font-size: 0.95rem; }
+    .comentario-input:focus { border-color: var(--primary-color); }
+
+    /* Segmented Control */
+    .segmented-control {
+        display: flex;
+        background: #edf2f7;
+        padding: 6px;
+        border-radius: 50px;
+    }
+    .segmented-control .nav-link {
+        flex: 1;
+        text-align: center;
+        padding: 12px 20px;
+        border-radius: 50px;
+        color: #718096;
+        font-weight: 700;
+        border: none;
+        background: transparent;
+        transition: var(--transition-base);
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+    }
+    .segmented-control .nav-link.active {
+        background: #fff;
+        color: var(--primary-color);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    /* Stripe Card */
+    .stripe-callout { background: #fcfdfe; border-radius: 20px; border: 1px solid #e2e8f0; }
+    .stripe-logo { font-size: 4.5rem; color: #635bff; }
+    .btn-checkout {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--primary-color);
+        color: #fff;
+        border: none;
+        padding: 6px 6px 6px 25px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: var(--transition-base);
+        box-shadow: 0 10px 20px rgba(11, 78, 138, 0.25);
+    }
+    .btn-checkout:hover { background: #0a4072; transform: translateY(-2px); box-shadow: 0 15px 25px rgba(11, 78, 138, 0.3); }
+    .btn-checkout-amount { background: #fff; color: var(--primary-color); padding: 12px 20px; border-radius: 40px; display: flex; align-items: center; font-size: 1.15rem; }
+
+    /* Transferencia Alerta */
+    .transfer-alert-box {
+        display: flex;
+        background: #f0f7ff;
+        border: 1px solid #cce4ff;
+        border-radius: 20px;
+        padding: 20px;
+        align-items: flex-start;
+    }
+    .transfer-alert-icon { background: #fff; color: var(--primary-color); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; box-shadow: 0 4px 10px rgba(11, 78, 138, 0.1); margin-right: 15px;}
+    .transfer-alert-content h6 { font-weight: 800; color: #1a202c; margin-bottom: 5px; }
+    .transfer-alert-content p { font-size: 0.9rem; color: #4a5568; margin-bottom: 0; line-height: 1.5; }
+
+    /* Inputs Copiar */
+    .copy-input-group { display: inline-flex; background: #fff; border: 1px solid #cbd5e0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+    .copy-input { border: none; padding: 10px 15px; outline: none; width: auto; min-width: 150px; letter-spacing: 1px; background: transparent; }
+    .btn-copiar { background: #f8fafc; border: none; border-left: 1px solid #cbd5e0; padding: 0 20px; color: var(--primary-color); transition: 0.2s; cursor: pointer; }
+    .btn-copiar:hover { background: var(--primary-color); color: #fff; }
+
+    /* Tarjetas Bancarias */
+    .cuentas-title { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; }
+    .bank-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; transition: var(--transition-base); }
+    .bank-card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-color: #cbd5e0; }
+    .bank-card-primary { border: 2px solid var(--primary-color); box-shadow: 0 4px 15px rgba(11, 78, 138, 0.08); }
+    .bank-card-header { padding: 15px 20px; border-bottom: 1px solid #edf2f7; background: #fcfdfe; }
+    .bank-icon { background: #edf2f7; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #718096; margin-right: 15px; }
+    .bank-card-body { padding: 20px; }
+    .bank-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #a0aec0; letter-spacing: 0.5px; display: block; margin-bottom: 5px; }
+    .bank-value.titular { font-size: 1.1rem; font-weight: 800; color: #2d3748; }
+    
+    .copy-input-group-sm { display: flex; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .copy-input-sm { border: none; background: transparent; padding: 6px 12px; font-size: 0.9rem; color: #2d3748; width: 100%; outline: none; }
+    .btn-copiar-sm { padding: 0 15px; border-left: 1px solid #e2e8f0; }
+
+    /* Upload Receipt Box */
+    .upload-receipt-card { background: #fff; border: 2px dashed #cbd5e0; border-radius: 20px; padding: 25px; transition: var(--transition-base); }
+    .upload-receipt-card:hover { border-color: var(--primary-color); background: #fcfdfe; }
+    .btn-upload { background: #1a202c; color: #fff; border: none; padding: 15px; border-radius: 50px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem; transition: var(--transition-base); }
+    .btn-upload:hover { background: #2d3748; transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
+
+    /* Warning Callout */
+    .warning-callout { display: flex; background: #fffaf0; border-left: 4px solid #ed8936; padding: 15px 20px; border-radius: 12px; align-items: center; }
+    .warning-icon { color: #ed8936; font-size: 1.5rem; margin-right: 15px; }
+    .warning-text { font-size: 0.85rem; color: #7b341e; margin: 0; line-height: 1.5; }
+
+    /* Modals */
+    .modern-modal .modal-content { border: none; border-radius: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); overflow: hidden; }
+    .modern-modal .modal-header { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 20px 25px; }
+    .modern-modal .modal-title { font-weight: 800; color: #2d3748; font-size: 1.1rem; }
+    .custom-file-upload input[type="file"] { padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
+    .image-preview-wrapper { position: relative; background: #edf2f7; padding: 15px; border-radius: 16px; text-align: center; border: 1px solid #e2e8f0; }
+    .preview-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--primary-color); color: #fff; font-size: 0.7rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
+    .image-preview-wrapper img { max-height: 200px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    
+    .animate-bounce i { font-size: 4rem; animation: bounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @@keyframes bounce {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.1); }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            
+            const statusModalElement = document.getElementById('modalStatus');
+            const statusModalInstance = new bootstrap.Modal(statusModalElement);
+
+            const btnMontos = document.querySelectorAll('.btn-monto');
+            const inputPersonalizado = document.getElementById('inputMontoPersonalizado');
+            const txtBotonPagar = document.getElementById('txtBotonPagar');
+            const comentarioGlobal = document.getElementById('comentarioGlobal');
+
+            const hMontoStripe = document.getElementById('hiddenMontoStripe');
+            const hComentarioStripe = document.getElementById('hiddenComentarioStripe');
+            const hMontoTransfer = document.getElementById('hiddenMontoTransfer');
+            const hComentarioTransfer = document.getElementById('hiddenComentarioTransfer');
+
+            const hProyectoStripe = document.getElementById('hiddenProyectoStripe');
+            const hProyectoTransfer = document.getElementById('hiddenProyectoTransfer');
+            const radiosProyecto = document.querySelectorAll('input[name="proyectoSeleccionado"]');
+
+            let montoActual = 0;
+
+            // Mapear los radios a los hiddens de ambos forms
+            radiosProyecto.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    hProyectoStripe.value = this.value;
+                    hProyectoTransfer.value = this.value;
+                });
+            });
+
+            window.mostrarModalAlerta = function(titulo, mensaje, tipo) {
+                let iconoHtml = '';
+                if(tipo === 'success') iconoHtml = '<i class="fa-solid fa-circle-check text-success"></i>';
+                else if(tipo === 'error') iconoHtml = '<i class="fa-solid fa-circle-xmark text-danger"></i>';
+                else iconoHtml = '<i class="fa-solid fa-triangle-exclamation text-warning"></i>';
+
+                document.getElementById('statusTitle').innerText = titulo;
+                document.getElementById('statusMessage').innerText = mensaje;
+                document.getElementById('statusIconContainer').innerHTML = iconoHtml;
+                statusModalInstance.show();
+            };
+
+            @if (ViewBag.PagoExitoso != null)
+            {
+                <text>
+                mostrarModalAlerta("¡Muchas Gracias!", "@Html.Raw(ViewBag.PagoExitoso)", "success");
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.3 }, colors: ['#0b4e8a', '#ff7f50', '#ffd700'] });
+                </text>
+            }
+            @if (ViewBag.ErrorPago != null)
+            {
+                <text>mostrarModalAlerta("Aviso", "@Html.Raw(ViewBag.ErrorPago)", "warning");</text>
+            }
+
+            btnMontos.forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    const yaEstabaActivo = this.classList.contains('active');
+
+                    btnMontos.forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    
+                    this.classList.add('active');
+
+                    if (!yaEstabaActivo) {
+                        const rect = this.getBoundingClientRect();
+                        const x = (rect.left + (rect.width / 2)) / window.innerWidth;
+                        const y = (rect.top + (rect.height / 2)) / window.innerHeight;
+
+                        confetti({
+                            particleCount: 40,
+                            spread: 50,
+                            origin: { x: x, y: y },
+                            colors: ['#0b4e8a', '#ff7f50', '#ffd700'],
+                            disableForReducedMotion: true,
+                            scalar: 0.8,
+                            ticks: 150
+                        });
+                    }
+
+                    const valor = this.dataset.valor;
+                    if (valor === 'libre') {
+                        inputPersonalizado.focus();
+                        montoActual = parseFloat(inputPersonalizado.value) || 0;
+                    } else {
+                        montoActual = parseFloat(valor);
+                        inputPersonalizado.value = montoActual;
+                    }
+                    actualizarHiddens();
+                });
+            });
+
+            inputPersonalizado.addEventListener('input', function () {
+                document.getElementById('btnMontoLibre').click();
+                montoActual = parseFloat(this.value) || 0;
+                actualizarHiddens();
+            });
+
+            comentarioGlobal.addEventListener('input', function() {
+                hComentarioStripe.value = this.value;
+                hComentarioTransfer.value = this.value;
+            });
+
+            function actualizarHiddens() {
+                txtBotonPagar.innerText = montoActual > 0 ? `$${montoActual.toFixed(2)}` : '$0.00';
+                hMontoStripe.value = montoActual;
+                hMontoTransfer.value = montoActual;
+            }
+
+            document.getElementById('formStripe').addEventListener('submit', function(e) {
+                if (montoActual < 50) {
+                    e.preventDefault();
+                    mostrarModalAlerta("Monto Insuficiente", "El monto mínimo establecido es de $50.00 MXN.", "warning");
+                    setTimeout(() => { inputPersonalizado.focus(); }, 400);
+                }
+            });
+
+            document.getElementById('btnDispararModalReporte').addEventListener('click', function(e) {
+                if (montoActual <= 0) {
+                    e.preventDefault();
+                    e.stopPropagation(); 
+                    mostrarModalAlerta("Faltan Datos", "Por favor, ingresa o selecciona primero la cantidad que vas a reportar en tu transferencia.", "warning");
+                    setTimeout(() => { inputPersonalizado.focus(); }, 400);
+                }
+            });
+
+            document.querySelectorAll('.btn-copiar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = document.querySelector(this.dataset.clipboardTarget);
+                    navigator.clipboard.writeText(target.value);
+                    const icon = this.querySelector('i');
+                    icon.className = 'fa-solid fa-check text-success';
+                    setTimeout(() => { icon.className = 'fa-regular fa-copy'; }, 2000);
+                });
+            });
+
+            document.getElementById('archivoComprobante').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                const previewContainer = document.getElementById('previewContainer');
+                const imagePreview = document.getElementById('imagePreview');
+
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        previewContainer.classList.remove('d-none');
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    imagePreview.src = '#';
+                    previewContainer.classList.add('d-none');
+                }
+            });
+        });
+    </script>
+}

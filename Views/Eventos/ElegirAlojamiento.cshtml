@@ -1,0 +1,602 @@
+﻿@model RedAJP.Models.PortalAlojamientoViewModel
+@using RedAJP.Globales
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Selección de Habitaciones";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-eventos');
+    });
+</script>
+
+<style>
+    .card-habitacion { transition: all 0.2s ease-in-out; border: 2px solid transparent; }
+    .card-habitacion:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+    .card-habitacion.recomendada { border-color: #198754; background-color: #f8fff9; }
+    
+    .cama-icon { font-size: 1.4rem; margin: 0 3px; }
+    .cama-ocupada-h { color: #0984e3 !important; } /* Azul Hombres */
+    .cama-ocupada-m { color: #e84393 !important; } /* Rosa Mujeres */
+    .cama-libre { color: #bdc3c7 !important; opacity: 0.5; } /* Gris Libre */
+    
+    .badge-recomendada { position: absolute; top: -10px; right: -10px; background: #198754; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .badge-alternativa { position: absolute; top: -10px; right: -10px; background: #6c757d; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    
+    .miembro-bloqueado { background-color: #fceaea !important; border: 1px solid #f5c2c2 !important; opacity: 0.85; }
+    .texto-deuda { color: #dc3545; font-weight: bold; font-size: 0.75rem; display: block; margin-top: 5px; }
+
+    /* ESTILOS DE GÉNERO */
+    .text-pink { color: #e84393 !important; }
+    .text-blue { color: #0984e3 !important; }
+    .bg-pink-light { background-color: #fff0f6 !important; color: #e84393 !important; border: 1px solid #ffdeeb !important; }
+    .bg-blue-light { background-color: #f0f7ff !important; color: #0984e3 !important; border: 1px solid #d1e9ff !important; }
+    .card-miembro { border-left: 5px solid transparent !important; transition: all 0.2s ease; }
+    .card-mitad-h { border-left-color: #74b9ff !important; background-color: rgba(116, 185, 255, 0.08) !important; }
+    .card-mitad-m { border-left-color: #ff78b0 !important; background-color: rgba(255, 120, 176, 0.08) !important; }
+</style>
+
+<div class="container py-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-bed text-primary me-2"></i>Selección de Habitaciones</h2>
+            <p class="text-muted mb-0">@Model.TituloEvento</p>
+        </div>
+        <a href="@Url.Action("Index", "Eventos")" class="btn btn-outline-secondary rounded-pill fw-bold bg-white shadow-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Volver
+        </a>
+    </div>
+
+    @Html.AntiForgeryToken()
+
+    @if (!Model.PortalActivo)
+    {
+        <div class="alert alert-warning shadow-sm border-0 rounded-4 p-4 text-center">
+            <i class="fa-solid fa-lock fa-3x text-warning mb-3"></i>
+            <h4 class="fw-bold text-dark">Portal Cerrado</h4>
+            <p class="mb-0 fs-5">@Model.MensajeInactivo</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 h-100 bg-light">
+                    <div class="card-header border-0 bg-transparent pt-4 pb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold text-dark mb-0">
+                                <i class="fa-solid fa-users me-2 text-primary"></i>Mi Grupo
+                            </h5>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-info rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
+                                        style="width: 32px; height: 32px; padding: 0;"
+                                        onclick="mostrarAyudaCombinaciones()" 
+                                        title="¿Cómo armar mis propias combinaciones?">
+                                    <i class="fa-solid fa-question"></i>
+                                </button>
+                                <button class="btn btn-sm btn-dark rounded-pill px-3 fw-bold shadow-sm" onclick="seleccionarTodoInteligente()">
+                                    <i class="fa-solid fa-check-double me-1"></i> Seleccionar Grupo
+                                </button>
+                            </div>
+                        </div>
+                        <p class="small text-muted mb-0 mt-2">
+                            Selecciona a quiénes deseas asignar. 
+                            <span class="text-primary d-block mt-1" style="cursor:pointer; font-size: 0.75rem;" onclick="mostrarAyudaCombinaciones()">
+                                <i class="fa-solid fa-circle-info me-1"></i> ¿Quieres elegir quién va con quién? Haz clic aquí.
+                            </span>
+                        </p>
+                    </div>
+                    
+                    <div class="card-body p-3" id="panelMiGrupo">
+                        @* ORDENADO: MUJERES PRIMERO *@
+                        @foreach (var m in Model.MiGrupo.OrderByDescending(x => x.Genero == "M").ThenBy(x => x.Nombre))
+                        {
+                            bool yaAsignado = m.IdAlojamientoActual.HasValue;
+                            bool bloqueadoPorDeuda = Model.BloqueoPorDeuda && m.TieneDeuda;
+                            
+                            string claseGeneroCard = m.Genero == "H" ? "card-mitad-h" : "card-mitad-m";
+                            string claseBloqueo = bloqueadoPorDeuda ? "miembro-bloqueado" : "";
+
+                            <div class="card mb-2 border-0 shadow-sm rounded-3 overflow-hidden card-miembro @claseGeneroCard @claseBloqueo">
+                                <div class="card-body p-3 d-flex align-items-center gap-3">
+                                    
+                                    @if (yaAsignado)
+                                    {
+                                        <i class="fa-solid fa-circle-check text-success ms-1 me-2" style="font-size: 1.2rem;"></i>
+                                    }
+                                    else if (bloqueadoPorDeuda)
+                                    {
+                                        <i class="fa-solid fa-circle-exclamation text-danger ms-1 me-2" style="font-size: 1.2rem;" title="Pago pendiente"></i>
+                                    }
+                                    else
+                                    {
+                                        <div class="form-check">
+                                            <input class="form-check-input chk-miembro" type="checkbox" style="transform: scale(1.3);"
+                                               value="@m.IdAsistente" 
+                                               data-reftipo="@m.RefTipo" 
+                                               data-genero="@m.Genero"
+                                               data-nombre="@m.Nombre">
+                                        </div>
+                                    }
+                                    
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 fw-bold @(bloqueadoPorDeuda ? "text-danger" : "text-dark")">
+                                            @if (m.Genero == "H") { <i class="fa-solid fa-person text-blue me-2 fa-lg" title="Hombre"></i> } 
+                                            else { <i class="fa-solid fa-person-dress text-pink me-2 fa-lg" title="Mujer"></i> }
+                                            @m.Nombre
+                                        </h6>
+                                        <small class="text-muted"><i class="fa-solid fa-tag me-1"></i>@m.TipoAlojamiento</small>
+                                        
+                                        @if (yaAsignado)
+                                        {
+                                            <div class="mt-1 text-success fw-bold" style="font-size: 0.75rem;">
+                                                <i class="fa-solid fa-door-closed me-1"></i>@m.NombreZonaActual - @m.NombreHabitacionActual
+                                            </div>
+                                        }
+                                        else if (bloqueadoPorDeuda)
+                                        {
+                                            <span class="texto-deuda">
+                                                <i class="fa-solid fa-hand-holding-dollar me-1"></i> Debe completar el pago.
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header border-0 bg-white pt-4 pb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-house-chimney me-2 text-info"></i>Opción de Habitación</h5>
+                        <span class="badge bg-secondary rounded-pill px-3 py-2" id="lblEstadoSeleccion">Selecciona personas primero</span>
+                    </div>
+                    <div class="card-body p-4 bg-light rounded-bottom-4 d-flex flex-column" style="min-height: 50vh;">
+                        <div id="mensajeVacio" class="text-center text-muted m-auto">
+                            <i class="fa-solid fa-hand-pointer fa-3x mb-3 opacity-25"></i>
+                            <h6>Selecciona miembros de tu grupo a la izquierda. El sistema buscará la mejor opción.</h6>
+                        </div>
+
+                        <div id="contenedorHabitaciones" class="w-100 d-none mt-2"></div>
+                    </div>
+                </div>
+             </div>
+        </div>
+    }
+</div>
+
+<div id="loadingOverlay" class="d-none position-fixed w-100 h-100 top-0 start-0 bg-dark bg-opacity-75" 
+     style="z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+    <div class="spinner-border text-light" style="width: 3.5rem; height: 3.5rem; border-width: 0.35em;" role="status"></div>
+    <h5 class="text-light mt-3 fw-bold">Actualizando disponibilidad...</h5>
+</div>
+
+<script>
+    let dbHabitaciones = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Habitaciones));
+    let mostrarTodasLasHabitaciones = @(Model.MostrarTodasLasHabitaciones.ToString().ToLower());
+</script>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+
+    <script>
+        let seleccionActual = { ids: [], refTipo: null, generoGlobal: null };
+        let isProcessingAction = false;
+        let hubConnected = false;
+
+        // SIGNALR
+        const connection = new signalR.HubConnectionBuilder().withUrl("/eventosHub").withAutomaticReconnect().build();
+        
+        function iniciarConexionHub() {
+            connection.start().then(() => {
+                connection.invoke("UnirseGrupoEvento", "@Model.IdEvento.ToString()");
+                hubConnected = true;
+            }).catch(err => console.error(err));
+        }
+
+        connection.on("AlojamientoActualizado", async function () {
+            if (isProcessingAction) return;
+            await refrescarInterfazEnVivo();
+        });
+
+        function mostrarLoader() { document.getElementById('loadingOverlay').classList.remove('d-none'); }
+        function ocultarLoader() { document.getElementById('loadingOverlay').classList.add('d-none'); }
+
+        // Valida si todos ya tienen cuarto asignado para cerrar sockets y ocultar pantalla
+        function verificarEstadoCompleto() {
+            const checksDisponibles = document.querySelectorAll('.chk-miembro').length;
+            const msgVacio = document.getElementById('mensajeVacio');
+            const contenedor = document.getElementById('contenedorHabitaciones');
+            const lblEstado = document.getElementById('lblEstadoSeleccion');
+
+            if (checksDisponibles === 0) {
+                // Desconectar Hub para ahorrar recursos ya que no necesita ver cambios en vivo
+                if (hubConnected && connection.state === signalR.HubConnectionState.Connected) {
+                    connection.stop();
+                    hubConnected = false;
+                }
+                
+                contenedor.classList.add('d-none');
+                msgVacio.classList.remove('d-none');
+                msgVacio.innerHTML = `
+                    <i class="fa-solid fa-circle-check fa-4x mb-3 text-success"></i>
+                    <h4 class="text-success fw-bold">¡Asignación Completada!</h4>
+                    <p class="fs-6">Todo tu grupo ya cuenta con una habitación asignada.</p>
+                `;
+                
+                lblEstado.className = "badge bg-success rounded-pill px-3 py-2";
+                lblEstado.innerHTML = "<i class='fa-solid fa-check me-1'></i> Finalizado";
+                return true;
+            }
+            return false;
+        }
+
+        // RECARGA EN VIVO
+        async function refrescarInterfazEnVivo() {
+            mostrarLoader();
+            try {
+                const nocacheTag = `_t=${new Date().getTime()}`;
+                const urlHtml = new URL(window.location.href);
+                urlHtml.searchParams.set('_t', new Date().getTime());
+        
+                const [respHtml, respHab] = await Promise.all([
+                    fetch(urlHtml.toString(), { cache: 'no-store' }),
+                    fetch(`@Url.Action("ApiGetHabitacionesDisponibles", "Eventos")?idEvento=@Model.IdEvento&${nocacheTag}`, { cache: 'no-store' })
+                ]);
+
+                if (respHab.ok) dbHabitaciones = await respHab.json();
+
+                const htmlTexto = await respHtml.text();
+                const docSimulado = new DOMParser().parseFromString(htmlTexto, 'text/html');
+                const panelActual = document.getElementById('panelMiGrupo');
+                const panelNuevo = docSimulado.getElementById('panelMiGrupo');
+        
+                if (panelActual && panelNuevo) {
+                    const checkedValues = Array.from(document.querySelectorAll('.chk-miembro:checked')).map(cb => cb.value);
+                    panelActual.innerHTML = panelNuevo.innerHTML;
+                    vincularEventosCheckboxes();
+                    checkedValues.forEach(val => {
+                        const cb = document.querySelector(`.chk-miembro[value="${val}"]`);
+                        if (cb) cb.checked = true;
+                    });
+                }
+                
+                if (!verificarEstadoCompleto()) {
+                    actualizarHabitaciones(Array.from(document.querySelectorAll('.chk-miembro:checked')));
+                }
+
+            } catch (error) { 
+                console.error(error);
+            } finally {
+                ocultarLoader();
+            }
+        }
+
+        // SELECCIONAR TODO INTELIGENTE
+        function seleccionarTodoInteligente() {
+            const checks = Array.from(document.querySelectorAll('.chk-miembro:not(:disabled)'));
+            if (checks.length === 0) return;
+
+            const mujeres = checks.filter(c => c.dataset.genero === 'M');
+            const hombres = checks.filter(c => c.dataset.genero === 'H');
+
+            if (mujeres.length > 0) {
+                hombres.forEach(h => h.checked = false);
+                mujeres.forEach(m => m.checked = true);
+            } else {
+                hombres.forEach(h => h.checked = true);
+            }
+            actualizarHabitaciones(Array.from(document.querySelectorAll('.chk-miembro:checked')));
+        }
+
+        function vincularEventosCheckboxes() {
+            document.querySelectorAll('.chk-miembro').forEach(chk => {
+                chk.addEventListener('change', function() {
+                    if (this.checked) {
+                        const checkboxes = Array.from(document.querySelectorAll('.chk-miembro:checked'));
+                        const hayConflicto = checkboxes.some(c => c.dataset.genero !== this.dataset.genero);
+                        if (hayConflicto) {
+                            this.checked = false;
+                            Swal.fire('Género Incompatible', 'Solo puedes seleccionar personas del mismo género.', 'error');
+                            return; 
+                        }
+                    }
+                    actualizarHabitaciones(Array.from(document.querySelectorAll('.chk-miembro:checked')));
+                });
+            });
+        }
+        
+        function actualizarHabitaciones(checkboxes) {
+            const contenedor = document.getElementById('contenedorHabitaciones');
+            const mensaje = document.getElementById('mensajeVacio');
+            const lblEstado = document.getElementById('lblEstadoSeleccion');
+
+            if (checkboxes.length === 0) {
+                contenedor.classList.add('d-none');
+                mensaje.classList.remove('d-none');
+                lblEstado.className = "badge bg-secondary rounded-pill px-3 py-2";
+                lblEstado.innerText = "Selecciona personas primero";
+                return;
+            }
+
+            const generoGrupo = checkboxes[0].dataset.genero;
+            const refTipo = checkboxes[0].dataset.reftipo;
+            seleccionActual = { 
+                ids: checkboxes.map(c => parseInt(c.value)), 
+                nombres: checkboxes.map(c => c.dataset.nombre), 
+                refTipo: refTipo, 
+                generoGlobal: generoGrupo 
+            };
+
+            lblEstado.className = "badge bg-success rounded-pill px-3 py-2";
+            lblEstado.innerHTML = `<i class="fa-solid fa-bolt me-1"></i> Sugerencia para ${seleccionActual.ids.length} personas`;
+
+            contenedor.classList.remove('d-none');
+            mensaje.classList.add('d-none');
+
+            let validRooms = [];
+            dbHabitaciones.forEach(h => {
+                if (h.GeneroAsignado !== generoGrupo) return;
+                const cap = h.Capacidades.find(c => c.RefTipo === refTipo);
+                if (!cap) return;
+                const libres = cap.CapacidadTotal - cap.LugaresOcupados;
+                if (libres <= 0) return;
+
+                validRooms.push({ id: h.IdAlojamiento, nombre: h.NombreHabitacion, zona: h.NombreZona, libres, generos: cap.GenerosOcupantes, genHab: h.GeneroAsignado });
+            });
+
+            contenedor.innerHTML = '';
+            let n = seleccionActual.ids.length;
+            let optionsToPresent = []; 
+
+            let singleRooms = validRooms.filter(r => r.libres >= n);
+            if (singleRooms.length > 0) {
+                let minDesperdicio = Math.min(...singleRooms.map(r => r.libres - n));
+                let bestSingleRooms = singleRooms.filter(r => (r.libres - n) === minDesperdicio);
+                let randomRoom = bestSingleRooms[Math.floor(Math.random() * bestSingleRooms.length)];
+                optionsToPresent.push({ isCombo: false, data: [randomRoom] });
+            } else {
+                let totalLibres = validRooms.reduce((s, r) => s + r.libres, 0);
+                if (totalLibres >= n) {
+                    let combos = encontrarMejoresCombinaciones(validRooms, n);
+                    if (combos.length > 0) {
+                        let randomCombo = combos[Math.floor(Math.random() * combos.length)];
+                        optionsToPresent.push({ isCombo: true, data: randomCombo });
+                    }
+                }
+            }
+
+            if (optionsToPresent.length === 0) {
+                contenedor.classList.add('d-none');
+                mensaje.classList.remove('d-none');
+                mensaje.innerHTML = `<i class="fa-solid fa-face-frown fa-3x mb-3 text-warning"></i><h6>No hay habitaciones de ${generoGrupo === 'M' ? 'Mujeres' : 'Hombres'} con cupo suficiente.</h6>`;
+            } else {
+                const winner = optionsToPresent[0];
+                let renderedHtml = generarHtmlTarjeta(winner.isCombo ? null : winner.data[0], winner.data, true);
+                
+                // Mostrar habitaciones alternativas si la configuración lo permite
+                if (mostrarTodasLasHabitaciones && !winner.isCombo) {
+                    let idRecomendada = winner.data[0].id;
+                    let alternativas = validRooms.filter(r => r.id !== idRecomendada && r.libres >= n);
+                    
+                    if (alternativas.length > 0) {
+                        renderedHtml += `
+                        <div class="mt-4 pt-3 border-top w-100">
+                            <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-list-ul me-2"></i>Otras opciones disponibles con cupo</h6>
+                            <div class="d-flex flex-column gap-3">`;
+                                
+                        alternativas.forEach(altRoom => {
+                            renderedHtml += generarHtmlTarjeta(altRoom, [altRoom], false);
+                        });
+                        
+                        renderedHtml += `</div></div>`;
+                    }
+                }
+                contenedor.innerHTML = renderedHtml;
+            }
+        }
+
+        function encontrarMejoresCombinaciones(rooms, target) {
+            let results = [];
+            let sortedRooms = rooms.slice().sort((a, b) => b.libres - a.libres);
+
+            function search(startIndex, currentCombo, currentSum) {
+                if (results.length > 50) return;
+                if (currentSum >= target) {
+                    results.push([...currentCombo]);
+                    return;
+                }
+                for (let i = startIndex; i < sortedRooms.length; i++) {
+                    currentCombo.push(sortedRooms[i]);
+                    search(i + 1, currentCombo, currentSum + sortedRooms[i].libres);
+                    currentCombo.pop();
+                }
+            }
+            search(0, [], 0);
+            if (results.length === 0) return [];
+
+            results.sort((a, b) => {
+                if (a.length !== b.length) return a.length - b.length; 
+                let sumA = a.reduce((s, r) => s + r.libres, 0);
+                let sumB = b.reduce((s, r) => s + r.libres, 0);
+                return sumA - sumB; 
+            });
+
+            let bestLength = results[0].length;
+            let bestSum = results[0].reduce((s, r) => s + r.libres, 0);
+            return results.filter(c => c.length === bestLength && c.reduce((s, r) => s + r.libres, 0) === bestSum);
+        }
+
+        // RENDERIZADO VISUAL CON SOPORTE PARA "ALTERNATIVAS"
+        function generarHtmlTarjeta(singleRoom, comboArr, isRecommended) {
+            let isCombo = singleRoom === null;
+            let muestraRoom = isCombo ? comboArr[0] : singleRoom;
+            
+            let tituloGenero = muestraRoom.genHab === 'M' ? "HABITACIÓN PARA MUJERES" : "HABITACIÓN PARA HOMBRES";
+            let colorGenero = muestraRoom.genHab === 'M' ? "bg-pink-light" : "bg-blue-light";
+            let colorIconoOcupada = muestraRoom.genHab === 'M' ? "cama-ocupada-m" : "cama-ocupada-h";
+            
+            let titulo = isCombo ? `Grupo dividido en ${comboArr.length} habitaciones` : singleRoom.nombre;
+            let subtitulo = isCombo ? `Asignación Múltiple` : singleRoom.zona;
+            
+            // Configuración dinámica de estilos según es recomendado o alternativo
+            let borderClass = isRecommended ? "border-success" : "border-secondary";
+            let badgeCls = isRecommended ? "badge-recomendada bg-success" : "badge-alternativa bg-secondary";
+            let badgeIcon = isRecommended ? "fa-wand-magic-sparkles" : "fa-check-circle";
+            let badgeText = isCombo ? 'Mejor Combinación' : (isRecommended ? 'Opción Ideal' : 'Opción Disponible');
+            let btnClass = isRecommended ? (isCombo ? 'btn-info text-white' : 'btn-primary') : 'btn-dark';
+            
+            let payload = [];
+            let idIndex = 0;
+            let camasHtml = '';
+
+            let leyendaHtml = `
+                <div class="d-flex justify-content-center flex-wrap gap-3 mb-2" style="font-size: 0.8rem;">
+                    <span class="text-muted"><i class="fa-solid fa-bed ${colorIconoOcupada}"></i> Ocupada</span>
+                    <span class="fw-bold text-success"><i class="fa-solid fa-bed text-success"></i> Tu Selección</span>
+                    <span class="text-muted"><i class="fa-solid fa-bed cama-libre"></i> Disponible</span>
+                </div>
+            `;
+            comboArr.forEach((r, index) => {
+                let asisAAsignar = Math.min(r.libres, seleccionActual.ids.length - idIndex);
+                let chunkIds = seleccionActual.ids.slice(idIndex, idIndex + asisAAsignar);
+                let chunkNombres = seleccionActual.nombres.slice(idIndex, idIndex + asisAAsignar); 
+     
+                idIndex += asisAAsignar;
+                
+                if (chunkIds.length > 0) {
+                    payload.push({ IdAlojamiento: r.id, IdsAsistentes: chunkIds, RefTipo: seleccionActual.refTipo });
+                }
+        
+                let colorCamaBgc = (isCombo || !isRecommended) ? 'bg-white border mb-2 shadow-sm' : 'bg-light border';
+                camasHtml += `<div class="${colorCamaBgc} rounded p-3 w-100 text-center">`;
+                
+                if (isCombo) {
+                    camasHtml += `<small class="fw-bold d-block mb-1 text-info"><i class="fa-solid fa-key me-1"></i>${r.zona} - ${r.nombre}</small>`;
+                }
+
+                let badgesNombres = chunkNombres.map(n => `<span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill fw-bold mx-1 mb-2" style="font-size: 0.7rem;"><i class="fa-solid fa-user me-1"></i>${n}</span>`).join('');
+                camasHtml += `<div>${badgesNombres}</div>`;
+                
+                r.generos.forEach(g => {
+                    let claseColor = g === 'H' ? 'cama-ocupada-h' : 'cama-ocupada-m';
+                    camasHtml += `<i class="fa-solid fa-bed cama-icon ${claseColor}" title="Ocupada"></i>`;
+                });
+                for (let i = 0; i < r.libres; i++) {
+                    if (i < asisAAsignar) camasHtml += `<i class="fa-solid fa-bed cama-icon text-success beat-fade" title="Tu lugar"></i>`;
+                    else camasHtml += `<i class="fa-solid fa-bed cama-icon cama-libre" title="Cama Libre"></i>`;
+                }
+                camasHtml += `</div>`;
+            });
+            const payloadJson = JSON.stringify(payload).replace(/"/g, '&quot;');
+
+            return `
+            <div class="col-12 col-md-10 fade-in mx-auto w-100">
+                <div class="card card-habitacion shadow-sm rounded-4 h-100 position-relative ${borderClass}" style="border-width: 2px;">
+                    <div class="${badgeCls}"><i class="fa-solid ${badgeIcon} me-1"></i>${badgeText}</div>
+  
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="text-center mb-3">
+                            <span class="badge ${colorGenero} rounded-pill px-4 py-2 fw-bold" style="font-size: 0.9rem;">
+                                <i class="fa-solid ${muestraRoom.genHab === 'M' ? 'fa-person-dress' : 'fa-person'} me-2"></i>${tituloGenero}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid ${isCombo ? 'fa-layer-group text-info' : 'fa-key text-warning'} me-2"></i>${titulo}</h5>
+                            <span class="badge bg-secondary rounded-pill">${subtitulo}</span>
+                        </div>
+                        
+                        ${leyendaHtml}
+                        <div class="camas-container mb-4 flex-grow-1">
+                            ${camasHtml}
+                        </div>
+             
+                        <button class="btn ${btnClass} btn-lg w-100 rounded-pill fw-bold shadow-sm mt-auto" 
+                                data-payload="${payloadJson}" 
+                                onclick="confirmarAsignacion(this.dataset.payload)">
+                            <i class="fa-solid fa-check me-2"></i> Confirmar y Reservar
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function confirmarAsignacion(payloadStr) {
+            Swal.fire({
+                title: '¿Confirmar Selección?',
+                text: "Se registrarán estas personas en la habitación sugerida.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, reservar'
+            }).then((result) => { if (result.isConfirmed) ejecutarAsignacion(JSON.parse(payloadStr)); });
+        }
+
+        async function ejecutarAsignacion(payload) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            Swal.fire({ title: 'Reservando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            isProcessingAction = true;
+            try {
+                const response = await fetch('@Url.Action("ApiAsignarHabitacionPortal", "Eventos")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.exito) {
+                    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                    Toast.fire({ icon: 'success', title: data.mensaje });
+            
+                    await refrescarInterfazEnVivo();
+                } else {
+                    Swal.fire('Atención', data.mensaje, 'error');
+                    await refrescarInterfazEnVivo();
+                }
+            } catch (error) { 
+                Swal.fire('Error', 'Servidor no disponible', 'error');
+                ocultarLoader();
+            } finally { 
+                isProcessingAction = false;
+            }
+        }
+        
+        function mostrarAyudaCombinaciones() {
+            Swal.fire({
+                title: '<strong>¿Cómo elegir tus propias combinaciones?</strong>',
+                icon: 'info',
+                html: `
+                    <div class="text-start" style="font-size: 0.9rem;">
+                        <p>El sistema cuenta con dos formas de asignar habitaciones:</p>
+                        <ol>
+                            <li class="mb-2"><strong>Asignación Rápida:</strong> Al usar el botón <b>"Seleccionar Grupo"</b>, el algoritmo acomoda a todos automáticamente para aprovechar el espacio al máximo.</li>
+                            <li class="mb-2"><strong>Asignación Personalizada:</strong> Si quieres que personas específicas queden juntas (o separadas), hazlo <b>por partes</b>:</li>
+                        </ol>
+                        <div class="bg-light p-3 rounded border mb-3">
+                            <p class="mb-1 fw-bold text-primary">Paso a paso para el usuario:</p>
+                            <ul class="mb-0">
+                                <li>Selecciona manualmente solo a 2 o 3 personas que quieras juntas.</li>
+                                <li>Verifica la habitación sugerida y haz clic en <b>"Confirmar y Reservar"</b>.</li>
+                                <li>El sistema actualizará la lista y podrás elegir al resto de tu grupo en una segunda vuelta.</li>
+                            </ul>
+                        </div>
+                        <p class="small text-muted">Nota: El sistema te mostrará etiquetas de nombre indicando quién ocupará cada cama en el lugar propuesto antes de confirmar.</p>
+                    </div>
+                `,
+                confirmButtonText: '¡Entendido!',
+                confirmButtonColor: '#0d6efd'
+            });
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            vincularEventosCheckboxes();
+            if(!verificarEstadoCompleto()) {
+                iniciarConexionHub();
+            }
+        });
+    </script>
+}

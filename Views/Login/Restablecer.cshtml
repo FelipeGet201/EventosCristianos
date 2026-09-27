@@ -1,0 +1,122 @@
+﻿@{
+    Layout = "Principal";
+    ViewData["Title"] = "Restablecer Contraseña";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if(typeof activarMenu === 'function') {
+            activarMenu('menu-miembros');
+        }
+    });
+</script>
+
+<style>
+    /* --- ESTILOS NÁUTICOS (Mismos del Login/Recuperar) --- */
+    .card-login {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 51, 78, 0.15);
+        overflow: hidden;
+        background-color: #ffffff;
+    }
+
+    .login-header {
+        background-color: #ffffff;
+        color: #00334e;
+        padding: 25px 20px 15px 20px;
+        text-align: center;
+        border-bottom: 3px solid #d4af37; /* Línea dorada clave */
+    }
+
+        .login-header p {
+            color: #6c757d !important;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+    /* Inputs Flotantes */
+    .form-floating > .form-control {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+    }
+
+        .form-floating > .form-control:focus {
+            background-color: #fff;
+            border-color: #d4af37;
+            box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.15);
+        }
+
+    .form-floating > label {
+        color: #6c757d;
+    }
+
+    /* Botón Principal */
+    .btn-nautico {
+        background-color: #00334e;
+        color: white;
+        border-radius: 50px;
+        font-weight: 600;
+        padding: 12px;
+        transition: all 0.3s;
+        width: 100%;
+        font-size: 1rem;
+        letter-spacing: 1px;
+        border: 1px solid #00334e;
+    }
+
+        .btn-nautico:hover {
+            background-color: #002233;
+            border-color: #d4af37;
+            color: #d4af37;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+    .ixoye-container img {
+        filter: drop-shadow(0 4px 6px rgba(212, 175, 55, 0.4));
+    }
+</style>
+
+<div class="row justify-content-center align-items-center" style="min-height: 85vh;">
+    <div class="col-11 col-sm-8 col-md-6 col-lg-5">
+
+        <div class="card card-login">
+            <div class="login-header">
+                <div class="ixoye-container">
+                    <img src="~/Images/ixoye.png" alt="IXOYE" style="width: 5.5rem;" />
+                </div>
+
+                <h4 class="fw-bold mb-1" style="color: #00334e;">Nueva Contraseña</h4>
+                <p class="mb-0">Crea una clave segura para tu cuenta</p>
+            </div>
+
+            <div class="card-body p-4 pt-4">
+                <form method="post" action="@Url.Action("Restablecer", "Login")">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" name="token" value="@ViewBag.Token" />
+
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="floatingNewPass" placeholder="Nueva Contraseña" name="password" required>
+                        <label for="floatingNewPass"><i class="fa-solid fa-lock me-2 opacity-50"></i>Nueva Contraseña</label>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <input type="password" class="form-control" id="floatingConfirm" placeholder="Confirmar" name="confirmPassword" required>
+                        <label for="floatingConfirm"><i class="fa-solid fa-circle-check me-2 opacity-50"></i>Confirmar Contraseña</label>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="submit" class="btn btn-nautico">
+                            ACTUALIZAR CONTRASEÑA
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>

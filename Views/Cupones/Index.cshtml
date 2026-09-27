@@ -1,0 +1,200 @@
+﻿@model List<RedAJP.Models.CuponViewModel>
+@{
+    ViewData["Title"] = "Catálogo de Cupones";
+    Layout = "Principal";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-cupones');
+        }
+    });
+</script>
+
+<div class="container py-5 fade-in">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="fa-solid fa-ticket me-2 text-primary"></i>Cupones y Descuentos</h2>
+            <p class="text-muted mb-0">Gestiona los códigos promocionales para eventos y tienda.</p>
+        </div>
+        <a href="@Url.Action("Editor", new { id = 0 })" class="btn btn-primary rounded-pill shadow px-4 fw-bold">
+            <i class="fa-solid fa-plus me-2"></i>Nuevo Cupón
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-nowrap">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Código</th>
+                            <th>Valor</th>
+                            <th>Uso</th>
+                            <th>Vigencia</th>
+                            <th>Alcance</th>
+                            <th>Estado</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            bool vencido = DateTime.Now > item.Fecha_Fin;
+                            bool agotado = item.Conteo_Usados >= item.Limite_Usos;
+
+                            string badgeClass = item.Activo ?
+                            (vencido ? "bg-warning text-dark" : (agotado ? "bg-secondary" : "bg-success")) : "bg-danger";
+
+                            string estadoTexto = item.Activo ?
+                            (vencido ? "Vencido" : (agotado ? "Agotado" : "Activo")) : "Inactivo";
+
+                            // Cálculo de porcentaje de uso para barra de progreso
+                            int porcentajeUso = item.Limite_Usos > 0 ? (item.Conteo_Usados * 100 / item.Limite_Usos) : 0;
+
+                            // CAMBIO 1: Detectar si tiene usuarios en la lista privada usando el conteo
+                            bool esPersonal = item.ConteoUsuariosRestringidos > 0;
+
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-primary font-monospace fs-5 d-flex align-items-center">
+                                        @item.Codigo
+                                        @if (esPersonal)
+                                        {
+                                            <i class="fa-solid fa-users-lock text-warning ms-2" title="Restringido a lista de usuarios" style="font-size: 0.8em;"></i>
+                                        }
+                                    </div>
+                                    <div class="small text-muted text-truncate" style="max-width: 200px;" title="@item.Descripcion">
+                                        @item.Descripcion
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.Tipo_Descuento == 1)
+                                    {
+                                        <span class="fw-bold">@item.Valor.ToString("0.##")%</span>
+                                        if (item.Tope_Maximo_Descuento.HasValue)
+                                        {
+                                            <div class="small text-muted" style="font-size: 0.75rem;">Tope: $@item.Tope_Maximo_Descuento</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-bold text-success">$@item.Valor.ToString("N2")</span>
+                                    }
+
+                                    @if (item.Monto_Minimo_Compra > 0)
+                                    {
+                                        <div class="badge bg-light text-muted border mt-1">Min: $@item.Monto_Minimo_Compra.ToString("N0")</div>
+                                    }
+                                </td>
+                                <td style="width: 150px;">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>@item.Conteo_Usados / @item.Limite_Usos</span>
+                                        <span class="fw-bold">@porcentajeUso%</span>
+                                    </div>
+                                    <div class="progress bg-dark bg-opacity-10" style="height: 6px;">
+                                        <div class="progress-bar @(porcentajeUso > 90 ? "bg-danger" : "bg-info")" role="progressbar" style="width: @porcentajeUso%"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small"><i class="fa-regular fa-calendar me-1"></i> @item.Fecha_Inicio.ToString("dd/MMM")</div>
+                                    <div class="small text-muted">Hasta: @item.Fecha_Fin.ToString("dd/MMM/yy")</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1 align-items-start">
+                                        @if (item.Aplica_Eventos)
+                                        {
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">Eventos</span>
+                                        }
+                                        @if (item.Aplica_Tienda)
+                                        {
+                                            <span class="badge bg-purple bg-opacity-10 text-purple border border-purple border-opacity-25" style="color: #6f42c1; border-color: #6f42c1;">Tienda</span>
+                                        }
+
+                                        @if (esPersonal)
+                                        {
+                                            <span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-50">
+                                                <i class="fa-solid fa-list-check me-1"></i> Lista Privada
+                                            </span>
+                                            <small class="text-muted fst-italic" style="font-size: 0.7rem;">
+                                                @item.ConteoUsuariosRestringidos usuario(s) aut.
+                                            </small>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill @badgeClass">@estadoTexto</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="@Url.Action("Editor", new { id = item.Id_Cupon })" class="btn btn-sm btn-outline-secondary border-0 rounded-circle" title="Editar">
+                                        <i class="fa-solid fa-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle"
+                                            onclick="confirmarBorrado(@item.Id_Cupon, '@item.Codigo', @item.Conteo_Usados)">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Count == 0)
+            {
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-ticket fa-3x text-muted opacity-25 mb-3"></i>
+                    <p class="text-muted">No hay cupones registrados.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalBorrar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3 text-danger bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                    <i class="fa-solid fa-trash-can fa-2x"></i>
+                </div>
+                <h5 class="fw-bold mb-2">¿Eliminar Cupón?</h5>
+                <p class="text-muted mb-4">Vas a eliminar el cupón <strong id="lblCodigoBorrar" class="text-dark"></strong>.</p>
+
+                <div id="msgAdvertenciaUso" class="alert alert-warning small d-none text-start">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Este cupón ya tiene usos registrados. Por seguridad, no se borrará, solo se marcará como <strong>Inactivo</strong>.
+                </div>
+
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <form action="@Url.Action("Eliminar")" method="post">
+                        <input type="hidden" name="id" id="hdnIdBorrar" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Confirmar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmarBorrado(id, codigo, usos) {
+        document.getElementById('hdnIdBorrar').value = id;
+        document.getElementById('lblCodigoBorrar').innerText = codigo;
+
+        var alertUso = document.getElementById('msgAdvertenciaUso');
+        // Mostrar advertencia si ya se usó al menos una vez
+        if (usos > 0) {
+            alertUso.classList.remove('d-none');
+        } else {
+            alertUso.classList.add('d-none');
+        }
+
+        var myModal = new bootstrap.Modal(document.getElementById('modalBorrar'));
+        myModal.show();
+    }
+</script>

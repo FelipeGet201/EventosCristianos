@@ -1,0 +1,70 @@
+﻿@model RedAJP.Models.EncuestaResponderViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Encuesta Resuelta";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-encuestas');
+        }
+    });
+</script>
+<div class="container py-5 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card border-0 shadow-lg rounded-4 p-5 text-center position-relative overflow-hidden"
+         style="background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 500px;
+        width: 100%;">
+
+        <div class="mb-4">
+            <i class="fa-solid fa-clipboard-check fa-6x text-info animate__animated animate__pulse animate__infinite" style="animation-duration: 2s;"></i>
+        </div>
+
+        <h2 class="fw-bold text-dark mb-2">¡Misión Cumplida!</h2>
+
+        <p class="text-muted fs-5 mb-4">
+            Hola <strong>@(Model.NombreUsuarioLogueado ?? "Usuario")</strong>,<br>
+            ya tenemos registradas tus respuestas para:
+        </p>
+
+        <div class="bg-white bg-opacity-50 rounded-3 p-3 mb-4 border border-white">
+            <h5 class="fw-bold text-primary m-0">"@Model.Titulo"</h5>
+        </div>
+
+        @if (ViewBag.Folio != null)
+        {
+            <div class="bg-light border rounded-4 p-4 mb-4 text-center shadow-sm">
+                <h6 class="fw-bold text-secondary text-uppercase mb-2">Tu Folio de Seguimiento es:</h6>
+                <div class="display-5 fw-bold text-primary font-monospace mb-2 user-select-all" style="letter-spacing: 2px;">
+                    @ViewBag.Folio
+                </div>
+            </div>
+        }
+
+        <p class="small text-muted mb-4">
+            <i class="fa-solid fa-circle-info me-1"></i> Solo se permite un envío por persona.
+        </p>
+
+        <div class="d-grid gap-2 col-md-8 mx-auto">
+            <a href="/" class="btn btn-dark rounded-pill py-3 fw-bold shadow-sm hover-scale transition-fast">
+                <i class="fa-solid fa-house me-2"></i> Volver al Inicio
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .transition-fast {
+        transition: all 0.3s ease;
+    }
+
+    .hover-scale:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+</style>

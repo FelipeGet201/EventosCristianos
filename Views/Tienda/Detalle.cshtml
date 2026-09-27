@@ -1,0 +1,403 @@
+﻿@model RedAJP.Models.DetalleProductoViewModel
+@using System.Text.Json
+@using RedAJP.Globales
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = Model.Nombre;
+    bool bEsAdmin = User.TienePermiso(Parametros.Modulos.TiendaConfig, Parametros.Permisos.Editar);
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-tienda');
+    });
+</script>
+
+<div class="fade-in py-4">
+    <a href="@Url.Action("Index")" class="btn btn-link text-decoration-none text-muted mb-4 ps-0">
+        <i class="fa-solid fa-arrow-left me-2"></i> Volver a la Tienda
+    </a>
+
+    <div class="card border-0 shadow-lg overflow-hidden" style="border-radius: 20px;">
+        <div class="row g-0 px-3">
+
+            <div class="col-lg-6 d-flex align-items-center justify-content-center p-3 p-lg-5 position-relative img-container">
+                <div class="w-100">
+                    <div class="rounded shadow-sm mb-3 position-relative overflow-hidden bg-light" style="height: 400px;">
+                        @if (!string.IsNullOrEmpty(Model.ImagenUrl))
+                        {
+                            <img id="imgPrincipalActiva" src="@Model.ImagenUrl" class="d-block w-100 h-100" style="object-fit: contain;" alt="Imagen Principal">
+
+                            @if (Model.Id_Solicitud_Diseno.HasValue)
+                            {
+                                <div class="position-absolute top-0 start-0 m-3">
+                                    <span class="badge bg-warning text-dark shadow-sm fs-6 px-3 py-2 rounded-pill border border-dark">
+                                        <i class="fa-solid fa-star me-1"></i> Tu Diseño
+                                    </span>
+                                </div>
+                            }
+                        }
+                        else if (Model.GaleriaUrls == null || Model.GaleriaUrls.Count == 0)
+                        {
+                            <div class="w-100 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fa-solid fa-image fa-5x text-muted opacity-25"></i>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.ImagenUrl) && Model.GaleriaUrls != null && Model.GaleriaUrls.Count > 0 && !Model.Id_Solicitud_Diseno.HasValue)
+                    {
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            <div class="miniatura-btn border border-2 border-primary rounded p-1" style="cursor: pointer; width: 80px; height: 80px;" onclick="cambiarImagenPrincipal(this)">
+                                <img src="@Model.ImagenUrl" class="w-100 h-100 rounded" style="object-fit: cover;" alt="Miniatura principal">
+                            </div>
+
+                            @foreach (var imgGal in Model.GaleriaUrls)
+                            {
+                                <div class="miniatura-btn border border-1 border-light rounded p-1 opacity-75" style="cursor: pointer; width: 80px; height: 80px;" onclick="cambiarImagenPrincipal(this)">
+                                    <img src="@imgGal" class="w-100 h-100 rounded" style="object-fit: cover;" alt="Miniatura adicional">
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-lg-6 p-4 p-lg-5">
+                <div class="h-100 d-flex flex-column justify-content-center">
+
+                    @if (Model.Es_Personalizable)
+                    {
+                        <div class="mb-2"><span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fa-solid fa-palette me-2"></i> Personalizable</span></div>
+                    }
+
+                    <h1 class="fw-bold text-dark mb-2 fs-2">@Model.Nombre</h1>
+                    <h2 class="text-primary fw-bold mb-4">$@Model.Precio.ToString("N2")</h2>
+                    <p class="text-muted lead fs-6 mb-4">@Model.Descripcion</p>
+
+                    <hr class="opacity-25 my-4" />
+
+                    @if (Model.Es_Personalizable && !Model.Id_Solicitud_Diseno.HasValue)
+                    {
+                        @if (User.Identity!.IsAuthenticated)
+                        {
+                            <div class="d-grid gap-2">
+                                <a href="@Url.Action("Disenador", "Tienda", new { idBase = Model.Id_Producto })" class="btn btn-nautico py-3 rounded-pill fw-bold fs-5 shadow-sm">
+                                    <i class="fa-solid fa-pen-ruler me-2"></i> Personalizar Ahora
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-light border text-center p-4 rounded-4 shadow-sm">
+                                <p class="mb-3 text-muted">Inicia sesión para personalizar este artículo.</p>
+                                <a href="/Login?returnUrl=@Url.Action("Detalle", "Tienda", new { id = Model.Id_Producto })" class="btn btn-dark w-100 rounded-pill fw-bold">Iniciar Sesión</a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="mt-4">
+                            @if (User.Identity!.IsAuthenticated)
+                            {
+                                <form method="post" action="@Url.Action("AgregarCarrito", "Tienda")">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="Id_Producto" value="@Model.Id_Producto" />
+                                    <input type="hidden" name="Precio" value="@Model.Precio.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                                    <input type="hidden" name="Id_Solicitud_Diseno" value="@Model.Id_Solicitud_Diseno" />
+                                    <input type="hidden" name="Es_Personalizable" value="false" />
+
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-muted">Medida / Talla</label>
+                                            <select class="form-select" id="selectTalla" name="TallaSeleccionada" required onchange="actualizarStockVisual()">
+                                                @if (Model.TallasInfo != null && Model.TallasInfo.Count > 0)
+                                                {
+                                                    foreach (var t in Model.TallasInfo)
+                                                    {
+                                                        // LÓGICA VISUAL: Mostramos "M (5 disp)" o "M (Agotado)"
+                                                        string infoExtra = t.Stock > 0 ? $"({t.Stock} disp.)" : "(Agotado)";
+                                                        string clase = t.Stock == 0 ? "text-muted" : "fw-bold";
+                                                        <option value="@t.Nombre" class="@clase">
+                                                            @t.Nombre @infoExtra
+                                                        </option>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <option value="Unitalla">Unitalla</option>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-muted">Cantidad</label>
+                                            <input type="number" id="inputCantidad" class="form-control" name="Cantidad" min="1" value="1" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-2 mb-3">
+                                        <small id="lblStock" class="text-muted fw-bold">
+                                            <i class="fa-solid fa-cubes me-1"></i> Verificando stock...
+                                        </small>
+                                    </div>
+
+                                    <div class="d-grid">
+                                        <button type="submit" id="btnAgregar" class="btn btn-nautico py-3 rounded-pill fw-bold fs-5 shadow-sm">
+                                            <span><i class="fa-solid fa-cart-plus me-2"></i> Agregar al Carrito</span>
+                                        </button>
+                                        <div class="alert alert-light border mt-3 mb-0 small rounded-4">
+                                            <i class="fa-solid fa-box-open me-2 text-primary"></i>
+                                            El método de entrega y los costos de envío (cuando correspondan) serán acordados y confirmados contigo una vez completada tu compra.
+                                        </div>
+                                        <button type="button" id="btnAgotado" class="btn btn-secondary py-3 rounded-pill fw-bold fs-5 shadow-sm" style="display: none;" disabled>
+                                            <i class="fa-solid fa-ban me-2"></i> Agotado en esta talla
+                                        </button>
+                                    </div>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="alert alert-light border text-center p-4 rounded-4 shadow-sm">
+                                    <p class="mb-3 text-muted">Inicia sesión para comprar este artículo.</p>
+                                    <a href="/Login?returnUrl=@Url.Action("Detalle", "Tienda", new { id = Model.Id_Producto })" class="btn btn-dark w-100 rounded-pill fw-bold">Iniciar Sesión</a>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4 mb-3 fade-in">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+            <div class="card-body p-4 p-lg-5">
+                <h3 class="fw-bold text-dark mb-4"><i class="fa-regular fa-comments me-2 text-primary"></i> Preguntas sobre este producto</h3>
+
+                @if (User.Identity!.IsAuthenticated)
+                {
+                    // Si es administrador, NO mostramos la caja para hacer preguntas nuevas.
+                    // El admin solo debe responder a hilos ya creados por clientes.
+                    @if (!bEsAdmin)
+                    {
+                        <form method="post" action="@Url.Action("AgregarPregunta", "Tienda")" class="mb-5 bg-light p-3 rounded-4">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="idProducto" value="@Model.Id_Producto" />
+                            <div class="input-group">
+                                <input type="text" name="mensaje" class="form-control border-0 bg-transparent shadow-none" placeholder="Escribe tu pregunta aquí..." required autocomplete="off">
+                                <button class="btn btn-nautico rounded-pill px-4 fw-bold" type="submit">Preguntar</button>
+                            </div>
+                        </form>
+                    }
+                    else if (Model.Preguntas == null || !Model.Preguntas.Any())
+                    {
+                        // Mensaje amigable exclusivo para admins cuando no hay preguntas en el producto
+                        <div class="alert alert-info border-0 rounded-4 text-center mb-5 shadow-sm">
+                            <i class="fa-solid fa-shop me-2"></i> Eres administrador. Aún no hay preguntas de clientes para responder en este artículo.
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-secondary border-0 rounded-4 text-center mb-5">
+                        <i class="fa-solid fa-lock me-2"></i> Inicia sesión para poder realizar una pregunta.
+                    </div>
+                }
+
+                <div class="lista-preguntas">
+                    @if (Model.Preguntas == null || !Model.Preguntas.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fa-regular fa-face-smile-wink fa-3x mb-3 opacity-25"></i>
+                            <p>¡Nadie ha preguntado aún! Si tienes alguna duda puedes preguntar aquí.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        foreach (var hilo in Model.Preguntas)
+                        {
+                            <div class="hilo-conversacion mb-4">
+                                <div class="d-flex mb-2">
+                                    <div class="me-3 mt-1">
+                                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-baseline">
+                                            <span class="fw-bold text-dark">@hilo.NombreUsuario preguntó...</span>
+                                            <small class="text-muted">@hilo.Fecha.ToString("dd/MMM/yy HH:mm")</small>
+                                        </div>
+                                        <p class="mb-1 text-dark">@hilo.Mensaje</p>
+                                    </div>
+                                </div>
+
+                                @if (hilo.Respuestas.Any())
+                                {
+                                    <div class="respuestas-container ms-5 ps-3 border-start border-2 border-primary border-opacity-25 mt-3">
+                                        @foreach (var resp in hilo.Respuestas)
+                                        {
+                                            <div class="d-flex mb-3">
+                                                <div class="me-3 mt-1">
+                                                    @if (resp.Es_Admin)
+                                                    {
+                                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px;">
+                                                            <i class="fa-solid fa-store"></i>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                                            <i class="fa-solid fa-user"></i>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <div class="d-flex justify-content-between align-items-baseline gap-2">
+                                                        @if (resp.Es_Admin)
+                                                        {
+                                                            <span class="fw-bold text-primary badge bg-light border border-primary px-2 py-1 rounded-pill">
+                                                                <i class="fa-solid fa-star text-warning me-1"></i> Tienda AJP @resp.NombreUsuario
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="fw-bold text-dark">
+                                                                <i class="fa-solid fa-user-tag text-secondary me-1"></i> @resp.NombreUsuario
+                                                            </span>
+                                                        }
+                                                        <small class="text-muted" style="font-size:0.75rem;">@resp.Fecha.ToString("dd/MMM/yy HH:mm")</small>
+                                                    </div>
+                                                    <p class="mb-0 text-muted" style="font-size: 0.95rem;">@resp.Mensaje</p>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                @if (User.Identity!.IsAuthenticated && (hilo.Es_Propia || bEsAdmin))
+                                {
+                                    <div class="ms-5 mt-2">
+                                        <a href="javascript:void(0)" class="text-decoration-none text-primary small fw-bold" onclick="mostrarCajaRespuesta(@hilo.Id_Pregunta)">
+                                            <i class="fa-solid fa-reply"></i> Responder
+                                        </a>
+
+                                        <form id="form-resp-@hilo.Id_Pregunta" method="post" action="@Url.Action("AgregarPregunta", "Tienda")" class="mt-2 d-none">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="idProducto" value="@Model.Id_Producto" />
+                                            <input type="hidden" name="idPreguntaPadre" value="@hilo.Id_Pregunta" />
+                                            <div class="input-group input-group-sm w-75">
+                                                <input type="text" name="mensaje" class="form-control rounded-start-pill" placeholder="Escribe tu respuesta..." required>
+                                                <button class="btn btn-primary rounded-end-pill" type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                }
+                                <hr class="opacity-10 my-4" />
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Convertimos la lista de C# a un objeto JSON usable en JS
+    var infoTallas = @Html.Raw(JsonSerializer.Serialize(Model.TallasInfo));
+    var stockGlobal = @Model.Stock; // Fallback por si es unitalla
+
+    function actualizarStockVisual() {
+        var select = document.getElementById('selectTalla');
+        var inputCant = document.getElementById('inputCantidad');
+        var lblStock = document.getElementById('lblStock');
+        var btnAdd = document.getElementById('btnAgregar');
+        var btnOut = document.getElementById('btnAgotado');
+
+        var tallaSeleccionada = select.value;
+        var stockActual = 0;
+
+        // 1. Buscar Stock Específico
+        if (infoTallas && infoTallas.length > 0) {
+            var tallaObj = infoTallas.find(t => t.Nombre === tallaSeleccionada);
+            if (tallaObj) {
+                stockActual = tallaObj.Stock;
+            }
+        } else {
+            // Caso Unitalla
+            stockActual = stockGlobal;
+        }
+
+        // 2. Actualizar UI
+        inputCant.max = stockActual; // Limitar input
+
+        // Si la cantidad actual es mayor al nuevo stock, bajarla
+        if(parseInt(inputCant.value) > stockActual) inputCant.value = Math.max(1, stockActual);
+        if (stockActual > 0) {
+            // HAY STOCK
+            lblStock.innerHTML = `<span class="text-success"><i class="fa-solid fa-check-circle me-1"></i> Stock disponible: <strong>${stockActual}</strong></span>`;
+            if(btnAdd) btnAdd.style.display = 'block';
+            if(btnOut) btnOut.style.display = 'none';
+            inputCant.disabled = false;
+        } else {
+            // AGOTADO
+            lblStock.innerHTML = `<span class="text-danger"><i class="fa-solid fa-times-circle me-1"></i> Agotado en esta selección</span>`;
+            if(btnAdd) btnAdd.style.display = 'none';
+            if(btnOut) btnOut.style.display = 'block';
+            inputCant.disabled = true;
+            inputCant.value = 0;
+        }
+    }
+
+    // Ejecutar al cargar para validar la selección inicial
+    window.addEventListener('load', function() {
+        actualizarStockVisual();
+    });
+
+    function mostrarCajaRespuesta(idHilo) {
+        var form = document.getElementById('form-resp-' + idHilo);
+        if (form.classList.contains('d-none')) {
+            form.classList.remove('d-none');
+            form.querySelector('input[name="mensaje"]').focus();
+        } else {
+            form.classList.add('d-none');
+        }
+    }
+    function cambiarImagenPrincipal(elementoCliquedo) {
+        // 1. Obtenemos la ruta (src) de la imagen que está DENTRO del cuadrito clickeado
+        let nuevaRuta = elementoCliquedo.querySelector('img').src;
+
+        // 2. Cambiamos la imagen principal activa
+        document.getElementById('imgPrincipalActiva').src = nuevaRuta;
+
+        // 3. Quitamos el borde azul y le damos opacidad a todas las miniaturas
+        let miniaturas = document.querySelectorAll('.miniatura-btn');
+        miniaturas.forEach(min => {
+            min.classList.remove('border-2', 'border-primary');
+            min.classList.add('border-1', 'border-light', 'opacity-75');
+        });
+
+        // 4. Resaltamos la miniatura que acabamos de hacer clic
+        elementoCliquedo.classList.remove('border-1', 'border-light', 'opacity-75');
+        elementoCliquedo.classList.add('border-2', 'border-primary');
+    }
+</script>
+
+<style>
+    /* Estilos existentes... */
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+        transition: 0.3s;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul);
+            color: white;
+            transform: translateY(-2px);
+        }
+</style>

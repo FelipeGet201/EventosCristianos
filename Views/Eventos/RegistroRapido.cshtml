@@ -1,0 +1,298 @@
+﻿@{
+    Layout = "Principal";
+    ViewData["Title"] = "Registro Rápido Interactivo";
+}
+
+<style>
+    /* =========================================
+       1. ESTILOS BASE Y MAPA
+       ========================================= */
+    .mapa-scroll { 
+        overflow-x: auto; 
+        text-align: center;
+        padding-bottom: 15px; 
+        -webkit-overflow-scrolling: touch; 
+        border-radius: 12px;
+        scrollbar-width: thin;
+        scrollbar-color: #f39c12 rgba(0, 0, 0, 0.15);
+    }
+    .mapa-scroll::-webkit-scrollbar { height: 8px; }
+    .mapa-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
+    .mapa-scroll::-webkit-scrollbar-thumb { background-color: #f39c12; border-radius: 10px; }
+    
+    .mapa-wrapper { position: relative; display: inline-block; margin: 0 auto; }
+    .img-mapa { display: block; width: 100%; min-width: 800px; max-width: 1200px; height: auto; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+
+    /* =========================================
+       2. PANEL DE CONTROL RESPONSIVO
+       ========================================= */
+    .stepper-control {
+        background: rgba(0, 43, 54, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    /* Ajuste para pantallas grandes: Todo en una línea */
+    @@media (min-width: 992px) {
+        .stepper-control {
+            max-width: 900px !important;
+            padding: 10px 25px !important;
+        }
+        .control-row {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: b !important;
+            gap: 20px;
+        }
+        .control-divider { display: none; } /* Quitar línea divisoria en desktop */
+        .stepper-group { margin-bottom: 0 !important; width: auto !important; }
+    }
+
+    /* Ajuste para pantallas muy pequeñas: Solo iconos */
+    @@media (max-width: 360px) {
+        .btn-completar span { display: none; }
+        .btn-completar i { margin: 0 !important; font-size: 1.4rem; }
+        .label-stepper { font-size: 0.6rem !important; }
+    }
+
+    .btn-stepper {
+        width: 38px; height: 38px;
+        background: rgba(255,255,255,0.1);
+        color: white; border: none;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-stepper:active { background: #00838f; transform: scale(0.9); }
+
+    /* =========================================
+       3. PINES DEL MAPA
+       ========================================= */
+    .pin {
+        position: absolute; width: 34px; height: 34px; border-radius: 50%;
+        border: 2px solid white; transform: translate(-50%, -50%);
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 13px; transition: all 0.2s; z-index: 10;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+    .pin-disponible { background: linear-gradient(135deg, #27ae60, #1e8449); color: white; }
+    .pin-agotado { background: linear-gradient(135deg, #7f8c8d, #555); color: #ccc; cursor: not-allowed; }
+    .pin-mio { background: linear-gradient(135deg, #f1c40f, #f39c12); color: #002b36; border-color: #002b36; animation: pulseMio 2s infinite; }
+
+    @@keyframes pulseMio { 
+        0% { box-shadow: 0 0 0 0px rgba(243, 156, 18, 0.7); } 
+        70% { box-shadow: 0 0 0 12px rgba(243, 156, 18, 0); }
+        100% { box-shadow: 0 0 0 0px rgba(243, 156, 18, 0); } 
+    }
+
+    .btn-borrar-pin {
+        position: absolute; top: -8px; right: -8px; width: 20px; height: 20px;
+        background: #e74c3c; color: white; border-radius: 50%; font-size: 10px;
+        display: none; align-items: center; justify-content: center; border: 1.5px solid #002b36; 
+    }
+    .pin-mio .btn-borrar-pin { display: flex; }
+
+    .loading-overlay {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 43, 54, 0.7); display: none; align-items: center; justify-content: center;
+        border-radius: inherit; z-index: 100; backdrop-filter: blur(3px);
+    }
+</style>
+
+<div class="container-xl py-3 flex-grow-1 d-flex flex-column position-relative">
+    
+    <div class="text-center mb-3">
+        <h2 class="fw-bold text-white mb-2" style="text-shadow: 0px 2px 4px rgba(0,0,0,0.6);">@ViewBag.Titulo</h2>
+        <div class="small px-3 py-1 rounded-pill bg-info text-dark fw-bold d-inline-flex align-items-center shadow-sm">
+            <i class="fa-solid fa-clock me-2"></i> 
+            <span>Tendrás un corto periodo de tiempo para completar el Registro manualmente.</span>
+        </div>
+    </div>
+
+    <div class="stepper-control rounded-4 p-3 shadow-lg mb-4 mx-auto w-100" style="max-width: 450px;">
+        <div class="loading-overlay rounded-4" id="loader"><div class="spinner-border text-warning"></div></div>
+        
+        <div class="control-row">
+            <div class="stepper-group d-flex flex-column align-items-center mb-3 mb-lg-0">
+                <label class="text-white opacity-75 small fw-bold mb-1 text-uppercase label-stepper" style="font-size: 0.7rem;">Lugares por toque</label>
+                <div class="d-flex align-items-center bg-dark bg-opacity-50 rounded-pill p-1 border border-white border-opacity-10">
+                    <button type="button" class="btn btn-stepper rounded-circle" id="btnMinus"><i class="fa-solid fa-minus"></i></button>
+                    <input type="number" id="cantApartar" class="form-control text-center border-0 bg-transparent text-white fw-bold mx-1 fs-5" value="1" readonly style="width: 50px; box-shadow: none;">
+                    <button type="button" class="btn btn-stepper rounded-circle" id="btnPlus"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+
+            <hr class="control-divider border-secondary opacity-25 my-2">
+
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-grow-1">
+                <div class="d-flex align-items-center px-3 py-2 bg-dark bg-opacity-25 rounded-3 border border-white border-opacity-10">
+                    <div class="text-center">
+                        <span class="d-block text-white opacity-75 fw-bold" style="font-size: 0.6rem;">MÍOS</span>
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-ticket text-warning me-2 small"></i>
+                            <span class="fs-4 fw-bold text-warning lh-1" id="countMios">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="@Url.Action("Registro", new { sid = ViewBag.IdEventoEncriptado })" 
+                   id="btnCompletar" 
+                   class="btn btn-warning rounded-pill py-2 px-4 fw-bold text-dark shadow-sm flex-grow-1 d-flex align-items-center justify-content-center btn-completar disabled" 
+                   style="font-size: 1rem;">
+                    <span>COMPLETAR</span> 
+                    <i class="fa-solid fa-chevron-right ms-2 opacity-75"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center w-100">
+        <div class="mapa-scroll">
+            <div class="mapa-wrapper" id="mapa">
+                <img src="@ViewBag.ImagenUrl" class="img-mapa" alt="Mapa">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalStatus" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-dark border border-secondary shadow-lg rounded-4 text-white">
+            <div class="modal-body text-center p-4">
+                <div id="modalIcon" class="mb-3"></div>
+                <h5 class="fw-bold mb-2" id="modalTitle"></h5>
+                <p class="small opacity-75 mb-4" id="modalText"></p>
+                <button type="button" class="btn btn-warning w-100 rounded-pill fw-bold" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+<script>
+    // 1. DECLARACIÓN DE VARIABLES (Una sola vez)
+    const configMapa = @Html.Raw(ViewBag.MapaJson);
+    const idEvento = @ViewBag.IdEvento;
+    let apartadosServidor = [];
+
+    // 2. CONFIGURAR SIGNALR
+    const conexionSignalR = new signalR.HubConnectionBuilder()
+        .withUrl("/eventosHub")
+        .withAutomaticReconnect()
+        .build();
+
+    // 3. ESCUCHAR EL MENSAJE DEL SERVIDOR
+    conexionSignalR.on("RefrescarMapa", function () {
+        console.log("Notificación recibida: Alguien actualizó los cupos.");
+        actualizarDisponibilidad(true); 
+    });
+
+    // 4. INICIALIZACIÓN AL CARGAR LA PÁGINA
+    document.addEventListener("DOMContentLoaded", async () => {
+        // Inicializar controles de cantidad (Stepper)
+        const inputCant = document.getElementById('cantApartar');
+        document.getElementById('btnMinus').onclick = () => { if(inputCant.value > 1) inputCant.value--; };
+        document.getElementById('btnPlus').onclick = () => { if(inputCant.value < 20) inputCant.value++; };
+
+        // Dibujar el mapa y consultar disponibilidad inicial
+        renderizarPuntosBase();
+        actualizarDisponibilidad(true); 
+        
+        // Arrancar SignalR
+        try {
+            await conexionSignalR.start();
+            console.log("Conectado a SignalR para el mapa.");
+            await conexionSignalR.invoke("UnirseGrupoEvento", idEvento.toString());
+        } catch (err) {
+            console.error("Error al conectar SignalR: ", err);
+        }
+    });
+
+    // 5. FUNCIONES DEL MAPA Y LÓGICA DE APARTADO
+    function renderizarPuntosBase() {
+        const container = document.getElementById('mapa');
+        configMapa.forEach(m => {
+            const div = document.createElement('div');
+            div.id = `pin-${m.id}`;
+            div.className = `pin pin-disponible`;
+            div.style.left = `${m.x}%`; div.style.top = `${m.y}%`;
+            div.innerHTML = `<span>-</span><div class="btn-borrar-pin" onclick="event.stopPropagation(); borrarPreRegistro(${m.id})"><i class="fa-solid fa-xmark"></i></div>`;
+            div.onclick = () => ejecutarApartado(m);
+            container.appendChild(div);
+        });
+    }
+
+    async function ejecutarApartado(modalidad) {
+        if (document.getElementById(`pin-${modalidad.id}`).classList.contains('pin-agotado')) return;
+        showLoader(true);
+        try {
+            const resp = await fetch('/Eventos/ApiReservarLugarRapido', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+                body: JSON.stringify({ idEvento, idSubtipo: modalidad.id, cantidad: parseInt(document.getElementById('cantApartar').value) })
+            });
+            const res = await resp.json();
+            if (res.exito) { actualizarDisponibilidad(); } 
+            else { mostrarMsg("Aviso", res.mensaje, "fa-solid fa-circle-exmark text-danger"); }
+        } catch { 
+            mostrarMsg("Error", "Error de red", "fa-solid fa-wifi text-warning");
+        } finally { 
+            showLoader(false);
+        }
+    }
+
+    async function borrarPreRegistro(idSub) {
+        showLoader(true);
+        try {
+            await fetch(`/Eventos/LimpiarModalidadPendiente?idEvento=${idEvento}&idSubtipo=${idSub}`, { 
+                method: 'POST', 
+                headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value } 
+            });
+            actualizarDisponibilidad();
+        } catch {} finally { showLoader(false); }
+    }
+
+    async function actualizarDisponibilidad(esInicial = false) {
+        if (document.hidden && !esInicial) return;
+        try {
+            const r = await fetch(`/Eventos/GetDisponibilidadMapa?idEvento=${idEvento}`);
+            const data = await r.json();
+            let totalMios = 0;
+            apartadosServidor = data;
+            
+            data.forEach(d => {
+                const p = document.getElementById(`pin-${d.id}`);
+                if (!p) return;
+                if (d.mios > 0) { p.className = "pin pin-mio"; p.querySelector('span').innerText = d.mios; totalMios += d.mios; }
+                else if (d.disp > 0) { p.className = "pin pin-disponible"; p.querySelector('span').innerText = d.disp; }
+                else { p.className = "pin pin-agotado"; p.querySelector('span').innerText = "X"; }
+            });
+            
+            // Actualizamos el contador en texto
+            document.getElementById('countMios').innerText = totalMios;
+            
+            // Control del botón COMPLETAR
+            const btnCompletar = document.getElementById('btnCompletar');
+            if (totalMios > 0) {
+                btnCompletar.classList.remove('disabled');
+            } else {
+                btnCompletar.classList.add('disabled');
+            }
+
+        } catch {}
+    }
+
+    function showLoader(show) { 
+        document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
+    }
+
+    function mostrarMsg(titulo, texto, iconClass) {
+        document.getElementById('modalTitle').innerText = titulo;
+        document.getElementById('modalText').innerText = texto;
+        document.getElementById('modalIcon').innerHTML = `<i class="${iconClass} fa-3x"></i>`;
+        new bootstrap.Modal(document.getElementById('modalStatus')).show();
+    }
+</script>
+@Html.AntiForgeryToken()
+@Html.AntiForgeryToken()

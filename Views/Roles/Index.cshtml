@@ -1,0 +1,147 @@
+﻿@using RedAJP.Globales
+@model List<RedAJP.Models.RolItem>
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Perfiles";
+    bool p_Crear = User.TienePermiso(Parametros.Modulos.Roles, Parametros.Permisos.Crear);
+    bool p_Editar = User.TienePermiso(Parametros.Modulos.Roles, Parametros.Permisos.Editar);
+    bool p_Borrar = User.TienePermiso(Parametros.Modulos.Roles, Parametros.Permisos.Borrar);
+}
+<script>
+    // Este script le dice al Layout "Abuelo" (Principal) que encienda la opción "Tienda" en el menú superior
+    // El Layout "Padre" (_TiendaLayout) ya tiene su propio menú lateral activo
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-roles');
+        }
+    });
+</script>
+
+<div class="fade-in py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold" style="color: var(--header-footer);">
+                <i class="fa-solid fa-id-card-clip me-2 text-warning"></i>Perfiles
+            </h2>
+            <p class="text-muted mb-0 small">Control de acceso y roles</p>
+        </div>
+        @if (p_Crear)
+        {
+            <a href="@Url.Action("Editor", "Roles", new { id = 0 })" class="btn btn-nautico rounded-pill px-4 shadow-sm">
+                <i class="fa-solid fa-plus me-2"></i> Nuevo
+            </a>
+        }
+    </div>
+
+    <div class="row g-4">
+        @foreach (var item in Model)
+        {
+            // Color dinámico según estado
+            string borde = item.Activo ? "border-left: 5px solid var(--acento-dorado);" : "border-left: 5px solid #95a5a6;";
+            string opacidad = item.Activo ? "" : "opacity: 0.75;";
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm card-hover" style="@borde @opacidad border-radius: 12px;">
+                    <div class="card-body position-relative">
+
+                        <div class="position-absolute top-0 end-0 mt-3 me-3 opacity-25">
+                            <i class="fa-solid @item.Icono fa-4x text-secondary"></i>
+                        </div>
+
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-light rounded-circle p-3 me-3 text-center" style="width: 50px; height: 50px;">
+                                <i class="fa-solid @item.Icono fa-lg" style="color: var(--header-footer);"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0">@item.Nombre</h5>
+                                @if (item.Es_Predeterminado)
+                                {
+                                    <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">DEFAULT</span>
+                                }
+                                @if (!item.Activo)
+                                {
+                                    <span class="badge bg-secondary" style="font-size: 0.65rem;">INACTIVO</span>
+                                }
+                            </div>
+                        </div>
+
+                        <p class="text-muted small mb-3 text-truncate-2" style="min-height: 2.5em; line-height: 1.2;">
+                            @item.Descripcion
+                        </p>
+
+                        <div class="mb-3 border-top pt-2">
+                            <span class="small text-muted fw-bold d-block mb-1">Accesos:</span>
+                            @if (item.ModulosAcceso.Count > 0)
+                            {
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach (var mod in item.ModulosAcceso.Take(4))
+                                    {
+                                        <span class="badge bg-primary bg-opacity-10 text-primary fw-normal border border-primary border-opacity-10">@mod</span>
+                                    }
+                                    @if (item.ModulosAcceso.Count > 4)
+                                    {
+                                        <span class="badge bg-light text-muted border">+@(item.ModulosAcceso.Count - 4)</span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="small text-muted fst-italic">Sin permisos asignados</span>
+                            }
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-end mt-2">
+                            <small class="text-muted">
+                                <i class="fa-solid fa-users me-1"></i> @item.UsuariosCount usuarios
+                            </small>
+                            <div>
+                                @if (p_Editar)
+                                {
+                                    <a href="@Url.Action("Editor", "Roles", new { id = item.Id_Rol })" class="btn btn-sm btn-light text-primary border rounded-circle" title="Editar">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                }
+                                @if (p_Borrar && !item.Es_Predeterminado && item.UsuariosCount == 0)
+                                {
+                                    <form method="post" action="@Url.Action("Eliminar", "Roles")" class="d-inline" onsubmit="return confirm('¿Borrar?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id_Rol" />
+                                        <button class="btn btn-sm btn-light text-danger border rounded-circle" title="Eliminar">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+    }
+
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+
+        .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+        }
+
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>

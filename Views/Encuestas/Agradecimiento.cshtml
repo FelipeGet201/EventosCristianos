@@ -1,0 +1,118 @@
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "¡Gracias!";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-encuestas');
+        }
+    });
+</script>
+<div class="container d-flex justify-content-center align-items-center fade-in" style="min-height: 80vh;">
+    <div class="card border-0 shadow-lg rounded-4 p-5 text-center"
+         style="background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 500px;
+        width: 100%;">
+
+        <div class="mb-4">
+            <i class="fa-solid fa-circle-check fa-6x text-success animate__animated animate__bounceIn"></i>
+        </div>
+
+        <h1 class="fw-bold text-dark mb-3">¡Muchas Gracias!</h1>
+
+        <p class="text-muted mb-4 fs-5" style="line-height: 1.6;">
+            Hemos recibido tus respuestas correctamente.<br>
+            Agradecemos tu tiempo y participación.
+        </p>
+
+        @if (ViewBag.Folio != null)
+        {
+            <div class="bg-light border rounded-4 p-4 mb-4 text-center shadow-sm">
+                <h6 class="fw-bold text-secondary text-uppercase mb-2">Tu Folio de Seguimiento</h6>
+                <div class="display-4 fw-bold text-primary font-monospace mb-3 user-select-all" style="letter-spacing: 2px;">
+                    @ViewBag.Folio
+                </div>
+                <p class="small text-muted mb-0">
+                    <i class="fa-regular fa-copy me-1"></i> Por favor guarda o toma captura de este folio para futuras dinámicas.
+                </p>
+                
+                @if (ViewBag.EsAnonima != null && (bool)ViewBag.EsAnonima)
+                {
+                    <div class="alert alert-success border-0 rounded-3 mt-3 mb-0 text-start" style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-shield-halved me-2"></i> <strong>Tu privacidad está a salvo:</strong> Esta encuesta es anónima. El folio generado no contiene tus datos personales y sirve únicamente para que tú puedas reclamar beneficios sin revelar tu identidad.
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="d-grid gap-2 col-md-8 mx-auto">
+            @if (ViewBag.IdEventoRetorno != null)
+            {
+                <a href="@Url.Action("Detalle", "Eventos", new { sid = ViewBag.IdEventoRetorno })" class="btn btn-primary rounded-pill py-3 fw-bold shadow-sm hover-scale transition-fast">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Volver al Evento
+                </a>
+            }
+            else
+            {
+                <a href="/" class="btn btn-primary rounded-pill py-3 fw-bold shadow-sm hover-scale transition-fast">
+                    <i class="fa-solid fa-house me-2"></i> Volver al Inicio
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .transition-fast {
+        transition: all 0.3s ease;
+    }
+
+    .hover-scale:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    // Ejecutar confeti apenas carga la página
+    triggerFinalCelebration();
+    });
+    function triggerFinalCelebration() {
+    var duration = 3000;
+    // 3 segundos de fiesta
+    var end = Date.now() + duration;
+    // Usamos colores de tu tema (Dorado, Coral, Cyan)
+    var colors = ['#ffb74d', '#ff7043', '#00bcd4', '#ffffff'];
+    (function frame() {
+    confetti({
+    particleCount: 5,
+    angle: 60,
+    spread: 55,
+    origin: { x: 0 },
+    colors: colors,
+    zIndex: 10000
+    });
+    confetti({
+    particleCount: 5,
+    angle: 120,
+    spread: 55,
+    origin: { x: 1 },
+    colors: colors,
+    zIndex: 10000
+    });
+
+    if (Date.now() < end) {
+    requestAnimationFrame(frame);
+    }
+    }());
+    }
+</script>

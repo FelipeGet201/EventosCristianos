@@ -1,0 +1,308 @@
+@{
+    ViewData["Title"] = "Escáner QR de Acceso";
+    Layout = "Principal";
+}
+
+<style>
+    #reader {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: none !important;
+        background-color: #f8f9fa;
+        padding-bottom: 10px;
+    }
+    #reader video {
+        object-fit: cover;
+        border-radius: 15px 15px 0 0;
+    }
+    /* Estilizar los botones feos por defecto de html5-qrcode */
+    #reader button {
+        background-color: #0d6efd;
+        color: white;
+        border: none;
+        border-radius: 50rem;
+        padding: 8px 20px;
+        font-weight: bold;
+        margin: 5px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    #reader button:hover {
+        background-color: #0b5ed7;
+        transform: translateY(-1px);
+    }
+    #reader select {
+        padding: 8px 15px;
+        border-radius: 50rem;
+        border: 1px solid #dee2e6;
+        margin: 10px 5px;
+        outline: none;
+        background-color: white;
+        font-weight: 500;
+        color: #495057;
+    }
+    #reader a {
+        color: #0d6efd;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 10px;
+    }
+    .resultado-card {
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(20px);
+        display: none;
+    }
+    .resultado-card.show {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .badge-estado {
+        font-size: 0.85rem;
+        padding: 0.5em 1em;
+    }
+</style>
+
+<div class="container-fluid py-4 fade-in">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-qrcode me-2 text-info"></i>Escáner de Recepción</h2>
+            <p class="text-secondary mb-0 ms-1"><i class="fa-solid fa-calendar-day me-1"></i>@ViewBag.TituloEvento</p>
+        </div>
+        <a href="@Url.Action("PanelControl", "Eventos", new { sid = ViewBag.Sid })" class="btn btn-white rounded-pill shadow-sm border fw-bold px-4 py-2 text-dark">
+            <i class="fa-solid fa-arrow-left me-2"></i>Volver al Panel
+        </a>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- ZONA DE ESCÁNER -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4 text-center">
+                    <h5 class="fw-bold text-dark mb-3">Enfoca el código QR del Recibo</h5>
+                    <div id="reader"></div>
+                    <div class="mt-3">
+                        <button id="btnReiniciar" class="btn btn-light rounded-pill px-4 shadow-sm border fw-bold d-none" onclick="reiniciarEscaner()">
+                            <i class="fa-solid fa-rotate-right me-2"></i>Escanear Otro
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTADOS DEL ESCANEO -->
+        <div class="col-lg-7">
+            <div id="loadingEscaneo" class="card border-0 shadow-sm rounded-4 h-100 d-none">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center text-secondary py-5">
+                    <div class="spinner-grow text-info mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <h5 class="fw-bold">Buscando asistente...</h5>
+                </div>
+            </div>
+
+            <div id="emptyResult" class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center text-secondary py-5 opacity-50">
+                    <i class="fa-solid fa-expand fa-4x mb-3"></i>
+                    <h5 class="fw-bold">Esperando escaneo</h5>
+                    <p class="mb-0">Los datos del asistente aparecerán aquí</p>
+                </div>
+            </div>
+
+            <div id="resultadosContainer">
+                <!-- Aquí se inyectarán las tarjetas de los asistentes leídos -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Html5Qrcode Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        let html5QrcodeScanner;
+        const sid = '@ViewBag.Sid';
+
+        document.addEventListener("DOMContentLoaded", function () {
+            iniciarEscaner();
+        });
+
+        function iniciarEscaner() {
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250}, aspectRatio: 1.0 });
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function reiniciarEscaner() {
+            document.getElementById('resultadosContainer').innerHTML = '';
+            document.getElementById('emptyResult').classList.remove('d-none');
+            document.getElementById('btnReiniciar').classList.add('d-none');
+            html5QrcodeScanner.clear().then(() => {
+                iniciarEscaner();
+            });
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Pausar el escáner al leer
+            html5QrcodeScanner.clear();
+            document.getElementById('btnReiniciar').classList.remove('d-none');
+            document.getElementById('emptyResult').classList.add('d-none');
+            document.getElementById('loadingEscaneo').classList.remove('d-none');
+
+            // Analizar el texto escaneado (URL completa o Token/ID directo)
+            let token = decodedText ? decodedText.trim() : '';
+            let idCuenta = 0;
+
+            try {
+                if (token.startsWith("http://") || token.startsWith("https://")) {
+                    const url = new URL(token);
+                    // Check search query parameters
+                    if (url.searchParams.has("token")) token = url.searchParams.get("token");
+                    if (url.searchParams.has("idCuenta")) idCuenta = parseInt(url.searchParams.get("idCuenta") || '0');
+                    if (url.searchParams.has("idAsistente")) token = url.searchParams.get("idAsistente");
+
+                    // Check path segments if /Recibo/{token}/{idCuenta} or /ReciboGeneral/{token}
+                    const pathParts = url.pathname.split('/').filter(p => p.length > 0);
+                    const idxRecibo = pathParts.findIndex(p => p.toLowerCase() === 'recibo');
+                    if (idxRecibo >= 0 && pathParts.length > idxRecibo + 1) {
+                        token = pathParts[idxRecibo + 1];
+                        if (pathParts.length > idxRecibo + 2) {
+                            idCuenta = parseInt(pathParts[idxRecibo + 2]) || 0;
+                        }
+                    }
+                    const idxReciboGen = pathParts.findIndex(p => p.toLowerCase() === 'recibogeneral');
+                    if (idxReciboGen >= 0 && pathParts.length > idxReciboGen + 1) {
+                        token = pathParts[idxReciboGen + 1];
+                    }
+                }
+            } catch (e) {
+                token = decodedText.trim();
+            }
+
+            // Enviar a servidor
+            fetch('@Url.Action("ConsultarDetalleQRJson", "Eventos")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sid: sid, token: token, idCuenta: idCuenta })
+            })
+            .then(res => res.json())
+            .then(res => {
+                document.getElementById('loadingEscaneo').classList.add('d-none');
+                const container = document.getElementById('resultadosContainer');
+                container.innerHTML = '';
+
+                if (res.success && res.data.length > 0) {
+                    res.data.forEach(item => {
+                        let badgeEstado = '';
+                        const fmtMonto = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(item.montoPendiente || 0);
+                        if (item.estadoPago === 'LIQUIDADO') {
+                            badgeEstado = '<span class="badge bg-success badge-estado rounded-pill px-3 py-2 fs-6"><i class="fa-solid fa-circle-check me-1"></i>LIQUIDADO ($0 Deuda)</span>';
+                        } else if (item.estadoPago === 'ABONADO') {
+                            badgeEstado = `<span class="badge bg-warning text-dark badge-estado rounded-pill px-3 py-2 fs-6"><i class="fa-solid fa-clock me-1"></i>ABONADO (Pendiente ${fmtMonto})</span>`;
+                        } else {
+                            badgeEstado = `<span class="badge bg-danger badge-estado rounded-pill px-3 py-2 fs-6"><i class="fa-solid fa-triangle-exclamation me-1"></i>PENDIENTE DE PAGO (${fmtMonto})</span>`;
+                        }
+
+                        const asisCheck = item.asistencia ? 'checked' : '';
+
+                        const htmlCard = `
+                            <div class="card border-0 shadow-sm rounded-4 mb-3 resultado-card show">
+                                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                                    <h4 class="fw-bold text-dark mb-0">${item.nombre}</h4>
+                                    ${badgeEstado}
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <p class="text-secondary small fw-bold mb-1">Modalidad</p>
+                                            <h6 class="fw-bold text-primary">${item.modalidad}</h6>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="text-secondary small fw-bold mb-1">Extras Comprados</p>
+                                            <p class="mb-0 fw-bold">${item.extras}</p>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <p class="text-secondary small fw-bold mb-1">Respuestas / Cuestionario</p>
+                                            <p class="mb-0 small">${item.preguntas}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr class="text-secondary opacity-25">
+                                    
+                                    <div class="row align-items-center">
+                                        <div class="col-md-7 mb-3 mb-md-0">
+                                            <label class="text-secondary small fw-bold mb-1">Notas del Staff / Alertas</label>
+                                            <div class="input-group shadow-sm rounded">
+                                                <span class="input-group-text bg-light border-0"><i class="fa-solid fa-comment-dots text-secondary"></i></span>
+                                                <input type="text" id="nota_${item.idAsistente}" class="form-control border-0 bg-light" placeholder="Ej. Entregar gafete VIP..." value="${item.notas}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5 d-flex flex-column align-items-end">
+                                            <div class="form-check form-switch form-check-reverse fs-5 mb-2">
+                                                <input class="form-check-input shadow-sm" type="checkbox" role="switch" id="check_${item.idAsistente}" ${asisCheck}>
+                                                <label class="form-check-label fw-bold text-dark me-2" for="check_${item.idAsistente}">Asistencia</label>
+                                            </div>
+                                            <button class="btn btn-dark rounded-pill shadow-sm px-4 fw-bold" onclick="guardarAsistencia(${item.idAsistente})">
+                                                <i class="fa-solid fa-save me-2"></i>Guardar Cambios
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.innerHTML += htmlCard;
+                    });
+                    
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Escaneo Exitoso', showConfirmButton: false, timer: 2000 });
+                } else {
+                    container.innerHTML = `
+                        <div class="card border-0 shadow-sm rounded-4 h-100 resultado-card show">
+                            <div class="card-body d-flex flex-column align-items-center justify-content-center text-danger py-5">
+                                <i class="fa-solid fa-circle-xmark fa-4x mb-3"></i>
+                                <h5 class="fw-bold text-dark">Lectura Inválida</h5>
+                                <p class="text-secondary text-center mb-0">${res.message || 'El código QR no fue reconocido.'}</p>
+                            </div>
+                        </div>`;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('loadingEscaneo').classList.add('d-none');
+                Swal.fire('Error', 'Hubo un error de conexión', 'error');
+            });
+        }
+
+        function onScanFailure(error) {
+            // Ignorar errores de frame vacío
+        }
+
+        function guardarAsistencia(idAsistente) {
+            const asis = document.getElementById(`check_${idAsistente}`).checked;
+            const notas = document.getElementById(`nota_${idAsistente}`).value;
+
+            fetch('@Url.Action("GuardarNotaAsistenciaJson", "Eventos")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idAsistente: idAsistente, asistencia: asis, notas: notas })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Guardado correctamente', showConfirmButton: false, timer: 2000 });
+                } else {
+                    Swal.fire('Atención', res.message, 'warning');
+                }
+            })
+            .catch(err => Swal.fire('Error', 'Error de conexión', 'error'));
+        }
+    </script>
+}

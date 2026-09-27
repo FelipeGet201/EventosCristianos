@@ -1,0 +1,559 @@
+﻿@model RedAJP.Models.TableroRifaPersonalViewModel
+@{
+    Layout = "_LayoutRifasPersonales";
+    ViewData["Title"] = "Panel de la Rifa - Gestión Profesional";
+    ViewBag.IdRifaActiva = Model.InfoRifa.IdRifa;
+    
+    bool estaFinalizada = Model.InfoRifa.Estado == "Finalizada";
+    bool sorteoPendiente = Model.InfoRifa.FechaSorteo > DateTime.Now && !estaFinalizada;
+
+    // Dinero y Costos
+    decimal costoPremio = Model.InfoRifa.InversionPremio;
+    decimal dineroRecibido = Model.Promotores.Sum(p => p.TotalPagado);
+    decimal dineroFaltantePorCobrar = Model.RecaudacionTotal - dineroRecibido;
+
+    // Boletos
+    int boletosAsignados = ViewBag.BoletosAsignados ?? 0;
+    int boletosSinAsignar = ViewBag.BoletosSinAsignar ?? 0;
+    int asignadosNoVendidos = boletosAsignados - Model.BoletosVendidos;
+
+    // Lógica de Clasificación Financiera
+    var listaVendedores = Model.Promotores
+        .OrderByDescending(p => p.Vendidos)
+        .ThenBy(p => p.DeudaTotal) 
+        .ThenBy(p => p.Asignados) 
+        .ToList();
+
+    bool esUrgenciaVenta = sorteoPendiente && (Model.InfoRifa.FechaSorteo - DateTime.Now).TotalDays < 7;
+
+    // Datos para la gráfica del Top 5
+    var top5Vendedores = listaVendedores.Take(5).ToList();
+}
+
+<style>
+    .pastel-card { border-radius: 1rem; border: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03); transition: transform 0.2s ease-in-out; background: #ffffff; }
+    .pastel-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06); }
+    .icon-circle-pastel { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .stat-label { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 1.8rem; font-weight: 900; color: #0f172a; line-height: 1; margin-top: 0.5rem; }
+    
+    .bg-icon-blue { background-color: #e0f2fe; color: #0ea5e9; }
+    .bg-icon-green { background-color: #dcfce7; color: #22c55e; }
+    .bg-icon-orange { background-color: #ffedd5; color: #f97316; }
+    .bg-icon-purple { background-color: #f3e8ff; color: #a855f7; }
+
+    .chart-container { position: relative; height: 250px; width: 100%; }
+    .timer-box { font-size: 2rem; font-weight: 800; color: #a855f7; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+    
+    .table > tbody > tr > td { background-color: transparent !important; border-bottom: 1px solid #f1f5f9; padding-top: 1rem; padding-bottom: 1rem; }
+    .table > thead > tr > th { text-transform: uppercase; font-size: 0.8rem; color: #64748b; font-weight: 800; }
+    
+    .text-oro-dark { color: #0f172a !important; font-weight: 900; }
+    .text-oro-success { color: #065f46 !important; font-weight: 900; }
+    .badge-oro-contrast { background-color: #ffffff !important; color: #0f172a !important; font-weight: 800; border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+    /* ESTILO UNIFORME PARA DEUDAS */
+    .badge-deuda {
+        background-color: #fee2e2 !important; 
+        color: #991b1b !important; 
+        font-weight: 800; 
+        border: 1px solid #fca5a5;
+        font-size: 0.95rem;
+    }
+
+    /* Estilos del Podio (Degradados Suaves) */
+    .bg-gold-soft { background: linear-gradient(135deg, #fffdf0 0%, #fff8d6 100%) !important; }
+    .bg-silver-soft { background: linear-gradient(135deg, #fdfdfd 0%, #f1f5f9 100%) !important; }
+    .bg-bronze-soft { background: linear-gradient(135deg, #fffcf9 0%, #ffedd5 100%) !important; }
+
+    .rank-circle-base {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border-radius: 50%; color: #000000;
+        font-weight: 900; font-size: 1.1rem; flex-shrink: 0;
+        background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+        border: 2px solid #e2e8f0;
+    }
+    
+    .adornment-1 { border-color: #fcd34d; background: linear-gradient(135deg, #fef3c7, #fde68a); box-shadow: 0 0 10px rgba(252,211,77,0.4); } 
+    .adornment-2 { border-color: #cbd5e1; background: linear-gradient(135deg, #f8fafc, #e2e8f0); } 
+    .adornment-3 { border-color: #fdba74; background: linear-gradient(135deg, #ffedd5, #fdba74); } 
+    
+    .rank-default { display: inline-block; width: 38px; text-align: center; color: #64748b; font-weight: 800; font-size: 1.1rem; }
+
+    @@keyframes flash-warning { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    .inventory-danger { color: #dc2626; animation: flash-warning 1s infinite; font-size: 1.3rem; }
+
+    .card-vendedor { border-radius: 12px; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 1rem; background-color: #ffffff; }
+    .deuda-alerta { background-color: rgba(254, 242, 242, 0.5); border: 1px dashed #fca5a5; border-radius: 8px; padding: 0.8rem; text-align: center; }
+    .liquidado-alerta { background-color: rgba(240, 253, 244, 0.9); color: #166534; border-radius: 8px; padding: 0.6rem; font-weight: 800; text-align: center; font-size: 0.95rem; }
+</style>
+
+@if (costoPremio > 0)
+{
+    @if (dineroRecibido >= costoPremio)
+    {
+        <div class="alert alert-success border-0 shadow-sm rounded-4 d-flex align-items-center mb-4 p-3" role="alert">
+            <i class="fa-solid fa-party-horn fa-2x me-3 text-success"></i>
+            <div>
+                <h6 class="alert-heading fw-bold mb-1">¡Felicidades! Meta de Inversión Lograda 🎉</h6>
+                <p class="mb-0 small">El premio costó $@costoPremio.ToString("N0") y ya tienes en caja $@dineroRecibido.ToString("N0"). Tienes una ganancia libre de <strong>$@((dineroRecibido - costoPremio).ToString("N0"))</strong>.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center mb-4 p-3" role="alert">
+            <i class="fa-solid fa-seedling fa-2x me-3 text-warning"></i>
+            <div>
+                <h6 class="alert-heading fw-bold mb-1">Casi logras la meta de inversión</h6>
+                <p class="mb-0 small">El premio costó $@costoPremio.ToString("N0") y tienes $@dineroRecibido.ToString("N0"). Faltan <strong>$@((costoPremio - dineroRecibido).ToString("N0"))</strong> para recuperar la inversión.</p>
+            </div>
+        </div>
+    }
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card pastel-card h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div><div class="stat-label">Meta Boletos</div><div class="stat-value">@Model.InfoRifa.MetaBoletos</div></div>
+                <div class="icon-circle-pastel bg-icon-blue"><i class="fa-solid fa-layer-group"></i></div>
+            </div>
+            <div class="mt-3 small text-muted">A $@Model.InfoRifa.CostoBoleto c/u</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card pastel-card h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div><div class="stat-label">Repartidos</div><div class="stat-value">@boletosAsignados</div></div>
+                <div class="icon-circle-pastel bg-icon-purple"><i class="fa-solid fa-handshake"></i></div>
+            </div>
+            <div class="mt-3 small text-muted">Entregados a vendedores</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card pastel-card h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div><div class="stat-label">Dinero en Caja</div><div class="stat-value text-success fw-bolder">$@dineroRecibido.ToString("N0")</div></div>
+                <div class="icon-circle-pastel bg-icon-green"><i class="fa-solid fa-piggy-bank"></i></div>
+            </div>
+            <div class="mt-3 small text-muted">Dinero real en bolsa</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card pastel-card h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div><div class="stat-label">Falta Cobrar</div><div class="stat-value text-danger fw-bolder">$@dineroFaltantePorCobrar.ToString("N0")</div></div>
+                <div class="icon-circle-pastel bg-icon-orange"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+            </div>
+            <div class="mt-3 small text-muted">De ventas hechas</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card pastel-card h-100 p-4">
+            <h6 class="fw-bold text-dark mb-4"><i class="fa-solid fa-ticket text-muted me-2"></i> Repartición de Boletos</h6>
+            <div class="chart-container"><canvas id="chartReparto"></canvas></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card pastel-card h-100 p-4">
+            <h6 class="fw-bold text-dark mb-4"><i class="fa-solid fa-fire text-danger me-2"></i> Efectividad de Venta</h6>
+            <div class="chart-container"><canvas id="chartVentas"></canvas></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card pastel-card h-100 p-4">
+            <h6 class="fw-bold text-dark mb-4"><i class="fa-solid fa-coins text-warning me-2"></i> Estado de Cobranza</h6>
+            <div class="chart-container">
+                @if(dineroRecibido == 0 && dineroFaltantePorCobrar == 0)
+                {
+                    <div class="d-flex align-items-center justify-content-center h-100 text-muted flex-column">
+                        <i class="fa-solid fa-wallet fa-3x mb-2 opacity-50"></i>
+                        <p class="mb-0">Aún no hay ventas registradas</p>
+                    </div>
+                }
+                else
+                {
+                    <canvas id="chartCobranza"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if(listaVendedores.Any(v => v.Vendidos > 0))
+{
+    <div class="card pastel-card mb-4" style="border: 2px solid #fef08a;">
+        <div class="card-body p-4">
+            <h5 class="fw-bold text-center mb-3"><i class="fa-solid fa-crown text-warning me-2"></i> Top Mejores Vendedores</h5>
+            
+            <div class="text-center mb-4">
+                <div class="d-inline-flex flex-wrap justify-content-center align-items-center bg-light border rounded-pill px-4 py-2 small shadow-sm">
+                    <span class="fw-bold text-dark me-2 mb-1 mb-sm-0">
+                        <i class="fa-solid fa-clipboard-list text-secondary me-1"></i> Criterios (en orden):
+                    </span>
+                    <span class="text-muted fw-semibold d-flex align-items-center flex-wrap justify-content-center">
+                        Mayor Venta <i class="fa-solid fa-angle-right mx-2 opacity-50"></i> 
+                        Menor Deuda <i class="fa-solid fa-angle-right mx-2 opacity-50"></i> 
+                        Eficiencia
+                    </span>
+                </div>
+            </div>
+
+            <div class="chart-container" style="height: 280px;">
+                <canvas id="chartPodio"></canvas>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="card pastel-card mb-4" style="overflow: hidden;">
+    <div class="card-body p-4 pb-1">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-4"><i class="fa-solid fa-ranking-star text-warning me-2"></i> Rendimiento de Vendedores</h5>
+            @if(sorteoPendiente)
+            {
+                <span class="badge rounded-pill bg-light border text-dark fw-bold px-3 py-2">
+                    Faltan @((Model.InfoRifa.FechaSorteo - DateTime.Now).Days) Días
+                </span>
+            }
+        </div>
+    </div>
+
+    <div class="d-block d-lg-none px-3 pb-3">
+        @{ int rankMovil = 1; }
+        @foreach (var promotor in listaVendedores)
+        {
+            string claseFondo = rankMovil switch { 1 => "bg-gold-soft border-warning", 2 => "bg-silver-soft", 3 => "bg-bronze-soft", _ => "bg-white" };
+            string claseCircle = rankMovil <= 3 ? $"rank-circle-base adornment-{rankMovil}" : "rank-default";
+            string colorTexto = rankMovil <= 3 ? "text-oro-dark" : "text-dark";
+            string badgeVenta = rankMovil <= 3 ? "badge-oro-contrast" : "bg-light border text-dark"; 
+            string colorPagado = rankMovil <= 3 ? "text-oro-success" : "text-success fw-bold";
+            
+            <div class="card-vendedor p-3 @claseFondo">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3"><span class="@claseCircle">@rankMovil</span></div>
+                        <h6 class="fw-bold mb-0 @colorTexto" style="font-size: 1.05rem;">@promotor.Nombre</h6>
+                    </div>
+                </div>
+
+                <div class="row text-center mb-3 g-2">
+                    <div class="col-4">
+                        <div class="small fw-bold opacity-75 @colorTexto">Asignados</div>
+                        <div class="fw-bold fs-6 @colorTexto">@promotor.Asignados</div>
+                    </div>
+                    <div class="col-4 border-start border-end" style="border-color: rgba(0,0,0,0.1) !important;">
+                        <div class="small fw-bold opacity-75 @colorTexto">Vendidos</div>
+                        <div class="fw-bold fs-6">
+                            @if(esUrgenciaVenta && promotor.Vendidos == 0 && promotor.Asignados > 0)
+                            {
+                                <i class="fa-solid fa-triangle-exclamation inventory-danger" title="Urgencia"></i>
+                            }
+                            <span class="badge rounded-pill px-3 py-1 @badgeVenta">@promotor.Vendidos</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small fw-bold opacity-75 @colorTexto">Pagado</div>
+                        <div class="fw-bold fs-6 @colorPagado">$@promotor.TotalPagado.ToString("N0")</div>
+                    </div>
+                </div>
+
+                @if(promotor.DeudaTotal > 0)
+                {
+                    // Validación para la cuenta personal "Yo"
+                    string textoDeuda = promotor.Nombre.Trim().Equals("Yo", StringComparison.OrdinalIgnoreCase) ? "Debes" : "Debe";
+                    
+                    <div class="deuda-alerta d-flex flex-column align-items-center justify-content-center">
+                        <span class="text-muted small fw-bold mb-1">@textoDeuda</span>
+                        <span class="badge rounded-pill badge-deuda px-3 py-2 shadow-sm">
+                            <i class="fa-solid fa-circle-exclamation me-1"></i> $@promotor.DeudaTotal.ToString("N0")
+                        </span>
+                    </div>
+                }
+                else if(promotor.Vendidos > 0)
+                {
+                    <div class="liquidado-alerta">
+                        <i class="fa-solid fa-check-double me-1"></i> Cuenta Liquidada
+                    </div>
+                }
+            </div>
+            rankMovil++;
+        }
+    </div>
+
+    <div class="d-none d-lg-block table-responsive" style="margin-bottom: -1px;">
+        <table class="table align-middle mb-0 table-borderless table-striped-white" style="border-collapse: collapse;">
+            <thead>
+                <tr class="table-light">
+                    <th style="width: 5%;" class="text-center py-3">#</th>
+                    <th class="py-3">Vendedor</th>
+                    <th class="text-center py-3">B. Asignados</th>
+                    <th class="text-center py-3">Ya Vendidos</th>
+                    <th class="text-end py-3">Te ha pagado</th>
+                    <th class="text-end py-3 pe-4">Deuda Pendiente</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int rankDesk = 1; }
+                @foreach (var promotor in listaVendedores)
+                {
+                    string claseFondo = rankDesk switch { 1 => "bg-gold-soft", 2 => "bg-silver-soft", 3 => "bg-bronze-soft", _ => "" };
+                    string claseCircle = rankDesk <= 3 ? $"rank-circle-base adornment-{rankDesk}" : "rank-default";
+                    string colorTexto = rankDesk <= 3 ? "text-oro-dark" : "text-dark";
+                    string colorPagado = rankDesk <= 3 ? "text-oro-success" : "text-success fw-bold";
+                    string badgeVenta = rankDesk <= 3 ? "badge-oro-contrast" : "bg-light border text-dark"; 
+                    
+                    <tr class="@claseFondo border-bottom">
+                        <td class="text-center py-3">
+                            <span class="@claseCircle">@rankDesk</span>
+                        </td>
+                        <td class="py-3 @colorTexto fw-bold">@promotor.Nombre</td>
+                        <td class="text-center py-3 @colorTexto">@promotor.Asignados</td>
+                        <td class="text-center py-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                @if(esUrgenciaVenta && promotor.Vendidos == 0 && promotor.Asignados > 0)
+                                {
+                                    <i class="fa-solid fa-triangle-exclamation inventory-danger me-2" title="Urgencia"></i>
+                                }
+                                <span class="badge rounded-pill px-3 py-2 @badgeVenta" style="font-size: 0.95rem;">@promotor.Vendidos</span>
+                            </div>
+                        </td>
+                        <td class="text-end py-3 @colorPagado">$@promotor.TotalPagado.ToString("N2")</td>
+                        <td class="text-end py-3 pe-4">
+                            @if(promotor.DeudaTotal > 0)
+                            {
+                                // Validación para la cuenta personal "Yo"
+                                string textoDeuda = promotor.Nombre.Trim().Equals("Yo", StringComparison.OrdinalIgnoreCase) ? "Debes" : "Debe";
+                                
+                                <span class="badge rounded-pill badge-deuda px-3 py-2 shadow-sm">
+                                    <span class="opacity-75 fw-normal me-1">@textoDeuda</span> $@promotor.DeudaTotal.ToString("N2")
+                                </span>
+                            }
+                            else if (promotor.Vendidos > 0)
+                            {
+                                <span class="@colorPagado"><i class="fa-solid fa-check-double"></i> Liquidado</span>
+                            }
+                            else
+                            {
+                                <span class="opacity-50 @colorTexto">-</span>
+                            }
+                        </td>
+                    </tr>
+                    rankDesk++;
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card pastel-card h-100 p-4 d-flex flex-row align-items-center justify-content-between" style="background: linear-gradient(135deg, #eff6ff 0%, #bae6fd 100%);">
+            <div>
+                <h4 class="fw-bold text-dark mb-1">Punto de Venta</h4>
+                <p class="text-muted small mb-0">Gestiona ventas y datos de clientes.</p>
+            </div>
+            <a href="@Url.Action("PuntoDeVenta", "RifasPersonales", new { token = Model.InfoRifa.Token })" class="btn btn-primary rounded-pill shadow-sm fw-bold px-4">
+                Entrar <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        @if (estaFinalizada)
+        {
+            <div class="card pastel-card h-100 p-4 d-flex flex-row align-items-center justify-content-between bg-light">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">Sorteo Finalizado</h4>
+                    <p class="text-muted small mb-0">La dinámica ya concluyó.</p>
+                </div>
+                <a href="@Url.Action("Resultados", "RifasPersonales", new { token = Model.InfoRifa.Token })" class="btn btn-dark rounded-pill shadow-sm fw-bold px-4">
+                    Resultados <i class="fa-solid fa-trophy ms-1"></i>
+                </a>
+            </div>
+        }
+        else
+        {
+            <div id="panelContadorSorteo" class="card pastel-card h-100 p-4 d-flex flex-row align-items-center justify-content-between" style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);">
+                <div>
+                    <h5 class="fw-bold text-dark mb-1">El sorteo inicia en:</h5>
+                    <div id="countdownTimer" class="timer-box">--:--:--</div>
+                </div>
+                <i class="fa-solid fa-hourglass-half fa-3x opacity-25 text-purple"></i>
+            </div>
+
+            <div id="panelBotonSorteo" class="card pastel-card h-100 p-4 d-none flex-row align-items-center justify-content-between" style="background: linear-gradient(135deg, #fdf4ff 0%, #d8b4fe 100%);">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">Realizar Sorteo</h4>
+                    <p class="text-muted small mb-0">Inicia la tómbola en vivo.</p>
+                </div>
+                <button type="button" data-bs-toggle="modal" data-bs-target="#modalGrabacionSorteo" class="btn btn-dark rounded-pill shadow-sm fw-bold px-4" style="background-color: #581c87; border: none;">
+                    Iniciar <i class="fa-solid fa-play ms-1"></i>
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="modalGrabacionSorteo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4" style="background: linear-gradient(135deg, #eff6ff 0%, #bae6fd 100%);">
+                <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-video text-primary me-2"></i> Grabación del Sorteo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <p class="text-dark mb-3">Para garantizar la máxima transparencia con tus participantes, el sistema intentará <strong>grabar la pantalla</strong> durante el sorteo para generar un video de prueba al finalizar.</p>
+                
+                <div class="alert alert-warning border-warning shadow-sm d-flex align-items-center">
+                    <i class="fa-solid fa-desktop fa-2x text-warning me-3"></i>
+                    <div>
+                        <strong class="d-block mb-1">Recomendación Importante</strong>
+                        Por restricciones de seguridad, <strong>los teléfonos celulares no permiten grabar la pantalla desde el navegador</strong>. Te recomendamos abrir esta página en una <strong>Computadora</strong> para no perder esta función.
+                    </div>
+                </div>
+                <p class="text-muted small mb-0"><i class="fa-solid fa-circle-info me-1"></i> Si decides continuar desde un celular, el sorteo funcionará normalmente (En una versión compacta y sin los efectos completos), pero no se generará ninguna grabación de video.</p>
+            </div>
+            <div class="modal-footer border-0 bg-white p-4">
+                <button type="button" class="btn btn-light rounded-pill fw-bold px-4" data-bs-dismiss="modal">Cancelar</button>
+                <a href="@Url.Action("Sorteo", "RifasPersonales", new { token = Model.InfoRifa.Token })" class="btn btn-primary rounded-pill fw-bold shadow-sm px-4">
+                    Entendido, Continuar <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const moneyTooltip = { callbacks: { label: function(context) { return ' ' + context.label + ': $' + context.raw.toLocaleString(); } } };
+
+            const ctxReparto = document.getElementById('chartReparto').getContext('2d');
+            new Chart(ctxReparto, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Ya Repartidos', 'Libres (Mesa)'],
+                    datasets: [{ data: [@boletosAsignados, @boletosSinAsignar], backgroundColor: ['#2563eb', '#cbd5e1'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
+
+            const ctxVentas = document.getElementById('chartVentas').getContext('2d');
+            new Chart(ctxVentas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Vendidos', 'Faltan Vender'],
+                    datasets: [{ data: [@Model.BoletosVendidos, @asignadosNoVendidos], backgroundColor: ['#7c3aed', '#f87171'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
+
+            @if(dineroRecibido > 0 || dineroFaltantePorCobrar > 0)
+            {
+                <text>
+                const ctxCobranza = document.getElementById('chartCobranza').getContext('2d');
+                new Chart(ctxCobranza, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Ya Pagado', 'Por Cobrar'],
+                        datasets: [{ data: [@dineroRecibido, @dineroFaltantePorCobrar], backgroundColor: ['#16a34a', '#ea580c'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, tooltip: moneyTooltip } }
+                });
+                </text>
+            }
+
+            @if(listaVendedores.Any(v => v.Vendidos > 0))
+            {
+                <text>
+                const podioNombres = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(top5Vendedores.Select(v => v.Nombre)));
+                const podioVentas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(top5Vendedores.Select(v => v.Vendidos)));
+                
+                const barColors = ['#fbbf24', '#94a3b8', '#fb923c', '#93c5fd', '#93c5fd'];
+
+                const ctxPodio = document.getElementById('chartPodio').getContext('2d');
+                new Chart(ctxPodio, {
+                    type: 'bar',
+                    data: {
+                        labels: podioNombres,
+                        datasets: [{
+                            label: 'Boletos Vendidos',
+                            data: podioVentas,
+                            backgroundColor: barColors,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+                </text>
+            }
+
+            @if (!estaFinalizada)
+            {
+                <text>
+                // Forzamos al navegador a usar su propia zona horaria local pasando los números exactos
+                var year = @Model.InfoRifa.FechaSorteo.Year;
+                var month = @(Model.InfoRifa.FechaSorteo.Month - 1); // JS cuenta los meses del 0 al 11
+                var day = @Model.InfoRifa.FechaSorteo.Day;
+                var hour = @Model.InfoRifa.FechaSorteo.Hour;
+                var minute = @Model.InfoRifa.FechaSorteo.Minute;
+                var second = @Model.InfoRifa.FechaSorteo.Second;
+
+                var countDownDate = new Date(year, month, day, hour, minute, second).getTime();
+                var countdownElement = document.getElementById("countdownTimer");
+                var panelContador = document.getElementById("panelContadorSorteo");
+                var panelBoton = document.getElementById("panelBotonSorteo");
+
+                function checkTime() {
+                    var distance = countDownDate - new Date().getTime();
+
+                    // TRUCO PARA RAZOR: Usar "0 >= distance" para evitar el símbolo menor que (<)
+                    if (0 >= distance) {
+                        if(panelContador) panelContador.classList.replace("d-flex", "d-none");
+                        if(panelBoton) panelBoton.classList.replace("d-none", "d-flex");
+                        return true; 
+                    }
+
+                    // Matemáticas del timer
+                    var d = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    var h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    var m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    var s = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    var txt = (d > 0 ? d + "d " : "") + 
+                              h.toString().padStart(2, '0') + ":" + 
+                              m.toString().padStart(2, '0') + ":" + 
+                              s.toString().padStart(2, '0');
+                              
+                    countdownElement.innerHTML = txt;
+                    return false;
+                }
+
+                // Evaluar Inmediatamente y arrancar ciclo
+                if (!checkTime()) {
+                    var timerInterval = setInterval(function() {
+                        if(checkTime()) {
+                            clearInterval(timerInterval);
+                        }
+                    }, 1000);
+                }
+                </text>
+            }
+        });
+    </script>
+}

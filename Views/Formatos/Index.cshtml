@@ -1,0 +1,537 @@
+@using RedAJP.Globales
+@using System.Web
+@using System.Security.Claims
+@model List<RedAJP.Models.FormatoViewModel>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Recursos y Formatos AJP";
+
+    // 1. Variables Globales y de Permisos
+    bool p_Crear = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Crear);
+    bool p_Editar = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Editar);
+    bool p_Borrar = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Borrar);
+
+    bool esModoAdmin = ViewBag.EsEditorModulo ?? false;
+
+    // 2. ID del Usuario Actual
+    int currentUserId = int.Parse(User.FindFirst("IdUsuario")?.Value ?? "0");
+
+    // 3. Separación de listas
+    var listaRecursos = Model?.Where(m => m.Origen == "Recursos").ToList() ?? new List<RedAJP.Models.FormatoViewModel>();
+    var listaFormatos = Model?.Where(m => m.Origen == "Formatos" || m.Origen == "Terminos_Eventos" || m.Origen == "Aviso_Privacidad" || string.IsNullOrEmpty(m.Origen)).ToList() ?? new List<RedAJP.Models.FormatoViewModel>();
+}
+
+<style>
+    /* Tarjetas */
+    .recurso-card {
+        transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 0.75rem;
+        margin-bottom: 0.6rem;
+    }
+    .recurso-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08) !important;
+        border-color: rgba(var(--bs-primary-rgb), 0.3);
+    }
+    .icon-box { width: 42px; height: 42px; border-radius: 0.6rem; }
+    .btn-action { width: 32px; height: 32px; font-size: 0.85rem; }
+    .meta-text { font-size: 0.75rem; }
+    .min-w-0 { min-width: 0; }
+    #previewBody img { max-width: 100%; height: auto; display: block; margin: auto; }
+    
+    /* Buscador */
+    .search-wrapper {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.06); 
+        border: 2px solid transparent;
+        height: 3.5rem; 
+    }
+    .search-wrapper:focus-within {
+        border-color: rgba(var(--bs-primary-rgb), 0.4);
+        box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.12) !important;
+        transform: translateY(-2px);
+    }
+    .search-wrapper input { font-size: 1.05rem; }
+    .search-icon-color { color: var(--bs-primary); opacity: 0.8; }
+
+    /* Mosaicos (Recursos) */
+    .portada-recurso { height: 180px; background-color: #e9ecef; position: relative; }
+    .portada-recurso img { width: 100%; height: 100%; object-fit: cover; }
+    .btn-action-mosaic { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; }
+
+    /* Pestañas (Píldoras) */
+    .modern-tabs {
+        background-color: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(10px);
+        border-radius: 50rem;
+        padding: 0.4rem;
+        display: inline-flex;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        flex-wrap: wrap; /* Asegura que no se rompan en móviles pequeños */
+    }
+    .modern-tabs .nav-link {
+        color: #1e293b !important;
+        border-radius: 50rem;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+    }
+    .modern-tabs .nav-link:hover { background-color: rgba(255, 255, 255, 0.6); }
+    .modern-tabs .nav-link.active {
+        background-color: #ffffff !important;
+        color: var(--bs-primary) !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+    }
+</style>
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-formatos');
+        }
+    });
+
+    // Buscador
+    function filtrarRecursos() {
+        const textoBusqueda = document.getElementById('inputBusqueda').value.toLowerCase();
+        const items = document.querySelectorAll('.recurso-item');
+        let resultadosVisibles = 0;
+
+        items.forEach(item => {
+            const titulo = item.getAttribute('data-titulo').toLowerCase();
+            const desc = item.getAttribute('data-desc').toLowerCase();
+
+            if (titulo.includes(textoBusqueda) || desc.includes(textoBusqueda)) {
+                item.classList.remove('d-none');
+                resultadosVisibles++;
+            } else {
+                item.classList.add('d-none');
+            }
+        });
+
+        const msgVacio = document.getElementById('msgSinResultados');
+        if (resultadosVisibles === 0 && items.length > 0) {
+            msgVacio.classList.remove('d-none');
+        } else {
+            msgVacio.classList.add('d-none');
+        }
+    }
+
+    // Modal Vista Previa
+    function abrirVistaPrevia(titulo, tipoMime, urlDescarga, urlVer) {
+        document.getElementById('previewTitle').innerText = titulo;
+        const previewBody = document.getElementById('previewBody');
+        const downloadBtn = document.getElementById('previewDownloadBtn');
+
+        downloadBtn.href = urlDescarga;
+        previewBody.innerHTML = ''; 
+        previewBody.className = 'modal-body p-0 bg-light';
+
+        if (tipoMime.includes('pdf')) {
+            previewBody.innerHTML = `<iframe src="${urlVer}" width="100%" height="100%" style="border:none; border-radius: 0.5rem;"></iframe>`;
+        } 
+        else if (tipoMime.includes('image')) {
+            previewBody.classList.add('d-flex', 'align-items-center', 'justify-content-center', 'p-3');
+            previewBody.innerHTML = `<img src="${urlVer}" alt="${titulo}" class="shadow-sm rounded img-fluid" style="max-height: 95%;" />`;
+        }
+        else {
+            previewBody.innerHTML = `
+            <div class="d-flex flex-column align-items-center justify-content-center h-100 p-5 bg-white rounded-3">
+                <i class="fa-solid fa-file-arrow-down fa-3x text-muted mb-3 opacity-50"></i>
+                <h6 class="text-secondary fw-bold">Vista previa no disponible</h6>
+                <p class="text-muted text-center small mb-0">La previsualización en línea solo está disponible para PDFs e Imágenes.<br>Por favor, descargue el archivo.</p>
+            </div>`;
+        }
+        
+        var modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        modal.show();
+    }
+
+    // Modal Enlace
+    function abrirModalEnlace(titulo, urlEnlace) {
+        document.getElementById('enlaceTitle').innerText = titulo;
+        document.getElementById('enlaceUrlTexto').innerText = urlEnlace;
+        document.getElementById('btnIrEnlace').href = urlEnlace;
+        
+        const btnCopiar = document.getElementById('btnCopiarEnlace');
+        btnCopiar.innerHTML = '<i class="fa-solid fa-copy me-2"></i> Copiar';
+        btnCopiar.classList.replace('btn-success', 'btn-light');
+
+        var modal = new bootstrap.Modal(document.getElementById('enlaceModal'));
+        modal.show();
+    }
+
+    function copiarEnlace() {
+        const url = document.getElementById('enlaceUrlTexto').innerText;
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('btnCopiarEnlace');
+            btn.innerHTML = '<i class="fa-solid fa-check me-2"></i> ¡Copiado!';
+            btn.classList.replace('btn-light', 'btn-success');
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-copy me-2"></i> Copiar';
+                btn.classList.replace('btn-success', 'btn-light');
+            }, 2000);
+        }).catch(err => {
+            console.error('Error al copiar: ', err);
+        });
+    }
+
+    function confirmarEliminacion(idArchivo, tituloArchivo) {
+        document.getElementById('deleteFileId').value = idArchivo;
+        document.getElementById('deleteFileName').innerText = tituloArchivo;
+        var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
+</script>
+
+<div class="py-4 fade-in">
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12 col-xl-11 mx-auto">
+                
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+                    <div class="flex-grow-1">
+                        <h2 class="fw-bold mb-1 text-dark" style="color: var(--header-footer) !important; font-size: 1.75rem;">
+                            Recursos y Formatos AJP
+                        </h2>
+                        <p class="text-muted mb-0">Documentación, formatos y contenido de interés.</p>
+                    </div>
+
+                    @if (p_Crear) {
+                        <div class="dropdown flex-shrink-0">
+                            <button class="btn btn-primary rounded-pill shadow-sm px-4 fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa-solid fa-plus me-1"></i> Nuevo
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 mt-2 p-2">
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 rounded-3 mb-1" href="@Url.Action("Editor", new { origen = "Recursos" })">
+                                        <i class="fa-solid fa-photo-film text-primary me-2"></i> Nuevo Recurso
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 rounded-3 mb-1" href="@Url.Action("Editor", new { origen = "Formatos" })">
+                                        <i class="fa-solid fa-file-lines text-primary me-2"></i> Nuevo Formato
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 rounded-3 mb-1" href="@Url.Action("Editor", new { origen = "Terminos_Eventos" })">
+                                        <i class="fa-solid fa-scale-balanced text-warning me-2"></i> Términos de Eventos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 rounded-3" href="@Url.Action("Editor", new { origen = "Aviso_Privacidad" })">
+                                        <i class="fa-solid fa-shield-halved text-info me-2"></i> Aviso de Privacidad
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                </div>
+
+                <div class="mb-4">
+                    <div class="input-group bg-white rounded-pill search-wrapper overflow-hidden align-items-center w-100">
+                        <span class="input-group-text bg-transparent border-0 ps-4 pe-2 py-0">
+                            <i class="fa-solid fa-magnifying-glass search-icon-color fs-5"></i>
+                        </span>
+                        <input type="text" id="inputBusqueda" onkeyup="filtrarRecursos()" class="form-control border-0 shadow-none bg-transparent py-2 pe-4 h-100" placeholder="Buscar por título o descripción..." @(Model == null || Model.Count == 0 ? "disabled" : "")>
+                    </div>
+                </div>
+
+                <div class="d-flex mb-4">
+                    <ul class="nav nav-pills modern-tabs gap-1" id="recursosTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="recursos-tab" data-bs-toggle="pill" data-bs-target="#tab-recursos" type="button" role="tab" aria-controls="tab-recursos" aria-selected="true">
+                                <i class="fa-solid fa-photo-film me-2"></i>Recursos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="formatos-tab" data-bs-toggle="pill" data-bs-target="#tab-formatos" type="button" role="tab" aria-controls="tab-formatos" aria-selected="false">
+                                <i class="fa-solid fa-list me-2"></i>Formatos
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tab-content" id="recursosTabsContent">
+
+                    <div class="tab-pane fade show active" id="tab-recursos" role="tabpanel" aria-labelledby="recursos-tab">
+                        @if (listaRecursos.Count == 0)
+                        {
+                            <div class="text-center py-5 bg-white rounded-4 border shadow-sm">
+                                <i class="fa-solid fa-photo-film fa-3x text-muted opacity-25 mb-3"></i>
+                                <h5 class="fw-bold text-muted">No hay recursos visuales disponibles</h5>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row g-4">
+                                @foreach (var archivo in listaRecursos)
+                                {
+                                    string tMime = archivo.TipoMime ?? "";
+                                    string uEnl = HttpUtility.JavaScriptStringEncode(archivo.UrlEnlace ?? "");
+                                    string tituloEnc = HttpUtility.JavaScriptStringEncode(archivo.Titulo);
+                                    string descEnc = HttpUtility.JavaScriptStringEncode(archivo.Descripcion ?? "");
+
+                                    bool esPropietario = archivo.IdUsuarioCarga == currentUserId;
+                                    bool puedeEditarItem = p_Editar || (p_Crear && esPropietario);
+                                    bool puedeBorrarItem = p_Borrar || (p_Borrar && esPropietario);
+
+                                    <div class="col-12 col-md-6 col-lg-4 d-flex recurso-item" data-titulo="@tituloEnc" data-desc="@descEnc">
+                                        <div class="card w-100 border-0 shadow-sm rounded-4 overflow-hidden recurso-card d-flex flex-column">
+                                            
+                                            <div class="portada-recurso flex-shrink-0">
+                                                @if (!string.IsNullOrEmpty(archivo.UrlPortada)) {
+                                                    <img src="@archivo.UrlPortada" alt="@archivo.Titulo">
+                                                } else {
+                                                    <div class="w-100 h-100 d-flex justify-content-center align-items-center bg-secondary text-white opacity-25">
+                                                        <i class="fa-solid fa-image fa-4x"></i>
+                                                    </div>
+                                                }
+                                                <div class="position-absolute top-0 start-0 p-2">
+                                                    @if (archivo.Categoria == "Publico") { 
+                                                        <span class="badge bg-primary bg-opacity-90 shadow-sm px-3 py-2 rounded-pill">Público</span> 
+                                                    } else { 
+                                                        <span class="badge bg-warning text-dark bg-opacity-90 shadow-sm px-3 py-2 rounded-pill" title="Grupo: @archivo.NombreGrupoAcceso"><i class="fa-solid fa-lock me-1"></i>Grupo</span> 
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(archivo.UrlPortada)) {
+                                                    <div class="position-absolute top-50 start-50 translate-middle">
+                                                        <div class="bg-dark bg-opacity-50 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px; backdrop-filter: blur(2px);">
+                                                            <i class="fa-solid fa-play text-white fs-4 ms-1"></i>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            <div class="card-body flex-grow-1 bg-white">
+                                                <h6 class="fw-bold text-dark mb-2">@archivo.Titulo</h6>
+                                                @if(!string.IsNullOrEmpty(archivo.Descripcion)) {
+                                                    <p class="text-muted small mb-0" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">@archivo.Descripcion</p>
+                                                }
+                                            </div>
+
+                                            <div class="card-footer bg-white border-top border-light d-flex justify-content-between align-items-center p-3 pt-2">
+                                                <div class="d-flex gap-2">
+                                                    @if (archivo.EsEnlace) {
+                                                        <a href="javascript:void(0)" onclick="abrirModalEnlace('@tituloEnc', '@uEnl')" class="btn btn-light border rounded-circle btn-action-mosaic shadow-sm text-success" title="Abrir Enlace"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                                                    } else {
+                                                        <a href="javascript:void(0)" onclick="abrirVistaPrevia('@tituloEnc', '@tMime', '@Url.Action("Descargar", new { id = archivo.Id })', '@Url.Action("Ver", new { id = archivo.Id })')" class="btn btn-primary rounded-circle btn-action-mosaic shadow-sm" title="Previsualizar"><i class="fa-solid fa-eye"></i></a>
+                                                        <a href="@Url.Action("Descargar", new { id = archivo.Id })" class="btn btn-light border rounded-circle btn-action-mosaic shadow-sm text-primary" title="Descargar"><i class="fa-solid fa-download"></i></a>
+                                                    }
+                                                </div>
+                                                <div class="d-flex gap-1">
+                                                    @if (puedeEditarItem) {
+                                                        <a href="@Url.Action("Editor", new { id = archivo.Id })" class="btn btn-sm text-secondary" title="Editar"><i class="fa-solid fa-pen"></i></a>
+                                                    }
+                                                    @if (puedeBorrarItem) {
+                                                        <button type="button" onclick="confirmarEliminacion('@archivo.Id', '@tituloEnc')" class="btn btn-sm text-danger" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-formatos" role="tabpanel" aria-labelledby="formatos-tab">
+                        @if (listaFormatos.Count == 0)
+                        {
+                            <div class="text-center py-5 bg-white rounded-4 border shadow-sm">
+                                <i class="fa-solid fa-folder-open fa-3x text-muted opacity-25 mb-3"></i>
+                                <h5 class="fw-bold text-muted">No hay formatos disponibles</h5>
+                                <p class="text-muted small mb-0">Si esperas ver documentos de grupo, asegúrate de estar vinculado a ellos.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mt-2">
+                                @foreach (var archivo in listaFormatos)
+                                {
+                                    string tMime = archivo.TipoMime ?? "";
+                                    string uEnl = HttpUtility.JavaScriptStringEncode(archivo.UrlEnlace ?? "");
+                                    string tituloEnc = HttpUtility.JavaScriptStringEncode(archivo.Titulo);
+                                    string descEnc = HttpUtility.JavaScriptStringEncode(archivo.Descripcion ?? "");
+
+                                    bool esPropietario = archivo.IdUsuarioCarga == currentUserId;
+                                    bool puedeEditarItem = p_Editar || (p_Crear && esPropietario);
+                                    bool puedeBorrarItem = p_Borrar || (p_Borrar && esPropietario);
+
+                                    <div class="recurso-item" data-titulo="@tituloEnc" data-desc="@descEnc">
+                                        <div class="recurso-card bg-white p-3 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                                            
+                                            @if (archivo.EsEnlace)
+                                            {
+                                                <a href="javascript:void(0)" onclick="abrirModalEnlace('@tituloEnc', '@uEnl')" class="d-flex flex-grow-1 align-items-center text-decoration-none min-w-0 w-100">
+                                                    <div class="icon-box bg-light @archivo.ColorClase border shadow-sm flex-shrink-0 d-flex align-items-center justify-content-center me-3">
+                                                        <i class="fa-solid @archivo.IconoClase fs-5"></i>
+                                                    </div>
+                                                    <div class="min-w-0 flex-grow-1">
+                                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                                            <h6 class="mb-0 fw-bold text-dark text-truncate">@archivo.Titulo</h6>
+                                                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill py-0 px-2 flex-shrink-0"><i class="fa-solid fa-link small"></i></span> 
+                                                        </div>
+                                                        @if(!string.IsNullOrEmpty(archivo.Descripcion)) {
+                                                            <div class="text-muted text-truncate small lh-1 mb-1">@archivo.Descripcion</div>
+                                                        }
+                                                        <div class="d-flex flex-wrap gap-3 mt-1">
+                                                            <span class="text-secondary meta-text"><i class="fa-regular fa-calendar me-1"></i> @archivo.Fecha.ToString("dd/MM/yyyy")</span>
+                                                            @if (esModoAdmin) { <span class="text-secondary meta-text"><i class="fa-regular fa-user me-1"></i> @archivo.UsuarioCarga</span> }
+                                                            
+                                                            @if (archivo.Categoria == "Publico") { <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill fw-normal py-0 px-2 meta-text">Público</span> }
+                                                            else { <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle rounded-pill fw-normal py-0 px-2 meta-text" title="Grupo: @archivo.NombreGrupoAcceso"><i class="fa-solid fa-lock me-1"></i> @(String.IsNullOrEmpty(archivo.NombreGrupoAcceso) ? "No asignado" : archivo.NombreGrupoAcceso)</span> }
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a href="javascript:void(0)" onclick="abrirVistaPrevia('@tituloEnc', '@tMime', '@Url.Action("Descargar", new { id = archivo.Id })', '@Url.Action("Ver", new { id = archivo.Id })')" class="d-flex flex-grow-1 align-items-center text-decoration-none min-w-0 w-100">
+                                                    <div class="icon-box bg-light @archivo.ColorClase border shadow-sm flex-shrink-0 d-flex align-items-center justify-content-center me-3">
+                                                        <i class="fa-solid @archivo.IconoClase fs-5"></i>
+                                                    </div>
+                                                    <div class="min-w-0 flex-grow-1">
+                                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                                            <h6 class="mb-0 fw-bold text-dark text-truncate">@archivo.Titulo</h6>
+                                                            @if (archivo.Origen == "Terminos_Eventos")
+                                                            {
+                                                                <span class="badge bg-warning text-dark border border-warning-subtle rounded-pill py-0 px-2 flex-shrink-0" style="font-size: 0.7rem;"><i class="fa-solid fa-scale-balanced me-1"></i>Términos Eventos</span>
+                                                            }
+                                                            else if (archivo.Origen == "Aviso_Privacidad")
+                                                            {
+                                                                <span class="badge bg-info text-dark border border-info-subtle rounded-pill py-0 px-2 flex-shrink-0" style="font-size: 0.7rem;"><i class="fa-solid fa-shield-halved me-1"></i>Aviso Privacidad</span>
+                                                            }
+                                                        </div>
+                                                        @if(!string.IsNullOrEmpty(archivo.Descripcion)) {
+                                                            <div class="text-muted text-truncate small lh-1 mb-1">@archivo.Descripcion</div>
+                                                        }
+                                                        <div class="d-flex flex-wrap gap-3 mt-1">
+                                                            <span class="text-secondary meta-text"><i class="fa-regular fa-calendar me-1"></i> @archivo.Fecha.ToString("dd/MM/yyyy")</span>
+                                                            @if (esModoAdmin) { <span class="text-secondary meta-text"><i class="fa-regular fa-user me-1"></i> @archivo.UsuarioCarga</span> }
+                                                            @if (archivo.Categoria == "Publico") { <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill fw-normal py-0 px-2 meta-text">Público</span> }
+                                                            else { <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle rounded-pill fw-normal py-0 px-2 meta-text" title="Grupo: @archivo.NombreGrupoAcceso"><i class="fa-solid fa-lock me-1"></i> @(String.IsNullOrEmpty(archivo.NombreGrupoAcceso) ? "No asignado" : archivo.NombreGrupoAcceso)</span> }
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            }
+
+                                            <div class="d-flex align-items-center gap-2 ms-md-3 align-self-end align-self-md-center flex-shrink-0">
+                                                @if (puedeEditarItem) 
+                                                { 
+                                                    <a href="@Url.Action("Editor", new { id = archivo.Id })" class="btn btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center btn-action" title="Editar"><i class="fa-solid fa-pen"></i></a> 
+                                                }
+                                                @if (puedeBorrarItem) 
+                                                { 
+                                                    <button type="button" onclick="confirmarEliminacion('@archivo.Id', '@tituloEnc')" class="btn btn-outline-danger rounded-circle d-inline-flex align-items-center justify-content-center btn-action" title="Eliminar"><i class="fa-solid fa-trash"></i></button> 
+                                                }
+                                                
+                                                @if (puedeEditarItem || puedeBorrarItem)
+                                                {
+                                                    <div class="vr ms-1 me-1 d-none d-md-block text-muted"></div>
+                                                }
+
+                                                @if (archivo.EsEnlace) { 
+                                                    <a href="@Url.Action("Descargar", new { id = archivo.Id })" target="_blank" class="btn btn-success rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center btn-action" title="Abrir Enlace"><i class="fa-solid fa-arrow-up-right-from-square"></i></a> 
+                                                }
+                                                else { 
+                                                    <a href="@Url.Action("Descargar", new { id = archivo.Id })" class="btn btn-primary rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center btn-action" title="Descargar"><i class="fa-solid fa-download"></i></a> 
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                </div>
+
+                <div id="msgSinResultados" class="text-center py-5 d-none bg-white rounded-4 border mt-4">
+                    <i class="fa-solid fa-search fa-2x text-muted opacity-25 mb-2"></i>
+                    <h6 class="fw-bold text-muted mb-0">No se encontraron coincidencias</h6>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-light border-bottom-0 p-3">
+                <h6 class="modal-title fw-bold text-dark" id="previewTitle">Vista Previa</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-0 bg-light" id="previewBody" style="height: 70vh; min-height: 350px; overflow: hidden;"></div>
+            <div class="modal-footer border-top-0 bg-light p-3">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cerrar</button>
+                <a id="previewDownloadBtn" href="#" class="btn btn-sm btn-primary rounded-pill shadow-sm px-3">
+                    <i class="fa-solid fa-download me-2"></i> Descargar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="enlaceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom-0 p-3 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4 pt-0 text-center">
+                <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px;">
+                    <i class="fa-solid fa-link fs-4"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-3" id="enlaceTitle">Título del Enlace</h6>
+                <div class="bg-light p-2 rounded-3 text-truncate small text-muted font-monospace border mb-4" id="enlaceUrlTexto">
+                    https://...
+                </div>
+                <div class="d-grid gap-2">
+                    <a id="btnIrEnlace" href="#" target="_blank" class="btn btn-sm btn-primary rounded-pill shadow-sm" onclick="bootstrap.Modal.getInstance(document.getElementById('enlaceModal')).hide();">
+                        <i class="fa-solid fa-arrow-up-right-from-square me-2"></i> Abrir WEB
+                    </a>
+                    <button type="button" id="btnCopiarEnlace" class="btn btn-sm btn-light border rounded-pill" onclick="copiarEnlace()">
+                        <i class="fa-solid fa-copy me-2"></i> Copiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-bottom-0 p-3 pb-0">
+                <h6 class="modal-title fw-bold text-danger">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Eliminar
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-3">
+                <p class="mb-2 small text-muted">¿Deseas eliminar este recurso de forma permanente?</p>
+                <div class="bg-light p-2 rounded-3 border">
+                    <p class="fw-semibold text-dark mb-0 small text-truncate" id="deleteFileName"></p>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 p-3 pt-0">
+                <button type="button" class="btn btn-sm btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" action="@Url.Action("Eliminar")" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteFileId" value="" />
+                    <button type="submit" class="btn btn-sm btn-danger rounded-pill shadow-sm px-3">Sí, Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,91 @@
+﻿/* =========================================
+   SISTEMA DE ANIMACIÓN MARINA
+   ========================================= */
+
+#mar-animado {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(circle at center, #e0f7fa 0%, #80deea 50%, #006064 100%);
+}
+
+/* --- PECES --- */
+.pez {
+    position: absolute;
+    font-size: 1.4rem;
+    will-change: transform, left;
+    transition: color 1s ease, transform 1s ease, opacity 1s ease, filter 1s ease;
+}
+
+.pez-fondo {
+    color: #546e7a;
+    opacity: 0.4;
+    z-index: -5;
+}
+
+.pez-actor {
+    z-index: 10;
+}
+
+.pez-gris-actor {
+    color: #546e7a;
+    opacity: 0.4;
+    filter: none;
+}
+
+.pez-azul-actor {
+    color: var(--pez-azul);
+    transform: scaleX(-1);
+    opacity: 1;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+}
+
+.iluminado {
+    color: var(--luz-divina) !important;
+    filter: drop-shadow(0 0 25px var(--luz-divina)) !important;
+    opacity: 1 !important;
+    transform: scale(1.5);
+    z-index: 100;
+}
+
+.alga {
+    position: absolute;
+    color: var(--alga-verde);
+    opacity: 0.25;
+    z-index: -2;
+}
+
+/* --- KEYFRAMES --- */
+@keyframes flujoAlgas {
+    from {
+        transform: translate(-5vw, 0) rotate(0deg);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 0.3;
+    }
+
+    90% {
+        opacity: 0.3;
+    }
+
+    to {
+        transform: translate(105vw, 10vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes nadarFondo {
+    from {
+        transform: translateX(-10vw);
+    }
+
+    to {
+        transform: translateX(110vw);
+    }
+}

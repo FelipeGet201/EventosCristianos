@@ -1,0 +1,280 @@
+﻿@model RedAJP.Models.GrupoDetalleViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = Model.Nombre;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-grupos');
+        }
+        // Inicializar tooltips de Bootstrap (para el botón bloqueado)
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
+
+<div class="container py-4 fade-in">
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center g-3">
+
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-primary">Grupo</span>
+                        <a href="@Url.Action("Index")" class="btn btn-sm btn-link text-decoration-none p-0 text-muted">
+                            <i class="fa-solid fa-arrow-left"></i> Volver al Catálogo
+                        </a>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <h2 class="fw-bold text-dark mb-0">@Model.Nombre</h2>
+                        @if (ViewBag.PuedeEditar)
+                        {
+                            <button class="btn btn-sm btn-outline-secondary border-0 rounded-circle text-muted hover-scale"
+                                    data-bs-toggle="modal" data-bs-target="#modalEditarGrupo"
+                                    title="Editar nombre y descripción">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        }
+                    </div>
+                    <p class="text-muted mb-0 mt-1">@Model.Descripcion</p>
+                </div>
+
+                <div class="col-md-4 text-md-end d-grid gap-2 d-md-block">
+                    @if (ViewBag.PuedeEditar)
+                    {
+                        <a href="@Url.Action("Importar", new { id = Model.Id_Grupo })" class="btn btn-success rounded-pill fw-bold shadow-sm">
+                            <i class="fa-solid fa-user-plus me-2"></i> Agregar Miembros
+                        </a>
+                    }
+
+                    @if (ViewBag.PuedeBorrar)
+                    {
+                        @if (Model.EsBorrable)
+                        {
+                            <form action="@Url.Action("EliminarGrupo")" method="post" onsubmit="return confirm('¿Estás seguro de borrar este grupo completo? Esta acción no se puede deshacer.');" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id_Grupo" />
+                                <button type="submit" class="btn btn-outline-danger rounded-pill border-0" title="Eliminar Grupo">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-light rounded-pill border text-muted"
+                                    data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                    title="Este grupo está asignado a @Model.EventosAsignados evento(s). Debes desvincularlo de los eventos antes de eliminarlo.">
+                                <i class="fa-solid fa-lock me-1"></i> En Uso (@Model.EventosAsignados)
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="row mt-4 g-2">
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded-3 text-center border">
+                        <div class="h3 fw-bold text-success mb-0">@Model.Miembros.Count(x => x.EstaVinculado)</div>
+                        <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Vinculados</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded-3 text-center border">
+                        <div class="h3 fw-bold text-secondary mb-0">@Model.Miembros.Count(x => !x.EstaVinculado)</div>
+                        <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Pendientes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form action="@Url.Action("EliminarMiembrosMasivo")" method="post" id="formMasivo">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idGrupo" value="@Model.Id_Grupo" />
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom sticky-top" style="z-index: 5;">
+                <div class="row align-items-center g-2">
+                    <div class="col-md-4 d-flex align-items-center gap-3">
+                        <div class="form-check m-0">
+                            <input class="form-check-input shadow-none" type="checkbox" id="chkTodos" onchange="toggleTodos(this)" style="transform: scale(1.1);">
+                            <label class="form-check-label fw-bold text-dark small" for="chkTodos">Seleccionar Todo</label>
+                        </div>
+                        <span class="badge bg-secondary fade-in" id="contadorSeleccion" style="display:none;">0 sel.</span>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </span>
+                            <input type="text" id="txtBuscarMiembro" class="form-control bg-light border-start-0 shadow-none" placeholder="Buscar por nombre o teléfono..." onkeyup="filtrarMiembros()">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 text-end">
+                        <button type="submit" id="btnBorrarMasivo" class="btn btn-sm btn-danger fw-bold rounded-pill shadow-sm fade-in w-100" style="display:none;" onclick="return confirm('¿Estás seguro de eliminar los miembros seleccionados?');">
+                            <i class="fa-solid fa-trash-can me-1"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="list-group list-group-flush">
+                @if (Model.Miembros.Any())
+                {
+                    foreach (var m in Model.Miembros)
+                    {
+                        <div class="list-group-item p-3 list-group-item-action">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <input class="form-check-input chk-miembro" type="checkbox" name="idsSeleccionados" value="@m.Id_Miembro" onchange="actualizarContador()" style="transform: scale(1.2);">
+                                </div>
+
+                                <div class="d-flex align-items-center overflow-hidden flex-grow-1">
+                                    <div class="flex-shrink-0 me-3">
+                                        @if (m.EstaVinculado)
+                                        {
+                                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-light text-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                                <i class="fa-solid fa-user"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        @if (m.EstaVinculado)
+                                        {
+                                            <h6 class="mb-0 fw-bold text-truncate text-dark">@m.NombreSistema</h6>
+                                            <small class="text-muted d-block text-truncate">@m.NombreImportado</small>
+                                        }
+                                        else
+                                        {
+                                            <h6 class="mb-0 fw-bold text-truncate text-dark">@m.NombreImportado</h6>
+                                            <small class="text-warning d-block"><i class="fa-solid fa-circle-exclamation me-1"></i> No vinculado</small>
+                                        }
+                                        <div class="font-monospace text-primary small mt-1">@m.TelefonoOrigen</div>
+                                    </div>
+                                </div>
+
+                                <div class="d-none d-md-block ms-2">
+                                    @if (ViewBag.PuedeBorrar)
+                                    {
+                                        <button type="submit" formaction="@Url.Action("EliminarMiembro")" name="idMiembro" value="@m.Id_Miembro" class="btn btn-sm btn-light text-danger rounded-circle" onclick="return confirm('¿Quitar a este miembro?');" style="width: 35px; height: 35px;">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-users-slash fa-2x text-muted opacity-25 mb-2"></i>
+                        <p class="text-muted small">No hay miembros en este grupo.</p>
+                        @if (ViewBag.PuedeEditar)
+                        {
+                            <a href="@Url.Action("Importar", new { id = Model.Id_Grupo })" class="btn btn-sm btn-outline-primary mt-2 rounded-pill">Comenzar a agregar</a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="modalEditarGrupo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold">Editar Grupo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="@Url.Action("ActualizarGrupo")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id_Grupo" value="@Model.Id_Grupo" />
+
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Nombre del Grupo</label>
+                        <input type="text" name="Nombre" class="form-control form-control-lg" value="@Model.Nombre" required placeholder="Ej. Ventas 2024" />
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Descripción</label>
+                        <textarea name="Descripcion" class="form-control" rows="3" placeholder="Opcional">@Model.Descripcion</textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-top-0">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Seleccionar todos los checkboxes
+    function toggleTodos(source) {
+        var checkboxes = document.querySelectorAll('.chk-miembro');
+        checkboxes.forEach(chk => chk.checked = source.checked);
+        actualizarContador();
+    }
+
+    // Actualizar contador y mostrar/ocultar botón de borrado masivo
+    function actualizarContador() {
+        var checkboxes = document.querySelectorAll('.chk-miembro:checked');
+        var count = checkboxes.length;
+        var badge = document.getElementById('contadorSeleccion');
+        var btn = document.getElementById('btnBorrarMasivo');
+
+        if(count > 0) {
+            badge.textContent = count + ' seleccionados';
+            badge.style.display = 'inline-block';
+            btn.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+            btn.style.display = 'none';
+        }
+    }
+    // Buscador en tiempo real de miembros
+    function filtrarMiembros() {
+        var input = document.getElementById("txtBuscarMiembro");
+        var filtro = input.value.toLowerCase();
+        var lista = document.querySelectorAll(".list-group-item");
+
+        lista.forEach(function(item) {
+            // Ignorar el div del mensaje "No hay miembros" si existe
+            if (item.querySelector('.fa-users-slash')) return;
+
+            // Extrae todo el texto del item (nombre y teléfono)
+            var textoItem = item.textContent || item.innerText;
+
+            // Si el texto incluye lo escrito en el buscador, lo mostramos, si no, lo ocultamos
+            if (textoItem.toLowerCase().indexOf(filtro) > -1) {
+                item.style.setProperty('display', 'block', 'important');
+            } else {
+                item.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        // Desmarcar "Seleccionar Todo" si se hace una búsqueda para evitar borrar ocultos accidentalmente
+        if(filtro.length > 0) {
+            document.getElementById('chkTodos').checked = false;
+        }
+    }
+</script>

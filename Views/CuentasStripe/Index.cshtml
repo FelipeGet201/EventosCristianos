@@ -1,0 +1,338 @@
+﻿@model RedAJP.Models.StripeCuentasViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Auditoría de Cuentas Stripe";
+    
+    // LÓGICA DINÁMICA: Si solo se generó 1 tarjeta y su tipo de uso contiene "&", significa que los módulos la comparten.
+    bool esMismaCuenta = Model.Cuentas.Count == 1 && Model.Cuentas.First().TipoUso.Contains("&");
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion', 'submenu-cuentas-stripe');
+        }
+    });
+</script>
+
+<style>
+    /* =========================================================================
+               DISEÑO 4.1: EJECUTIVO SUAVE (Totales Centrados y Proporcionados)
+               ========================================================================= */
+
+    .animacion-entrada {
+        animation: deslizarArriba 0.5s ease-out forwards;
+    }
+
+    .tarjeta-hibrida {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        margin-bottom: 2.5rem;
+        overflow: hidden;
+        border: 1px solid rgba(0, 51, 78, 0.08);
+    }
+
+    /* --- CABECERA OSCURA --- */
+    .th-cabecera {
+        background-color: #002b36;
+        color: #ffffff;
+        padding: 1.5rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 4px solid var(--acento-dorado, #d4af37);
+    }
+
+    .th-titulo {
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .th-badges {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .badge-solido {
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-uso {
+        background-color: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: #fff;
+    }
+
+    .badge-estado {
+        background-color: #059669;
+        color: #ffffff;
+    }
+
+    /* --- CUERPO CLARO --- */
+    .th-cuerpo {
+        padding: 2.5rem 2rem;
+    }
+
+    .seccion-titulo-pequeno {
+        font-size: 0.8rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        display: block;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 0.5rem;
+    }
+
+    .grid-config {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .dato-grupo {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dato-etiqueta {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .dato-valor {
+        font-size: 1rem;
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    .etiqueta-codigo {
+        background-color: #f8fafc;
+        color: #0f172a;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border: 1px solid #e2e8f0;
+        display: inline-block;
+        margin-top: 4px;
+    }
+
+    /* --- TOTALES PASTEL/SUAVES --- */
+    .contenedor-totales {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .caja-total {
+        flex: 1;
+        border-radius: 12px;
+        padding: 2rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        border: 1px solid transparent;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+        .caja-total:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.06);
+        }
+
+    .total-disponible {
+        background-color: #ecfdf5;
+        border-color: #a7f3d0;
+    }
+
+        .total-disponible .total-etiqueta {
+            color: #065f46;
+        }
+
+        .total-disponible .total-monto {
+            color: #047857;
+        }
+
+    .total-transito {
+        background-color: #fffbeb;
+        border-color: #fde68a;
+    }
+
+        .total-transito .total-etiqueta {
+            color: #92400e;
+        }
+
+        .total-transito .total-monto {
+            color: #b45309;
+        }
+
+    .total-etiqueta {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .total-monto {
+        font-size: clamp(1.8rem, 2.5vw, 2.8rem);
+        font-weight: 900;
+        letter-spacing: -1px;
+        line-height: 1;
+    }
+
+    @@keyframes deslizarArriba {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 991px) {
+        .contenedor-totales {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .th-cabecera {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .th-cuerpo {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<div class="container py-4 animacion-entrada">
+
+    <div class="mb-4">
+        <h1 class="fw-bold text-white mb-1" style="font-size: 2.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+            <i class="fa-brands fa-stripe me-2"></i>Auditoría de Cuentas
+        </h1>
+        <div class="fw-bold" style="color: var(--acento-dorado, #d4af37); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+            @if (esMismaCuenta)
+            {
+                <span><i class="fa-solid fa-link me-1"></i> Cuenta Única Vinculada</span>
+            }
+            else if (Model.Cuentas.Any())
+            {
+                <span><i class="fa-solid fa-layer-group me-1"></i> Múltiples Cuentas Conectadas</span>
+            }
+        </div>
+    </div>
+
+    @foreach (var cuenta in Model.Cuentas)
+    {
+        <div class="tarjeta-hibrida">
+
+            <div class="th-cabecera">
+                <h2 class="th-titulo">
+                    <i class="fa-brands fa-stripe fa-lg" style="color: #ffffff; opacity: 0.9;"></i>
+                    @cuenta.NombreMostrar
+                </h2>
+                <div class="th-badges">
+                    <span class="badge-solido badge-uso">Módulo(s): @cuenta.TipoUso</span>
+                    <span class="badge-solido badge-estado"><i class="fa-solid fa-check me-1"></i>@cuenta.Estado</span>
+                </div>
+            </div>
+
+            <div class="th-cuerpo">
+                <div class="row align-items-center">
+
+                    <div class="col-12 col-lg-5 pe-lg-4 mb-4 mb-lg-0">
+                        <span class="seccion-titulo-pequeno"><i class="fa-solid fa-server me-2"></i>Datos Operativos</span>
+
+                        <div class="grid-config">
+                            <div class="dato-grupo">
+                                <span class="dato-etiqueta">ID de Cuenta</span>
+                                <span class="etiqueta-codigo">@cuenta.IdCuenta</span>
+                            </div>
+
+                            @if (cuenta.FechaCreacion.HasValue)
+                            {
+                                <div class="dato-grupo">
+                                    <span class="dato-etiqueta">Fecha de Alta</span>
+                                    <span class="dato-valor"><i class="fa-regular fa-calendar-check text-muted me-1"></i> @cuenta.FechaCreacion.Value.ToString("dd MMM yyyy")</span>
+                                </div>
+                            }
+
+                            <div class="dato-grupo">
+                                <span class="dato-etiqueta">Frecuencia de Depósito (Payouts)</span>
+                                <span class="dato-valor">
+                                    @if (cuenta.FrecuenciaPayouts.Contains("Manual"))
+                                    {
+                                        <i class="fa-solid fa-hand-pointer text-warning me-1"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa-solid fa-rotate text-success me-1"></i>
+                                    }
+                                    @cuenta.FrecuenciaPayouts
+                                </span>
+                            </div>
+
+                            <div class="dato-grupo">
+                                <span class="dato-etiqueta">Descriptor de Cargo (Estado de cuenta)</span>
+                                <span class="etiqueta-codigo"><i class="fa-solid fa-file-invoice me-1"></i> @cuenta.DescriptorCargo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-7">
+                        <span class="seccion-titulo-pequeno d-none d-lg-block"><i class="fa-solid fa-chart-line me-2"></i>Saldos en Tiempo Real</span>
+
+                        <div class="contenedor-totales">
+
+                            <div class="caja-total total-disponible">
+                                <div class="total-etiqueta">
+                                    <i class="fa-solid fa-money-bill-wave me-1"></i> Disponible (@cuenta.Moneda)
+                                </div>
+                                <div class="total-monto">
+                                    $@cuenta.SaldoDisponible.ToString("N2")
+                                </div>
+                            </div>
+
+                            <div class="caja-total total-transito">
+                                <div class="total-etiqueta">
+                                    <i class="fa-solid fa-hourglass-half me-1"></i> En Tránsito (@cuenta.Moneda)
+                                </div>
+                                <div class="total-monto">
+                                    $@cuenta.SaldoPendiente.ToString("N2")
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    }
+
+</div>

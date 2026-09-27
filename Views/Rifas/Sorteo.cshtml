@@ -1,0 +1,875 @@
+﻿@model List<RedAJP.Models.BoletoItem>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Sorteo en Vivo";
+}
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-rifas');
+        }
+    });
+</script>
+
+<style>
+    /* --- 1. ESTRUCTURA MAESTRA --- */
+    .game-wrapper {
+        position: relative;
+        width: 100%;
+        height: 85vh;
+        overflow: hidden;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255,255,255,0.2);
+        display: flex;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        transition: all 0.3s ease;
+    }
+
+    body.modo-live header, body.modo-live footer, body.modo-live .navbar {
+        display: none !important;
+    }
+
+    body.modo-live main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+
+    body.modo-live .game-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        border: none;
+        z-index: 9999;
+        background: transparent;
+    }
+
+    /* --- 2. CONTROLES --- */
+    .top-controls-layer {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        gap: 12px;
+        z-index: 3000;
+    }
+
+    .btn-glass-control {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        color: white;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.3s;
+        text-decoration: none;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+        .btn-glass-control:hover {
+            background: white;
+            color: #006064;
+            transform: scale(1.1);
+        }
+
+    /* --- 3. PANEL LATERAL --- */
+    .discard-panel {
+        width: 0;
+        background: linear-gradient(180deg, rgba(5, 25, 35, 0.95) 0%, rgba(10, 40, 50, 0.85) 100%);
+        backdrop-filter: blur(15px);
+        border-right: 1px solid rgba(255,255,255,0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        z-index: 100;
+    }
+
+        .discard-panel.visible {
+            width: 320px;
+        }
+
+        .discard-panel.force-hide {
+            width: 0 !important;
+            border: none;
+            padding: 0;
+            transition: width 1s ease-in-out;
+        }
+
+    .panel-header {
+        padding: 30px 20px 20px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        white-space: nowrap;
+    }
+
+    .rifa-title {
+        color: white;
+        font-weight: 300;
+        font-size: 1.2rem;
+        margin-bottom: 8px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(239, 83, 80, 0.2);
+        color: #ef5350;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: 1px solid rgba(239, 83, 80, 0.3);
+    }
+
+    .pulse-dot {
+        width: 6px;
+        height: 6px;
+        background-color: #ef5350;
+        border-radius: 50%;
+        animation: pulseRed 1.5s infinite;
+    }
+
+    .discard-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        scrollbar-width: thin;
+    }
+
+    .discard-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin-bottom: 8px;
+        color: rgba(255,255,255,0.9);
+        display: flex;
+        align-items: center;
+        border-left: 3px solid #ef5350;
+        animation: slideInLeft 0.4s ease;
+    }
+
+    .discard-number {
+        font-weight: 800;
+        color: #ef5350;
+        font-size: 1.1em;
+        margin-right: 15px;
+        min-width: 40px;
+    }
+
+    .discard-name {
+        font-weight: 500;
+        font-size: 0.9em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* --- 4. ESCENARIO CENTRAL --- */
+    .ocean-stage {
+        flex: 1;
+        height: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.5s ease;
+    }
+
+    .bubble-container {
+        width: 450px;
+        height: 450px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.92), rgba(255,255,255,0.1) 70%);
+        border: 2px solid rgba(255,255,255,0.5);
+        box-shadow: inset 0 0 50px rgba(255,255,255,0.6), 0 30px 80px rgba(0,0,0,0.2);
+        position: relative;
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: all 0.3s;
+        max-width: 85%;
+        max-height: 85%;
+        aspect-ratio: 1/1;
+    }
+
+        .bubble-container.winner {
+            border-color: #ffd700;
+            box-shadow: 0 0 100px rgba(255, 215, 0, 0.6), inset 0 0 40px #fff;
+        }
+
+        .bubble-container.eliminated-state {
+            border-color: #ef5350;
+            box-shadow: 0 0 80px rgba(239, 83, 80, 0.4), inset 0 0 40px rgba(255,255,255,0.5);
+        }
+
+        .bubble-container.zoom-explosion {
+            transform: scale(4);
+            opacity: 0;
+            transition: all 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+    .bubble-inner {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+        .bubble-inner.slide-up {
+            transform: translateY(-60px);
+        }
+
+    .status-text {
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        color: #00838f;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        min-height: 25px;
+        transition: color 0.3s;
+    }
+
+    .display-num {
+        font-size: 8rem;
+        font-weight: 800;
+        color: #006064;
+        line-height: 0.9;
+        text-shadow: 3px 3px 0 rgba(255,255,255,0.6);
+        font-variant-numeric: tabular-nums;
+        margin: 10px 0;
+        transition: color 0.3s;
+    }
+
+    .display-name {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #455a64;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        max-width: 85%;
+        text-align: center;
+        line-height: 1.1;
+        min-height: 1.6em;
+        transition: color 0.3s;
+    }
+
+    .btn-continue {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: linear-gradient(135deg, #e53935 0%, #b71c1c 100%);
+        color: white;
+        border: 3px solid rgba(255,255,255,0.8);
+        padding: 14px 40px;
+        border-radius: 50px;
+        font-weight: 800;
+        font-size: 1.2rem;
+        text-transform: uppercase;
+        box-shadow: 0 10px 30px rgba(183, 28, 28, 0.4);
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .btn-continue.show {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .btn-continue:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
+
+    /* --- 5. OVERLAYS Y BOTONES --- */
+    .overlay-screen {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 45, 55, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 800;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #winnerScreen {
+        display: flex !important;
+        background: rgba(0, 60, 70, 0.98);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 1.5s ease;
+        z-index: 5000;
+        pointer-events: none;
+    }
+
+        #winnerScreen.visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+        }
+
+    .card-config {
+        background: white;
+        padding: 40px;
+        border-radius: 30px;
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+    }
+
+    .config-option {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        border: 2px solid #e0f2f1;
+        border-radius: 12px;
+        color: #006064;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .config-option.selected {
+            background: #006064;
+            color: white;
+            border-color: #006064;
+        }
+
+    .tracker-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 30px;
+        background: rgba(255,255,255,0.2);
+        padding: 10px 25px;
+        border-radius: 50px;
+    }
+
+    .dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.4);
+        transition: 0.3s;
+    }
+
+        .dot.active {
+            background: white;
+            transform: scale(1.3);
+            box-shadow: 0 0 10px white;
+        }
+
+        .dot.discard {
+            background: #ef5350;
+            opacity: 0.9;
+        }
+
+        .dot.win {
+            background: #ffd700;
+            transform: scale(1.5);
+            box-shadow: 0 0 20px #ffd700;
+        }
+
+    .btn-main {
+        background: white;
+        color: #006064;
+        border: none;
+        padding: 18px 70px;
+        border-radius: 60px;
+        font-size: 1.5rem;
+        font-weight: 800;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+        .btn-main:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        }
+
+        .btn-main:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .btn-main.golden-state {
+            background: linear-gradient(45deg, #FFD700 0%, #FDB931 50%, #FFD700 100%);
+            background-size: 200% auto;
+            color: #5d4037;
+            border: 4px solid rgba(255,255,255,0.8);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            animation: shine 3s linear infinite, pulseGold 2s infinite ease-in-out;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+    @@keyframes shine {
+        to { background-position: 200% center; }
+    }
+
+    @@keyframes pulseGold {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); box-shadow: 0 0 50px rgba(255, 215, 0, 0.8); }
+        100% { transform: scale(1); }
+    }
+
+    .shake-anim {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @@keyframes shake {
+        10%, 90% { transform: translate3d(-2px, 0, 0); }
+        20%, 80% { transform: translate3d(4px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+        40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    @@keyframes pulseRed {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.8); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    @@keyframes slideInLeft {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+</style>
+
+<div class="game-wrapper" id="gameWrapper">
+
+    <div class="top-controls-layer">
+        <button class="btn-glass-control" onclick="toggleLiveMode()" title="Pantalla Completa">
+            <i class="fa-solid fa-expand" id="iconFullscreen"></i>
+        </button>
+        <a href="@Url.Action("Index")" class="btn-glass-control" title="Salir">
+            <i class="fa-solid fa-xmark"></i>
+        </a>
+    </div>
+
+    <div class="discard-panel" id="discardPanel">
+        <div class="panel-header">
+            <h2 class="rifa-title">@ViewBag.TituloRifa</h2>
+            <div class="live-badge"><span class="pulse-dot"></span> EN VIVO</div>
+        </div>
+        <div style="padding: 15px 20px 5px 20px; color:rgba(255,255,255,0.5); font-weight:700; font-size:0.8rem; letter-spacing:1px;">HISTORIAL</div>
+        <div class="discard-list" id="discardList"></div>
+    </div>
+
+    <div class="ocean-stage">
+        <div class="tracker-row" id="trackerRow"></div>
+
+        <div class="bubble-container" id="mainBubble">
+            <div class="bubble-inner" id="bubbleContent">
+                <div class="status-text" id="statusText">PREPARADO</div>
+                <div class="display-num" id="displayNum">000</div>
+                <div class="display-label" id="displayName">Esperando...</div>
+            </div>
+            <button class="btn-continue" id="btnContinue" onclick="confirmarEliminacion()">
+                <span>CONTINUAR</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <div style="height: 90px;">
+            <button class="btn-main" id="btnSpin" onclick="spinRoulette()">GIRAR TÓMBOLA</button>
+        </div>
+    </div>
+
+    <div class="overlay-screen" id="setupScreen">
+        <div class="card-config fade-in">
+            <h2 class="fw-bold text-dark mb-4">Configuración del Sorteo</h2>
+            <div class="d-flex flex-column gap-2 mb-4">
+                <button class="config-option" onclick="selectMode(1)"><span>⚡ Directo</span> <span class="badge bg-light text-dark">1</span></button>
+                <button class="config-option selected" onclick="selectMode(3)"><span>🎲 Suspenso</span> <span class="badge bg-light text-dark">3</span></button>
+                <button class="config-option" onclick="selectMode(5)"><span>🔥 Emoción</span> <span class="badge bg-light text-dark">5</span></button>
+                <button class="config-option" onclick="selectMode(10)"><span>😱 Extremo</span> <span class="badge bg-light text-dark">10</span></button>
+            </div>
+            <button class="btn btn-dark w-100 rounded-pill py-3 fw-bold shadow" onclick="startGame()">COMENZAR</button>
+        </div>
+    </div>
+
+    <div class="overlay-screen" id="winnerScreen">
+        <div class="text-center text-white fade-in">
+            <p class="text-uppercase ls-2 mb-2 opacity-75">¡FELICIDADES!</p>
+            <h1 class="display-1 fw-bold text-warning mb-2" id="finalNum" style="font-size: 8rem;">000</h1>
+            <h2 class="display-4 fw-light mb-5" id="finalName">Nombre</h2>
+            <div class="d-flex gap-3 justify-content-center">
+                <button onclick="limpiarYPulsarFinalizar()" class="btn btn-light text-dark fw-bold rounded-pill px-5 py-3 shadow">
+                    <i class="fa-solid fa-check-circle me-2"></i> Finalizar y Ver Resultados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @Html.AntiForgeryToken()
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+<script>
+    var mediaRecorder = null;
+    var recordedChunks = [];
+
+    async function iniciarGrabacion(nombreArchivo) {
+        recordedChunks = [];
+        try {
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { displaySurface: "browser" },
+                audio: false
+            });
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            mediaRecorder.ondataavailable = function(e) {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+            mediaRecorder.onstop = function() {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = nombreArchivo ? `Sorteo_${nombreArchivo}.webm` : 'Grabacion_Sorteo.webm';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                stream.getTracks().forEach(track => track.stop());
+            };
+            mediaRecorder.start();
+        } catch(err) {
+            console.warn("Grabación cancelada o denegada: ", err);
+            alert("⚠️ ALERTA DE TRANSPARENCIA: No se otorgaron permisos de grabación de pantalla. El sorteo continuará con normalidad, pero NO se guardará video de evidencia.");
+        }
+    }
+
+    function detenerGrabacion() {
+        if(mediaRecorder && mediaRecorder.state !== "inactive") {
+            setTimeout(() => { mediaRecorder.stop(); }, 3000);
+        }
+    }
+
+    var tokenGlobalAjax = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    var idRifaGlobal = '@ViewBag.IdRifa';
+    var descartesPrevios = @Html.Raw(Json.Serialize(ViewBag.DescartesPrevios ?? new List<RedAJP.Models.BoletoItem>()));
+    
+    // ========================================================================
+    // SOLUCIÓN: POOL EN VIVO HEREDADO DIRECTAMENTE DEL MODELO DE PARTICIPANTES PAGADOS
+    // ========================================================================
+    var poolParticipantes = @Html.Raw(Json.Serialize(Model ?? new List<RedAJP.Models.BoletoItem>()));
+
+    var targetAttempt = 3;
+    var currentAttempt = 1;
+    var isSpinning = false;
+    var spinInterval;
+    var tempEliminado = null;
+    var confettiActive = false;
+    var ganadorFinal = null;
+
+    var statusText = document.getElementById('statusText');
+    var displayNum = document.getElementById('displayNum');
+    var displayName = document.getElementById('displayName');
+    var btnSpin = document.getElementById('btnSpin');
+    var mainBubble = document.getElementById('mainBubble');
+    var bubbleContent = document.getElementById('bubbleContent');
+    var btnContinue = document.getElementById('btnContinue');
+    var trackerRow = document.getElementById('trackerRow');
+
+    document.addEventListener("DOMContentLoaded", function() {
+        let guardadoTarget = localStorage.getItem('targetAttempt_' + idRifaGlobal);
+        if (guardadoTarget) targetAttempt = parseInt(guardadoTarget);
+        
+        let sorteoIniciado = localStorage.getItem('sorteoIniciado_' + idRifaGlobal);
+
+        if(descartesPrevios.length > 0 || sorteoIniciado === 'true') {
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('discardPanel').classList.add('visible');
+            
+            if (!guardadoTarget || targetAttempt <= descartesPrevios.length) {
+                targetAttempt = descartesPrevios.length + 1;
+                localStorage.setItem('targetAttempt_' + idRifaGlobal, targetAttempt);
+            }
+            
+            descartesPrevios.forEach(b => {
+                var div = document.createElement('div');
+                div.className = 'discard-item';
+                div.innerHTML = `<span class="discard-number">#${b.numero.toString().padStart(3,'0')}</span><span class="discard-name">${b.comprador}</span>`;
+                document.getElementById('discardList').prepend(div);
+            });
+            
+            currentAttempt = descartesPrevios.length + 1;
+            trackerRow.innerHTML = '';
+            for(let i=1; i<=targetAttempt; i++) {
+                let d = document.createElement('div');
+                d.className = 'dot';
+                d.id = 'dot-'+i;
+                if(i < currentAttempt) d.classList.add('discard');
+                trackerRow.appendChild(d);
+            }
+            updateState();
+        }
+    });
+
+    function selectMode(n) {
+        if(currentAttempt > 1) {
+            alert('El sorteo ya inició en la base de datos, no puedes alterar las rondas activas.');
+            return;
+        }
+        targetAttempt = n;
+        localStorage.setItem('targetAttempt_' + idRifaGlobal, n);
+        
+        document.querySelectorAll('.config-option').forEach(b => b.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+    }
+
+    function startGame() {
+        localStorage.setItem('sorteoIniciado_' + idRifaGlobal, 'true');
+        document.getElementById('setupScreen').style.display = 'none';
+        document.getElementById('discardPanel').classList.add('visible');
+        iniciarGrabacion('@ViewBag.TituloRifa' || 'Sorteo');
+
+        trackerRow.innerHTML = '';
+        for(let i=1; i<=targetAttempt; i++) {
+            let d = document.createElement('div');
+            d.className = 'dot';
+            d.id = 'dot-'+i;
+            trackerRow.appendChild(d);
+        }
+        updateState();
+    }
+
+    function updateState() {
+        for(let i=1; i<=targetAttempt; i++) {
+            let el = document.getElementById('dot-'+i);
+            if(el) el.classList.remove('active');
+        }
+        if(currentAttempt <= targetAttempt) {
+            let el = document.getElementById('dot-'+currentAttempt);
+            if(el) el.classList.add('active');
+            if(currentAttempt === targetAttempt) {
+                btnSpin.innerText = "¡GIRAR POR EL GANADOR!";
+                btnSpin.className = "btn-main golden-state";
+            } else {
+                btnSpin.innerText = "GIRAR (ELIMINATORIA)";
+                btnSpin.className = "btn-main";
+            }
+        }
+    }
+
+    // ========================================================================
+    // CORRECCIÓN DE LA FUNCIÓN GIRO: SELECCIÓN VISUAL EXCLUSIVA DE NÚMEROS REALES
+    // ========================================================================
+    function spinRoulette() {
+        if(isSpinning) return;
+        isSpinning = true;
+        btnSpin.disabled = true;
+
+        mainBubble.classList.remove('eliminated-state', 'zoom-explosion');
+        bubbleContent.classList.remove('slide-up');
+        btnContinue.classList.remove('show');
+        document.getElementById('discardPanel').classList.remove('force-hide');
+
+        statusText.innerText = "CONECTANDO CON SERVIDOR...";
+        statusText.style.color = "#00838f";
+        displayNum.style.color = "#006064";
+        displayName.style.color = "#455a64";
+
+        // Cambiamos el Math.random() directo por una selección del pool vivo de boletos restantes
+        spinInterval = setInterval(() => {
+            if (poolParticipantes && poolParticipantes.length > 0) {
+                let idxAleatorio = Math.floor(Math.random() * poolParticipantes.length);
+                let boletoVisual = poolParticipantes[idxAleatorio];
+                
+                displayNum.innerText = boletoVisual.numero.toString().padStart(3, '0');
+                displayName.innerText = boletoVisual.comprador || "ANÓNIMO";
+            } else {
+                displayNum.innerText = "000";
+                displayName.innerText = "Mezclando...";
+            }
+        }, 50);
+
+        fetch('@Url.Action("ProcesarTiroSorteo", "Rifas")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                '__RequestVerificationToken': tokenGlobalAjax,
+                'idRifa': idRifaGlobal,
+                'modalidadTotal': targetAttempt
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            setTimeout(() => {
+                clearInterval(spinInterval);
+                if(data.exito) {
+                    procesarResultadoExito(data, data.esGanadorFinal);
+                } else {
+                    if (data.codigoError === "SYNC") {
+                        statusText.innerText = "DESINCRONIZACIÓN EFECTUADA, CORRIGIENDO...";
+                        setTimeout(() => location.reload(), 1200);
+                    } else {
+                        alert('Error del Servidor: ' + data.mensaje);
+                        location.reload();
+                    }
+                }
+            }, 2500);
+        })
+        .catch(error => {
+            clearInterval(spinInterval);
+            alert('Error crítico de red/infraestructura.');
+            location.reload();
+        });
+    }
+
+    function procesarResultadoExito(data, esGanador) {
+        if (!esGanador) {
+            tempEliminado = data;
+            displayNum.innerText = data.numero.toString().padStart(3,'0');
+            displayName.innerText = data.comprador;
+            statusText.innerText = "RESULTADO";
+
+            setTimeout(() => {
+                mainBubble.classList.add('shake-anim');
+                setTimeout(() => {
+                    mainBubble.classList.remove('shake-anim');
+                    mainBubble.classList.add('eliminated-state');
+                               
+                    statusText.innerText = "ELIMINADO";
+                    statusText.style.color = "#ef5350";
+                    displayNum.style.color = "#ef5350";
+                    displayName.style.color = "#c62828";
+                    bubbleContent.classList.add('slide-up');
+                       
+                    setTimeout(() => { btnContinue.classList.add('show'); }, 200);
+                }, 500);
+            }, 200);
+        } else {
+            ganadorFinal = data;
+            displayNum.innerText = data.numero.toString().padStart(3,'0');
+            displayName.innerText = data.comprador;
+            statusText.innerText = "¡GANADOR!";
+            statusText.style.color = "#ffd700";
+
+            var dot = document.getElementById('dot-'+currentAttempt);
+            if(dot){ dot.classList.remove('active'); dot.classList.add('win'); }
+            mainBubble.classList.add('winner');
+
+            startInfiniteConfetti();
+            setTimeout(() => {
+                document.getElementById('discardPanel').classList.add('force-hide');
+                mainBubble.classList.add('zoom-explosion');
+                document.getElementById('finalNum').innerText = data.numero.toString().padStart(3,'0');
+                document.getElementById('finalName').innerText = data.comprador;
+
+                setTimeout(() => {
+                    document.getElementById('winnerScreen').classList.add('visible');
+                    detenerGrabacion();
+                }, 800);
+            }, 1000);
+        }
+    }
+
+    // ========================================================================
+    // CORRECCIÓN DE ELIMINACIÓN: REMOVER FÍSICAMENTE EL BOLETO DE LA MEMORIA CLIENTE
+    // ========================================================================
+    function confirmarEliminacion() {
+        mainBubble.classList.remove('eliminated-state');
+        btnContinue.classList.remove('show');
+        bubbleContent.classList.remove('slide-up');
+
+        statusText.innerText = "LISTO";
+        statusText.style.color = "#00838f";
+        displayNum.innerText = "000";
+        displayNum.style.color = "#006064";
+        displayName.innerText = "Siguiente...";
+        displayName.style.color = "#455a64";
+
+        var div = document.createElement('div');
+        div.className = 'discard-item';
+        div.innerHTML = `<span class="discard-number">#${tempEliminado.numero.toString().padStart(3,'0')}</span><span class="discard-name">${tempEliminado.comprador}</span>`;
+        document.getElementById('discardList').prepend(div);
+
+        var dot = document.getElementById('dot-'+currentAttempt);
+        if(dot){ dot.classList.remove('active'); dot.classList.add('discard'); }
+
+        // Filtramos el pool local para extirpar el número que el servidor acaba de eliminar
+        if (tempEliminado) {
+            poolParticipantes = poolParticipantes.filter(p => p.numero !== tempEliminado.numero);
+        }
+
+        currentAttempt++;
+        updateState();
+        isSpinning = false;
+        btnSpin.disabled = false;
+    }
+
+    function limpiarYPulsarFinalizar() {
+        localStorage.removeItem('targetAttempt_' + idRifaGlobal);
+        localStorage.removeItem('sorteoIniciado_' + idRifaGlobal);
+        location.href = '@Url.Action("Resultados", "Rifas", new { id = ViewBag.IdRifa })';
+    }
+
+    function startInfiniteConfetti() {
+        confettiActive = true;
+        (function frame() {
+            if (!confettiActive) return;
+            var sidebar = document.getElementById('discardPanel');
+            var sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+            var startX = sidebarWidth / window.innerWidth;
+
+            confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: startX, y: 0.6 }, colors: ['#ffffff', '#ffd700', '#00e5ff'], zIndex: 10001 });
+            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors: ['#ffffff', '#ffd700', '#00e5ff'], zIndex: 10001 });
+            requestAnimationFrame(frame);
+        }());
+    }
+
+    function toggleLiveMode() {
+        var body = document.body;
+        var activado = body.classList.toggle('modo-live');
+        var elem = document.documentElement;
+        var icon = document.getElementById('iconFullscreen');
+        if (activado) {
+            if (elem.requestFullscreen) elem.requestFullscreen();
+            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+            icon.classList.remove('fa-expand'); icon.classList.add('fa-compress');
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            icon.classList.remove('fa-compress'); icon.classList.add('fa-expand');
+        }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            document.body.classList.remove('modo-live');
+            document.getElementById('iconFullscreen').classList.remove('fa-compress');
+            document.getElementById('iconFullscreen').classList.add('fa-expand');
+        }
+    });
+</script>

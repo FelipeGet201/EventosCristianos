@@ -1,0 +1,736 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+@{
+    Layout = "~/Views/Shared/LayoutPaginasWEB.cshtml";
+    string nombreReal = string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "" : Model.NombreIglesia;
+    ViewData["Title"] = nombreReal;
+    string heroBg = Model.Galeria != null && Model.Galeria.Any() && !string.IsNullOrWhiteSpace(Model.Galeria.First().UrlImagen)
+                    ? Model.Galeria.First().UrlImagen
+                    : "";
+
+    bool hasEventos = Model.Eventos != null && Model.Eventos.Any();
+    bool hasAvisos = Model.Avisos != null && Model.Avisos.Any();
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --dark-bg: #09090b;
+        --dark-surface: #18181b;
+        --dark-surface-hover: #27272a;
+        --dark-border: rgba(255, 255, 255, 0.1);
+        --dark-text: #f4f4f5;
+        --dark-muted: #a1a1aa;
+        --neon-primary: #8b5cf6;
+        --neon-secondary: #06b6d4;
+        --gradient-text: linear-gradient(135deg, var(--neon-secondary) 0%, var(--neon-primary) 100%);
+        --font-head: 'Outfit', sans-serif;
+        --font-body: 'Space Grotesk', sans-serif;
+    }
+
+    body {
+        background-color: var(--dark-bg);
+        color: var(--dark-text);
+        font-family: var(--font-body);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-head);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--dark-text);
+        margin-bottom: 0;
+    }
+
+    /* Utilitarios */
+    .text-gradient {
+        background: var(--gradient-text);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: inline-block;
+    }
+
+    .text-muted-dark {
+        color: var(--dark-muted);
+    }
+
+    /* Nav Glassmorphism */
+    .dark-nav {
+        background: rgba(9, 9, 11, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--dark-border);
+        padding: 1.2rem 0;
+    }
+
+    .dark-nav-brand {
+        font-family: var(--font-head);
+        font-weight: 900;
+        font-size: 1.5rem;
+        color: var(--dark-text);
+        text-decoration: none;
+        letter-spacing: -0.5px;
+    }
+
+    .dark-nav-link {
+        color: var(--dark-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+        margin-left: 2rem;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+
+        .dark-nav-link:hover {
+            color: var(--dark-text);
+        }
+
+    /* Botones Neón */
+    .btn-neon {
+        background: var(--gradient-text);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-family: var(--font-head);
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+            color: white;
+        }
+
+    .btn-dark-outline {
+        background: rgba(255,255,255,0.05);
+        color: var(--dark-text);
+        border: 1px solid var(--dark-border);
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-family: var(--font-head);
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+        .btn-dark-outline:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--dark-text);
+        }
+
+    /* Hero Dinámico */
+    .hero-dark {
+        position: relative;
+        padding: 150px 0 100px;
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .hero-bg-img {
+        position: absolute;
+        inset: 0;
+        background: url('@Html.Raw(heroBg)') center/cover;
+        opacity: 0.3;
+        z-index: 0;
+        filter: saturate(0) contrast(1.2);
+    }
+
+    .hero-gradient-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, transparent 0%, var(--dark-bg) 100%), radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.2) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(4px);
+        border: 1px solid var(--dark-border);
+        padding: 6px 16px;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+    }
+
+    /* Secciones Generales */
+    .dark-section {
+        padding: 6rem 0;
+    }
+
+    .section-tag {
+        font-family: var(--font-body);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--neon-secondary);
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    /* Tarjetas Glass/Dark */
+    .glass-card {
+        background: var(--dark-surface);
+        border: 1px solid var(--dark-border);
+        border-radius: 20px;
+        padding: 2rem;
+        height: 100%;
+        transition: transform 0.3s, border-color 0.3s;
+    }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+    /* Tarjetas de Eventos */
+    .event-card {
+        background: var(--dark-surface);
+        border: 1px solid var(--dark-border);
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s;
+    }
+
+        .event-card:hover {
+            border-color: var(--neon-secondary);
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.1);
+        }
+
+    .event-img-wrapper {
+        position: relative;
+        height: 220px;
+        background: #000;
+    }
+
+        .event-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+        }
+
+    .event-date {
+        position: absolute;
+        bottom: -20px;
+        right: 20px;
+        background: var(--gradient-text);
+        color: white;
+        font-family: var(--font-head);
+        font-weight: 900;
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-align: center;
+        line-height: 1.1;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    /* ========================================================== */
+    /* PUNTOS DOCTRINALES ADAPTADOS AL DARK MODE                  */
+    /* ========================================================== */
+    .doctrina-wrapper {
+        background: transparent;
+        border: 1px solid var(--dark-border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+        .doctrina-wrapper .doctrina-header {
+            display: none;
+        }
+
+        .doctrina-wrapper .accordion {
+            border-radius: 0;
+            box-shadow: none !important;
+        }
+
+        .doctrina-wrapper .doctrina-item {
+            background: transparent;
+            border: none !important;
+            border-bottom: 1px solid var(--dark-border) !important;
+        }
+
+        .doctrina-wrapper .doctrina-btn {
+            background: var(--dark-surface);
+            color: var(--dark-text) !important;
+            padding: 1.5rem;
+            font-family: var(--font-head);
+        }
+
+            .doctrina-wrapper .doctrina-btn:not(.collapsed) {
+                background: rgba(139, 92, 246, 0.1);
+                color: white !important;
+                box-shadow: inset 0 -1px 0 var(--dark-border);
+            }
+
+        .doctrina-wrapper .doctrina-num {
+            color: var(--neon-secondary) !important;
+            font-weight: 900;
+        }
+
+        .doctrina-wrapper .doctrina-body {
+            background: var(--dark-surface);
+            padding: 1.5rem;
+        }
+
+        .doctrina-wrapper .text-dark {
+            color: var(--dark-text) !important;
+        }
+
+        .doctrina-wrapper .text-secondary {
+            color: var(--dark-muted) !important;
+        }
+
+        .doctrina-wrapper .doctrina-title {
+            color: var(--dark-text) !important;
+        }
+
+        .doctrina-wrapper .accordion-button::after {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+    /* Galería Hover Effects */
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .gallery-item {
+        border-radius: 16px;
+        overflow: hidden;
+        aspect-ratio: 1/1;
+        position: relative;
+        border: 1px solid var(--dark-border);
+    }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+    .gallery-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, var(--dark-bg) 0%, transparent 60%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        display: flex;
+        align-items: flex-end;
+        padding: 1.5rem;
+    }
+
+    .gallery-item:hover .gallery-overlay {
+        opacity: 1;
+    }
+
+    .dark-map {
+        filter: invert(90%) hue-rotate(180deg) grayscale(20%) contrast(110%);
+        border-radius: 16px;
+    }
+</style>
+
+<nav class="dark-nav sticky-top">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a href="#" class="dark-nav-brand">@nombreReal</a>
+        <div class="d-none d-lg-flex align-items-center">
+            @if (hasEventos || hasAvisos)
+            {
+                <a href="#actividad" class="dark-nav-link">Actividad</a>
+            }
+            @if (Model.Multimedia != null && Model.Multimedia.Any())
+            {
+                <a href="#multimedia" class="dark-nav-link">Multimedia</a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Historia))
+            {
+                <a href="#nosotros" class="dark-nav-link">Nosotros</a>
+            }
+            <a href="#contacto" class="dark-nav-link">Contacto</a>
+        </div>
+        <button class="btn btn-outline-light d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileNav">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
+</nav>
+
+<div class="collapse bg-black d-lg-none border-bottom" id="mobileNav" style="border-color: var(--dark-border) !important;">
+    <div class="container py-3 d-flex flex-column gap-3 text-center">
+        @if (hasEventos || hasAvisos)
+        {
+            <a href="#actividad" class="text-white text-decoration-none fw-bold text-uppercase">Actividad</a>
+        }
+        @if (Model.Multimedia != null && Model.Multimedia.Any())
+        {
+            <a href="#multimedia" class="text-white text-decoration-none fw-bold text-uppercase">Multimedia</a>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Historia))
+        {
+            <a href="#nosotros" class="text-white text-decoration-none fw-bold text-uppercase">Nosotros</a>
+        }
+        <a href="#contacto" class="text-white text-decoration-none fw-bold text-uppercase">Contacto</a>
+    </div>
+</div>
+
+<main>
+    <header class="hero-dark fade-in-up">
+        <div class="hero-bg-img"></div>
+        <div class="hero-gradient-overlay"></div>
+        <div class="container hero-content text-center">
+            @if (!string.IsNullOrWhiteSpace(Model.Municipio))
+            {
+                <div class="hero-badge">
+                    <i class="fa-solid fa-location-crosshairs text-info me-2"></i> @Model.Municipio
+                </div>
+            }
+            <h1 class="mb-4" style="font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1;">Bienvenidos a<br><span class="text-gradient">@nombreReal</span></h1>
+
+            <div class="d-flex justify-content-center gap-3 flex-wrap mt-5">
+                @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+                {
+                    <a href="https://wa.me/52@(Model.Whatsapp)" class="btn-neon"><i class="fa-brands fa-whatsapp me-2 fs-5"></i> Contáctanos</a>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Horarios))
+                {
+                    <a href="#contacto" class="btn-dark-outline">Ver Horarios</a>
+                }
+            </div>
+        </div>
+    </header>
+
+    @if (hasEventos || hasAvisos)
+    {
+        <section id="actividad" class="dark-section border-top" style="border-color: var(--dark-border) !important;">
+            <div class="container">
+                <div class="row g-5">
+
+                    @if (hasAvisos)
+                    {
+                        <div class="@(hasEventos ? "col-lg-4" : "col-lg-8 mx-auto")">
+                            <span class="section-tag">Importante</span>
+                            <h2 class="mb-5 fs-1">Avisos</h2>
+                            <div class="d-flex flex-column gap-3">
+                                @foreach (var aviso in Model.Avisos)
+                                {
+                                    <div class="glass-card p-4 position-relative overflow-hidden">
+                                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), transparent); pointer-events: none;"></div>
+                                        @if (!string.IsNullOrWhiteSpace(aviso.Titulo))
+                                        {
+                                            <h5 class="mb-2 text-white position-relative">@aviso.Titulo</h5>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(aviso.Descripcion))
+                                        {
+                                            <p class="text-muted-dark small mb-3 position-relative theme-strict-text">@Html.Raw(aviso.Descripcion.Replace("\n", "<br>").Replace("\r\n", "<br>"))</p>
+                                        }
+                                        @if (aviso.FechaExpiracion != default)
+                                        {
+                                            <div class="pt-2 border-top position-relative" style="border-color: rgba(255,255,255,0.05) !important; font-size: 0.75rem;">
+                                                <span class="text-info">Expira: @aviso.FechaExpiracion.ToString("dd/MM/yyyy")</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (hasEventos)
+                    {
+                        <div class="@(hasAvisos ? "col-lg-8" : "col-lg-10 mx-auto")">
+                            <span class="section-tag">Agenda</span>
+                            <h2 class="mb-5 fs-1">Próximos Eventos</h2>
+                            <div class="row g-4">
+                                @foreach (var ev in Model.Eventos)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="event-card h-100">
+                                            @if (!string.IsNullOrWhiteSpace(ev.ImagenUrl) || ev.Fecha != default)
+                                            {
+                                                <div class="event-img-wrapper">
+                                                    @if (!string.IsNullOrWhiteSpace(ev.ImagenUrl))
+                                                    {
+                                                        <img src="@ev.ImagenUrl" alt="Evento" loading="lazy">
+                                                    }
+                                                    @if (ev.Fecha != default)
+                                                    {
+                                                        <div class="event-date">
+                                                            <div class="fs-3">@ev.Fecha.ToString("dd")</div>
+                                                            <div style="font-size: 0.7rem; text-transform: uppercase;">@ev.Fecha.ToString("MMM")</div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            <div class="p-4 pt-5 mt-2 d-flex flex-column flex-grow-1">
+                                                @if (!string.IsNullOrWhiteSpace(ev.Titulo))
+                                                {
+                                                    <h4 class="mb-2 text-white">@ev.Titulo</h4>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(ev.Horarios))
+                                                {
+                                                    <p class="mb-3 text-info small fw-bold"><i class="fa-regular fa-clock me-1"></i> @ev.Horarios</p>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(ev.Descripcion))
+                                                {
+                                                    <p class="text-muted-dark small mb-0 mt-auto theme-strict-text">
+                                                        @Html.Raw(ev.Descripcion.Replace("\n", "<br>").Replace("\r\n", "<br>"))
+                                                    </p>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </section>
+    }
+
+    @if ((Model.Multimedia != null && Model.Multimedia.Any()) || (Model.Galeria != null && Model.Galeria.Any()))
+    {
+        <section class="dark-section" style="background: #121214;" id="multimedia">
+            <div class="container">
+
+                @if (Model.Multimedia != null && Model.Multimedia.Any())
+                {
+                    <div class="mb-5 pb-5 @(Model.Galeria != null && Model.Galeria.Any() ? "border-bottom" : "")" style="border-color: var(--dark-border) !important;">
+                        <div class="d-flex justify-content-between align-items-end mb-4">
+                            <div>
+                                <span class="section-tag">Streaming</span>
+                                <h2 class="fs-1">Multimedia</h2>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+                            {
+                                <a href="@Model.YoutubeUrl" target="_blank" class="btn-dark-outline d-none d-sm-flex"><i class="fa-brands fa-youtube text-danger me-2"></i> YouTube</a>
+                            }
+                        </div>
+
+                        <div class="row g-4">
+                            @foreach (var m in Model.Multimedia)
+                            {
+                                @if (!string.IsNullOrWhiteSpace(m.UrlEmbed))
+                                {
+                                    <div class="col-lg-6">
+                                        <div class="glass-card p-2 p-md-3">
+                                            @if (!string.IsNullOrWhiteSpace(m.Titulo))
+                                            {
+                                                <h5 class="px-2 mb-3 text-white fs-5 text-truncate">@m.Titulo</h5>
+                                            }
+                                            <div class="ratio ratio-16x9 bg-black rounded-3 overflow-hidden" style="border: 1px solid var(--dark-border);">
+                                                @{
+                                                    string embedUrl = m.UrlEmbed;
+                                                    string ytId = "";
+                                                    if (embedUrl.Contains("youtu.be/")) ytId = embedUrl.Split(new[] { "youtu.be/" }, StringSplitOptions.None)[1];
+                                                    else if (embedUrl.Contains("watch?v=")) ytId = embedUrl.Split(new[] { "watch?v=" }, StringSplitOptions.None)[1];
+                                                    else if (embedUrl.Contains("embed/")) ytId = embedUrl.Split(new[] { "embed/" }, StringSplitOptions.None)[1];
+                                                    else if (embedUrl.Contains("/shorts/")) ytId = embedUrl.Split(new[] { "/shorts/" }, StringSplitOptions.None)[1];
+                                                    else if (embedUrl.Contains("/live/")) ytId = embedUrl.Split(new[] { "/live/" }, StringSplitOptions.None)[1];
+                                                    if (!string.IsNullOrEmpty(ytId)) { embedUrl = "https://www.youtube.com/embed/" + ytId.Split('?')[0].Split('&')[0].Trim('/'); }
+                                                }
+                                                <iframe src="@embedUrl" frameborder="0" allowfullscreen></iframe>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Galeria != null && Model.Galeria.Any())
+                {
+                    <div class="@(Model.Multimedia != null && Model.Multimedia.Any() ? "pt-5" : "")">
+                        <span class="section-tag text-center">Capturas</span>
+                        <h2 class="fs-1 text-center mb-5">Galería</h2>
+                        <div class="gallery-grid">
+                            @foreach (var img in Model.Galeria)
+                            {
+                                @if (!string.IsNullOrWhiteSpace(img.UrlImagen))
+                                {
+                                    <div class="gallery-item">
+                                        <img src="@img.UrlImagen" alt="@(img.Titulo ?? "Foto")" loading="lazy">
+                                        @if (!string.IsNullOrWhiteSpace(img.Titulo))
+                                        {
+                                            <div class="gallery-overlay">
+                                                <h6 class="mb-0 text-white fw-bold">@img.Titulo</h6>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <section class="dark-section border-top" style="border-color: var(--dark-border) !important;" id="nosotros">
+        <div class="container">
+            <div class="row g-5">
+
+                @if (!string.IsNullOrWhiteSpace(Model.Historia))
+                {
+                    <div class="col-lg-5">
+                        <span class="section-tag">Identidad</span>
+                        <h2 class="fs-1 mb-4 text-gradient">Nuestra Historia</h2>
+                        <div class="text-muted-dark fs-6 theme-strict-text" style="text-align: justify;">
+                            @Html.Raw(Model.Historia.Replace("\n", "<br>").Replace("\r\n", "<br>"))
+                        </div>
+                    </div>
+                }
+
+                <div class="@(!string.IsNullOrWhiteSpace(Model.Historia) ? "col-lg-7" : "col-lg-8 mx-auto")">
+                    <span class="section-tag">Doctrina</span>
+                    <h2 class="fs-1 mb-32 text-gradient">Declaración de Fe</h2>
+                    <div class="mt-4">
+                        @await Html.PartialAsync("../_PuntosDoctrinales.cshtml")
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="border-top" style="border-color: var(--dark-border) !important; background: #000;" id="contacto">
+    <div class="container py-5 mt-4">
+        <div class="row g-5 mb-5 pb-5 border-bottom" style="border-color: var(--dark-border) !important;">
+
+            <div class="col-lg-4 text-center text-lg-start">
+                <h3 class="mb-4 text-white fs-2">@nombreReal</h3>
+
+                @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl) || !string.IsNullOrWhiteSpace(Model.InstagramUrl) || !string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+                {
+                    <div class="d-flex justify-content-center justify-content-lg-start gap-3 mb-4">
+                        @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl))
+                        {
+                            <a href="@Model.FacebookUrl" target="_blank" class="btn btn-dark border-secondary rounded-circle"><i class="fa-brands fa-facebook-f text-white"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.InstagramUrl))
+                        {
+                            <a href="@Model.InstagramUrl" target="_blank" class="btn btn-dark border-secondary rounded-circle"><i class="fa-brands fa-instagram text-white"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+                        {
+                            <a href="@Model.YoutubeUrl" target="_blank" class="btn btn-dark border-secondary rounded-circle"><i class="fa-brands fa-youtube text-white"></i></a>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.Whatsapp) || !string.IsNullOrWhiteSpace(Model.Telefono))
+                {
+                    <div class="d-flex flex-column gap-2 text-muted-dark">
+                        @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+                        {
+                            <a href="https://wa.me/52@(Model.Whatsapp)" class="text-decoration-none text-muted-dark"><i class="fa-brands fa-whatsapp text-success me-2"></i> @Model.Whatsapp</a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Telefono))
+                        {
+                            <a href="tel:@Model.Telefono" class="text-decoration-none text-muted-dark"><i class="fa-solid fa-phone text-info me-2"></i> @Model.Telefono</a>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="col-lg-4 text-center text-lg-start">
+                @if (!string.IsNullOrWhiteSpace(Model.DireccionCompleta) || !string.IsNullOrWhiteSpace(Model.Municipio) || !string.IsNullOrWhiteSpace(Model.Horarios))
+                {
+                    <h5 class="text-white mb-4">Ubicación y Horarios</h5>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.DireccionCompleta) || !string.IsNullOrWhiteSpace(Model.Municipio))
+                    {
+                        <p class="text-muted-dark mb-4">
+                            <i class="fa-solid fa-location-dot text-info me-2"></i> @Model.DireccionCompleta <br>
+                            <small class="ms-4">@Model.Municipio</small>
+                        </p>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Horarios))
+                    {
+                        <ul class="list-unstyled text-muted-dark">
+                            @{
+                                var lineas = Model.Horarios.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                                foreach (var linea in lineas)
+                                {
+                                    var partes = linea.Split(" | ");
+                                    if (partes.Length == 3)
+                                    {
+                                        <li class="mb-2 border-bottom pb-2" style="border-color: rgba(255,255,255,0.05) !important;">
+                                            <strong class="text-white">@partes[0]</strong> <span class="text-info float-end">@partes[1]</span><br>
+                                            <small style="font-size: 0.75rem;" class="theme-strict-text">@partes[2]</small>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="mb-2 text-truncate small theme-strict-text">@linea</li>
+                                    }
+                                }
+                            }
+                        </ul>
+                    }
+                }
+            </div>
+
+            @if ((Model.Latitud.HasValue && Model.Longitud.HasValue) || !string.IsNullOrWhiteSpace(Model.MapaUrl))
+            {
+                <div class="col-lg-4">
+                    <div class="ratio ratio-16x9 ratio-lg-4x3 bg-dark rounded-4 overflow-hidden" style="border: 1px solid var(--dark-border);">
+                        @if (Model.Latitud.HasValue && Model.Longitud.HasValue)
+                        {
+                            <iframe src="https://maps.google.com/maps?q=@@latLng&z=15&output=embed" class="dark-map" frameborder="0" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(Model.MapaUrl))
+                        {
+                            <div class="d-flex align-items-center justify-content-center text-center p-3">
+                                <a href="@Model.MapaUrl" target="_blank" class="btn btn-outline-info rounded-pill">Ver en Google Maps</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center text-muted-dark" style="font-size: 0.8rem;">
+            <p class="mb-2 mb-md-0">© @DateTime.Now.Year @nombreReal. Todos los derechos reservados.</p>
+            @if (!string.IsNullOrWhiteSpace(Model.PlantillaVista))
+            {
+                <p class="mb-0">Plantilla: @Model.PlantillaVista</p>
+            }
+        </div>
+    </div>
+</footer>

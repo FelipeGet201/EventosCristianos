@@ -1,0 +1,248 @@
+@model RedAJP.Models.EditorFormatoViewModel
+@{
+    Layout = "Principal";
+    bool esEdicion = Model.Id_Archivo > 0;
+    ViewData["Title"] = esEdicion ? "Editar " + Model.Origen : "Nuevo " + Model.Origen;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-formatos');
+        }
+
+        // Estado inicial
+        toggleTipoRecurso();
+        toggleCategoria();
+        toggleVideo();
+
+        configurarValidacionArchivo();
+    });
+
+    function toggleTipoRecurso() {
+        const esEnlace = document.getElementById('tipoEnlace').checked;
+        const divArchivo = document.getElementById('divArchivo');
+        const divUrl = document.getElementById('divUrl');
+        const inputArchivo = document.getElementById('inputArchivo');
+        const inputUrl = document.getElementById('inputUrl');
+
+        if (esEnlace) {
+            divArchivo.classList.add('d-none');
+            divUrl.classList.remove('d-none');
+            inputArchivo.removeAttribute('required');
+            inputUrl.setAttribute('required', 'required');
+            document.getElementById('errorPesoArchivo').classList.add('d-none');
+            inputArchivo.classList.remove('is-invalid');
+        } else {
+            divArchivo.classList.remove('d-none');
+            divUrl.classList.add('d-none');
+            inputUrl.removeAttribute('required');
+            @if (!esEdicion)
+            {
+                <text>inputArchivo.setAttribute('required', 'required');</text>
+            }
+        }
+    }
+
+    function toggleCategoria() {
+        const catGrupo = document.getElementById('catGrupos').checked;
+        const divGrupo = document.getElementById('divGrupoSeleccion');
+        const selectGrupo = document.getElementById('selectGrupo');
+
+        if (catGrupo) {
+            divGrupo.classList.remove('d-none');
+            selectGrupo.setAttribute('required', 'required');
+        } else {
+            divGrupo.classList.add('d-none');
+            selectGrupo.removeAttribute('required');
+        }
+    }
+
+    // --- LÓGICA DE VIDEO Y PORTADA ACTUALIZADA ---
+    function toggleVideo() {
+        const checkVideo = document.getElementById('esVideo');
+        const divPortadaInput = document.getElementById('divPortadaInput');
+        const inputPortada = document.getElementById('inputPortada');
+        
+        if (!checkVideo || !divPortadaInput) return;
+
+        const tienePortadaActual = '@string.IsNullOrEmpty(Model.UrlPortadaActual)'.toLowerCase() === 'false';
+
+        if (checkVideo.checked) {
+            // Si es video: Mostrar y validar
+            divPortadaInput.classList.remove('d-none');
+            if (!tienePortadaActual) {
+                inputPortada.setAttribute('required', 'required');
+            }
+        } else {
+            // Si NO es video: Ocultar y limpiar
+            divPortadaInput.classList.add('d-none');
+            inputPortada.removeAttribute('required');
+            inputPortada.value = ""; // Limpia la selección de archivo si existía
+        }
+    }
+
+    function configurarValidacionArchivo() {
+        const inputArchivo = document.getElementById('inputArchivo');
+        const divError = document.getElementById('errorPesoArchivo');
+        const spanPeso = document.getElementById('spanPesoTexto');
+        const form = document.querySelector('form');
+
+        inputArchivo.addEventListener('change', function () { validarPeso(this); });
+
+        form.addEventListener('submit', function (e) {
+            const esEnlace = document.getElementById('tipoEnlace').checked;
+            if (!esEnlace && !validarPeso(inputArchivo)) { e.preventDefault(); }
+        });
+
+        function validarPeso(input) {
+            if (input.files.length > 0) {
+                const pesoBytes = input.files[0].size;
+                const limiteBytes = 10 * 1024 * 1024;
+                if (pesoBytes > limiteBytes) {
+                    const pesoMegas = (pesoBytes / (1024 * 1024)).toFixed(2);
+                    spanPeso.textContent = pesoMegas;
+                    divError.classList.remove('d-none');
+                    input.classList.add('is-invalid');
+                    return false;
+                }
+            }
+            divError.classList.add('d-none');
+            input.classList.remove('is-invalid');
+            return true;
+        }
+    }
+</script>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8 col-xl-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                
+                <div class="card-header bg-white border-bottom pt-4 pb-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h4 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid @(esEdicion ? "fa-pen-to-square" : "fa-cloud-arrow-up") text-primary me-2"></i>
+                        @(esEdicion ? "Editar " + Model.Origen : "Nuevo " + Model.Origen)
+                    </h4>
+                    <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm flex-shrink-0">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Volver
+                    </a>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form action="@Url.Action("Guardar", "Formatos")" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id_Archivo" value="@Model.Id_Archivo" />
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary">Categoría / Tipo de Documento</label>
+                            <select name="Origen" class="form-select form-select-lg bg-light fw-bold text-dark border-primary border-opacity-25" id="selectOrigen">
+                                <option value="Formatos" @(Model.Origen == "Formatos" || string.IsNullOrEmpty(Model.Origen) ? "selected" : "")>📁 Formato General</option>
+                                <option value="Recursos" @(Model.Origen == "Recursos" ? "selected" : "")>📦 Recurso / Material Visual</option>
+                                <option value="Terminos_Eventos" @(Model.Origen == "Terminos_Eventos" ? "selected" : "")>⚖️ Términos y Condiciones de Participación (Eventos)</option>
+                                <option value="Aviso_Privacidad" @(Model.Origen == "Aviso_Privacidad" ? "selected" : "")>🔒 Aviso de Privacidad Integral (Eventos)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold d-block text-secondary">¿Qué deseas compartir?</label>
+                            <div class="btn-group w-100 shadow-sm" role="group">
+                                <input type="radio" class="btn-check" name="EsEnlace" id="tipoArchivo" value="false" onchange="toggleTipoRecurso()" @(!Model.EsEnlace ? "checked" : "")>
+                                <label class="btn btn-outline-primary py-2" for="tipoArchivo">
+                                    <i class="fa-solid fa-file-arrow-up me-2"></i>Archivo Local
+                                </label>
+                                <input type="radio" class="btn-check" name="EsEnlace" id="tipoEnlace" value="true" onchange="toggleTipoRecurso()" @(Model.EsEnlace ? "checked" : "")>
+                                <label class="btn btn-outline-primary py-2" for="tipoEnlace">
+                                    <i class="fa-solid fa-link me-2"></i>Enlace Web / Drive
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-secondary">Título</label>
+                            <input type="text" name="Titulo" class="form-control form-control-lg bg-light" value="@Model.Titulo" required placeholder="Ej. Reglamento / Video Tutorial" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary">Descripción (Opcional)</label>
+                            <textarea name="Descripcion" class="form-control bg-light" rows="2">@Model.Descripcion</textarea>
+                        </div>
+
+                        @if (Model.Origen == "Recursos")
+                        {
+                            <div class="mb-4 p-4 bg-white rounded-3 border border-primary border-opacity-25 shadow-sm">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input fs-5" type="checkbox" id="esVideo" name="EsVideo" value="true" onchange="toggleVideo()" @(Model.EsVideo ? "checked" : "")>
+                                    <input type="hidden" name="EsVideo" value="false" />
+                                    <label class="form-check-label fw-bold text-dark pt-1 ms-2" for="esVideo" style="cursor: pointer;">
+                                        <i class="fa-solid fa-circle-play text-danger me-1"></i> Este recurso es un Video
+                                    </label>
+                                </div>
+
+                                <div id="divPortadaInput" class="d-none">
+                                    <label class="form-label fw-bold text-dark">
+                                        <i class="fa-solid fa-image text-primary me-2"></i>Imagen de Portada (Obligatoria)
+                                    </label>
+                                    <input type="file" name="Portada" id="inputPortada" class="form-control mb-2" accept="image/*" />
+                                    
+                                    @if (!string.IsNullOrEmpty(Model.UrlPortadaActual))
+                                    {
+                                        <div class="mt-3 bg-light p-2 rounded border d-inline-block">
+                                            <p class="small text-success mb-2 fw-bold">Portada actual:</p>
+                                            <img src="@Model.UrlPortadaActual" class="rounded shadow-sm" style="max-height: 100px; object-fit: cover; width: 200px;" />
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mb-4 p-3 bg-light rounded-3 border" id="divArchivo">
+                            <label class="form-label fw-bold text-secondary">Archivo Físico</label>
+                            <input type="file" name="Archivo" id="inputArchivo" class="form-control" />
+                            <div id="errorPesoArchivo" class="text-danger small fw-bold mt-2 d-none">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> El archivo excede los 10 MB.
+                            </div>
+                        </div>
+
+                        <div class="mb-4 p-3 bg-light rounded-3 border d-none" id="divUrl">
+                            <label class="form-label fw-bold text-secondary">URL Enlace</label>
+                            <input type="url" name="UrlEnlace" id="inputUrl" class="form-control" value="@Model.UrlEnlace" placeholder="https://..." />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold d-block text-secondary">Acceso</label>
+                            <div class="d-flex flex-column flex-sm-row gap-3 mt-2">
+                                <div class="form-check p-3 border rounded-3 flex-fill bg-light hover-effect" onclick="document.getElementById('catPublico').click();">
+                                    <input class="form-check-input ms-1" type="radio" name="Categoria" id="catPublico" value="Publico" onchange="toggleCategoria()" @(Model.Categoria == "Publico" || string.IsNullOrEmpty(Model.Categoria) ? "checked" : "")>
+                                    <label class="form-check-label fw-bold ms-4" for="catPublico">Público</label>
+                                </div>
+                                <div class="form-check p-3 border rounded-3 flex-fill bg-light hover-effect" onclick="document.getElementById('catGrupos').click();">
+                                    <input class="form-check-input ms-1" type="radio" name="Categoria" id="catGrupos" value="Grupos" onchange="toggleCategoria()" @(Model.Categoria == "Grupos" ? "checked" : "")>
+                                    <label class="form-check-label fw-bold ms-4" for="catGrupos">Grupo Privado</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 d-none p-3 border border-warning rounded-3 bg-warning bg-opacity-10" id="divGrupoSeleccion">
+                            <select name="IdGrupoAcceso" id="selectGrupo" class="form-select border-warning">
+                                <option value="">-- Selecciona el Grupo --</option>
+                                @if (Model.ListaGrupos != null)
+                                {
+                                    foreach (var item in Model.ListaGrupos)
+                                    {
+                                        <option value="@item.Value" selected="@(Model.IdGrupoAcceso.ToString() == item.Value)">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm w-100 mt-4">
+                            <i class="fa-solid fa-save me-2"></i> Guardar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

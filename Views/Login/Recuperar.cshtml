@@ -1,0 +1,180 @@
+﻿@{
+    Layout = "Principal";
+    ViewData["Title"] = "Recuperar Contraseña";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        // Asumiendo que tienes un script para marcar el menú activo
+        if(typeof activarMenu === 'function') {
+            activarMenu('menu-miembros');
+        }
+    });
+</script>
+
+<style>
+    /* =========================================
+           1. TARJETA DE CRISTAL (ESTILO BITÁCORA)
+           ========================================= */
+    .card-login {
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 20px;
+        /* Fondo blanco al 85% para legibilidad perfecta */
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 15px 35px rgba(0, 43, 54, 0.2);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+        /* Brillo sutil al pasar el mouse (SIN SALTO) */
+        .card-login:hover {
+            box-shadow: 0 20px 40px rgba(0, 43, 54, 0.25);
+            border-color: #ffffff;
+        }
+
+    /* =========================================
+           2. ENCABEZADO INTEGRADO
+           ========================================= */
+    .login-header {
+        background-color: rgba(255, 255, 255, 0.5);
+        padding: 30px 20px 15px 20px;
+        text-align: center;
+        border-bottom: 1px solid rgba(0, 43, 54, 0.1);
+    }
+
+        .login-header h4 {
+            color: #00334e !important; /* Azul profundo */
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .login-header p {
+            color: #546e7a !important; /* Gris azulado */
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+    /* =========================================
+           3. INPUTS FLOTANTES (ESTILO LÍQUIDO)
+           ========================================= */
+    .form-floating > .form-control {
+        background-color: rgba(255, 255, 255, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 12px;
+        color: #002b36;
+        font-weight: 600;
+        backdrop-filter: blur(5px);
+    }
+
+        .form-floating > .form-control:focus {
+            background-color: #ffffff !important;
+            border-color: #ffb74d !important; /* Dorado */
+            box-shadow: 0 0 10px rgba(255, 183, 77, 0.4);
+        }
+
+    .form-floating > label {
+        color: #455a64;
+        font-weight: 600;
+        opacity: 0.8;
+    }
+
+        .form-floating > label > i {
+            color: #006064;
+        }
+
+    /* =========================================
+           4. BOTÓN "SUBMARINO" (EL MISMO DEL REGISTRO)
+           ========================================= */
+    .btn-nautico {
+        /* Estado Normal: Azul Profundo */
+        background: linear-gradient(135deg, #00334e 0%, #004060 100%);
+        color: #ffffff;
+        border-radius: 50px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 12px;
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 15px rgba(0, 43, 54, 0.3);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+        .btn-nautico:hover {
+            /* Estado Hover: Aclarado "Luz de Luna" */
+            background: linear-gradient(135deg, #004b70 0%, #005a80 100%);
+            color: #ffffff !important;
+            box-shadow: 0 0 20px rgba(0, 75, 112, 0.5);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-nautico:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+    /* =========================================
+           5. ENLACE DE VOLVER
+           ========================================= */
+    .link-regresar {
+        color: #004d40;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.3s;
+        display: inline-flex;
+        align-items: center;
+    }
+
+        .link-regresar:hover {
+            color: #002b36;
+            text-decoration: underline;
+        }
+
+        .link-regresar i {
+            margin-right: 5px;
+            transition: transform 0.3s;
+        }
+
+        .link-regresar:hover i {
+            transform: translateX(-3px);
+        }
+</style>
+
+<div class="row justify-content-center align-items-center" style="min-height: 85vh;">
+    <div class="col-11 col-sm-8 col-md-6 col-lg-5">
+
+        <div class="card card-login">
+            <div class="login-header">
+                <h4 class="fw-bold mb-1" style="color: #00334e;">Recuperar Acceso</h4>
+                <p class="mb-0">Te enviaremos un enlace a tu correo</p>
+            </div>
+
+            <div class="card-body p-4 pt-4">
+                <form method="post" action="@Url.Action("Recuperar", "Login")">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-floating mb-4">
+                        <input type="email" class="form-control" id="floatingEmail" placeholder="nombre@ejemplo.com" name="email" required>
+                        <label for="floatingEmail"><i class="fa-solid fa-envelope me-2 opacity-50"></i>Correo Electrónico</label>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-4">
+                        <button type="submit" class="btn btn-nautico">
+                            ENVIAR ENLACE
+                        </button>
+                    </div>
+
+                    <div class="text-center border-top pt-3">
+                        <a href="@Url.Action("Index", "Login")" class="link-regresar small">
+                            <i class="fa-solid fa-arrow-left"></i> Volver al Inicio de Sesión
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,35 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<div class="container py-5 fade-in-up">
+    <div class="text-center mb-5">
+        <h2 style="font-family: var(--theme-font-title); color: var(--theme-primary); font-weight: 800; font-size: 2.5rem;">Agenda</h2>
+    </div>
+    @if (Model.Eventos != null && Model.Eventos.Any())
+    {
+        <div class="row g-5">
+            @foreach (var ev in Model.Eventos)
+            {
+                <div class="col-md-6">
+                    <div class="h-100 d-flex flex-column">
+                        @if (!string.IsNullOrWhiteSpace(ev.ImagenUrl))
+                        {
+                            <div class="ratio ratio-21x9 mb-4 rounded-3 overflow-hidden shadow-sm" style="background-color: var(--theme-surface); border: 1px solid rgba(128, 128, 128, 0.2);">
+                                <img src="@ev.ImagenUrl" alt="Evento" style="object-fit: cover;">
+                            </div>
+                        }
+                        <span class="mb-2 d-block" style="font-family: var(--theme-font-title); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--theme-accent); font-weight: 700;">
+                            @(ev.Fecha == default ? "Sin fecha" : ev.Fecha.ToString("dd MMMM yyyy")) — @ev.Horarios
+                        </span>
+                        <h3 class="mb-3" style="font-family: var(--theme-font-title); color: var(--theme-primary);">@ev.Titulo</h3>
+                        <p style="font-family: var(--theme-font-body); color: var(--theme-text-muted);">
+                            @if (!string.IsNullOrWhiteSpace(ev.Descripcion))
+                            {
+                                @Html.Raw(ev.Descripcion.Replace("\n", "<br>"))
+                            }
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

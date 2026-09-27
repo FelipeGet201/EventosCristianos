@@ -1,0 +1,319 @@
+﻿@model List<dynamic>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Invitados de Cortesía";
+    string sidEncriptado = ViewBag.IdEventoEncriptado;
+    string tituloEvento = ViewBag.TituloEvento;
+}
+
+<style>
+    .btn-volver-panel {
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.1);
+        color: #333;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+        .btn-volver-panel:hover {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+    .badge-vip {
+        background-color: #ffe5d0;
+        color: #fd7e14;
+        border: 1px solid #fca666;
+        font-weight: bold;
+    }
+
+    .btn-accion-revocar {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid #dc3545;
+        background: white;
+        color: #dc3545;
+        transition: all 0.2s;
+    }
+
+        .btn-accion-revocar:hover {
+            background-color: #dc3545;
+            color: white;
+            transform: scale(1.1);
+        }
+</style>
+
+<div class="container py-5 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <a href="@Url.Action("PanelControl", new { sid = sidEncriptado })" class="btn-volver-panel rounded-circle" title="Volver al Panel de Control">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div>
+                <h2 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-gift text-warning me-2"></i>Invitados de Cortesía</h2>
+                <p class="text-muted mb-0">@tituloEvento</p>
+            </div>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary rounded-pill fw-bold shadow-sm px-4 py-2" onclick="abrirModalCortesia()">
+                <i class="fa-solid fa-user-plus me-2"></i> Otorgar Nueva Cortesía
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-header bg-white p-3 border-bottom">
+            <h6 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-address-book text-muted me-2"></i> Registro Histórico del Evento (@Model.Count)
+            </h6>
+        </div>
+        <div class="card-body p-0 bg-light">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-dark text-white small text-uppercase">
+                        <tr>
+                            <th class="ps-4 py-3">Nombre del Invitado</th>
+                            <th>Modalidad Asignada</th>
+                            <th>Género / Edad</th>
+                            <th>Contacto</th>
+                            <th>Autorización / Motivo</th>
+                            <th class="pe-4 text-end" style="width: 100px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-25"></i>
+                                    <h6>No se han otorgado cortesías para este evento todavía.</h6>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-bold text-secondary">
+                                        <i class="fa-solid fa-star text-warning me-1 small"></i> @item.Nombre
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-white text-dark border p-2 rounded-3">@item.Modalidad</span>
+                                    </td>
+                                    <td class="small">
+                                        <span>@(item.Genero)</span> <span class="text-muted">(@item.Edad años)</span>
+                                    </td>
+                                    <td class="small text-muted">
+                                        <div class="mb-1"><i class="fa-solid fa-envelope me-1"></i>@item.Correo</div>
+                                        <div><i class="fa-solid fa-phone me-1"></i>@item.Telefono</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-vip p-2 text-start text-wrap" style="max-width: 300px;">
+                                            <i class="fa-solid fa-shield-halved me-1"></i> @item.Motivo
+                                        </span>
+                                    </td>
+                                    <td class="pe-4 text-end">
+                                        <button type="button" class="btn-accion-revocar" title="Revocar Cortesía (Liberar Cupo)" onclick="confirmarRevocacion(@item.IdAsistente, '@item.Nombre')">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCortesiaVIP" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-gift text-warning me-2"></i> Otorgar Cortesía Especial</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <form action="@Url.Action("RegistrarInvitadoCortesia", "Eventos")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id_Evento" value="@ViewBag.IdEvento" />
+                <input type="hidden" name="sid" value="@sidEncriptado" />
+
+                <div class="modal-body p-4 bg-light">
+                    <div class="alert alert-warning border-0 shadow-sm small mb-4">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i> El sistema forzará matemáticamente un ingreso de <strong>$0.00 pesos</strong> para proteger las gráficas contables. Se validará el cupo disponible antes de autorizar el registro.
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Nombre Completo del Invitado *</label>
+                            <input type="text" name="NombreCompleto" class="form-control fw-bold" required placeholder="Ej: Ing. Alejandro González" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Edad *</label>
+                            <input type="number" name="Edad" class="form-control" required min="1" max="99" value="18" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Género *</label>
+                            <select name="Genero" class="form-select" required>
+                                <option value="H">Hombre</option>
+                                <option value="M">Mujer</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12" id="boxModalidadCortesia">
+                            <label class="form-label small fw-bold text-primary">Modalidad Solicitada (Filtro de Cupo Real) *</label>
+                            <select name="Id_Subtipo_Seleccionado" id="selModalidadCortesia" class="form-select fw-bold border-primary" required>
+                                <option value="">Cargando catálogo...</option>
+                            </select>
+                            <div class="text-danger small mt-1 d-none" id="errorModalidadCortesia"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Correo de Contacto (Opcional)</label>
+                            <input type="email" name="Correo" class="form-control" placeholder="correo@invitado.com" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Teléfono de Contacto (Opcional)</label>
+                            <input type="text" name="Telefono" class="form-control" placeholder="10 dígitos" maxlength="15" />
+                        </div>
+
+                        <div class="col-md-12 border-top pt-3 mt-3">
+                            <label class="form-label small fw-bold text-danger"><i class="fa-solid fa-key me-1"></i> Justificación de la Cortesía / Autorizado Por *</label>
+                            <input type="text" name="MotivoCortesia" class="form-control border-danger bg-white" required placeholder="Ej: Ponente Magistral, Autorizado por Comité de Finanzas..." />
+                            <small class="text-muted" style="font-size: 0.75rem;">Esta bitácora es obligatoria para auditorías internas de control de accesos.</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer bg-white border-top-0">
+                    <button type="button" class="btn btn-light rounded-pill fw-bold" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4 shadow-sm" id="btnGuardarCortesia" disabled>
+                        <i class="fa-solid fa-gift me-2"></i> Otorgar y Reservar Cama/Cupo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarRevocacion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-danger text-white border-0 py-3 justify-content-center">
+                <i class="fa-solid fa-triangle-exclamation fa-3x opacity-50"></i>
+            </div>
+            <div class="modal-body text-center p-4">
+                <h5 class="fw-bold mb-2 text-dark">¿Revocar Cortesía?</h5>
+                <p class="text-muted small mb-4">
+                    Se eliminará por completo el registro de <strong id="lblNombreRevocar" class="text-danger"></strong> y se liberará su espacio. El sistema bloqueará la acción si detecta cobros reales.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-danger rounded-pill fw-bold shadow-sm" onclick="ejecutarRevocacionReal()">
+                        Sí, Revocar Lugar
+                    </button>
+                    <button type="button" class="btn btn-light rounded-pill text-muted fw-bold" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="formRevocarCortesia" action="@Url.Action("RevocarCortesia", "Eventos")" method="post" class="d-none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="idAsistente" id="hdnIdAsistenteRevocar" value="0" />
+    <input type="hidden" name="sid" value="@sidEncriptado" />
+</form>
+
+@section Scripts {
+    <script>
+        var modalCortesiaBS = null;
+        var modalRevocarBS = null;
+        var idParaRevocar = 0;
+
+        function abrirModalCortesia() {
+            var elModal = document.getElementById('modalCortesiaVIP');
+            if (!modalCortesiaBS) modalCortesiaBS = new bootstrap.Modal(elModal);
+            
+            document.getElementById('btnGuardarCortesia').disabled = true;
+            document.getElementById('selModalidadCortesia').innerHTML = '<option value="">Consultando capacidades de base de datos...</option>';
+            document.getElementById('errorModalidadCortesia').classList.add('d-none');
+
+            fetch('@Url.Action("ApiGetModalidadesCortesia", "Eventos")?idEvento=@ViewBag.IdEvento')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.exito) {
+                        var sel = document.getElementById('selModalidadCortesia');
+                        sel.innerHTML = '<option value="">-- Selecciona una Modalidad --</option>';
+                        
+                        if (data.requiereModalidad) {
+                            data.modalidades.forEach(m => {
+                                var dis = m.disponibles <= 0 ? "disabled" : "";
+                                var txt = m.disponibles <= 0
+                                            ? `${m.nombre} - ❌ AGOTADA`
+                                            : `${m.nombre} - (Quedan ${m.disponibles} lugares libres)`;
+                                
+                                sel.innerHTML += `<option value="${m.id}" ${dis}>${txt}</option>`;
+                            });
+                            sel.required = true;
+                        } else {
+                            document.getElementById('boxModalidadCortesia').classList.add('d-none');
+                            sel.required = false;
+                            
+                            if(data.disponiblesGlobal <= 0) {
+                                alert("Error: El cupo general de este evento ya está lleno. No se pueden dar cortesías.");
+                                modalCortesiaBS.hide();
+                                return;
+                            }
+                        }
+                        
+                        document.getElementById('btnGuardarCortesia').disabled = false;
+                    } else {
+                        var err = document.getElementById('errorModalidadCortesia');
+                        err.classList.remove('d-none');
+                        err.innerText = data.mensaje;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('selModalidadCortesia').innerHTML = '<option value="">Error al conectar con el servidor</option>';
+                });
+
+            modalCortesiaBS.show();
+        }
+
+        // JS para el flujo de revocación segura
+        function confirmarRevocacion(idAsistente, nombre) {
+            idParaRevocar = idAsistente;
+            document.getElementById('lblNombreRevocar').innerText = nombre;
+            
+            var elModal = document.getElementById('modalConfirmarRevocacion');
+            if (!modalRevocarBS) modalRevocarBS = new bootstrap.Modal(elModal);
+            modalRevocarBS.show();
+        }
+
+        function ejecutarRevocacionReal() {
+            if (idParaRevocar > 0) {
+                document.getElementById('hdnIdAsistenteRevocar').value = idParaRevocar;
+                document.getElementById('formRevocarCortesia').submit();
+            }
+        }
+    </script>
+}

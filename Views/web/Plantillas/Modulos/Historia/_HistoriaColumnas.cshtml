@@ -1,0 +1,55 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<style>
+    .historia-columnas {
+        column-count: 1;
+        column-gap: 3rem;
+        text-align: justify;
+        color: var(--theme-text-main); /* Hereda el texto principal del tema [cite: 631] */
+        font-family: var(--theme-font-body);
+        font-size: 1.05rem;
+        line-height: 1.8;
+    }
+    @Html.Raw("@") media (min-width: 768px) {
+        .historia-columnas {
+            column-count: 2;
+        }
+    }
+
+    .historia-dropcap::first-letter {
+        font-family: var(--theme-font-title);
+        font-size: 4.5rem;
+        line-height: 0.8;
+        float: left;
+        margin-right: 0.5rem;
+        margin-top: 0.2rem;
+        font-weight: 800;
+        color: var(--theme-accent); /* Letra capital con color de acento [cite: 634] */
+    }
+</style>
+
+<div class="container py-5 fade-in-up">
+    <div class="text-center mb-5">
+        <span class="d-block mb-2" style="font-family: var(--theme-font-title); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: var(--theme-accent); font-weight: 700;">Identidad</span>
+        <h2 style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-primary); font-size: 2.5rem;">
+            Quiénes Somos
+        </h2>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            @if (!string.IsNullOrWhiteSpace(Model.Historia))
+            {
+                <div class="historia-columnas historia-dropcap">
+                    @Html.Raw(Model.Historia.Replace("\n", "<br>").Replace("\r\n", "<br>"))
+                </div>
+            }
+            else
+            {
+                <p class="text-center py-5" style="color: var(--theme-text-muted); font-family: var(--theme-font-body); font-style: italic; border: 2px dashed rgba(128, 128, 128, 0.2); border-radius: 16px;">
+                    No hay información histórica disponible.
+                </p>
+            }
+        </div>
+    </div>
+</div>

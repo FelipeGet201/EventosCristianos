@@ -1,0 +1,68 @@
+﻿@{
+    Layout = "Principal";
+    ViewData["Title"] = "Correo Enviado";
+}
+
+<div class="container flex-grow-1 py-3 row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-12 col-md-8 col-lg-6">
+
+        <div class="card p-5 shadow-lg border-0 text-center mx-auto"
+             style="border-radius: 20px; background: rgba(255,255,255,0.96); backdrop-filter: blur(5px);">
+
+            <div class="mb-4">
+                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-4">
+                    <i class="fa-solid fa-envelope-open-text fa-4x text-success"></i>
+                </div>
+            </div>
+
+            <h2 class="fw-bold" style="color: var(--header-footer);">¡Casi listo!</h2>
+
+            <p class="lead mt-3 text-dark mb-1">
+                Hemos enviado un correo de confirmación.
+            </p>
+
+            <p class="text-danger fw-bold small mb-4">
+                <i class="fa-regular fa-clock me-1"></i> Tienes 24 horas para confirmar tu cuenta antes de que expire el enlace.
+            </p>
+
+            <div class="alert alert-warning border-0 small text-muted mx-auto" style="max-width: 90%;">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                Por favor revisa tu bandeja de entrada (y la carpeta de spam) y haz clic en el enlace para activar tu cuenta.
+            </div>
+
+            <div class="mt-4">
+                <a href="@Url.Action("Index", "Login")" class="btn btn-nautico rounded-pill px-5 fw-bold py-2">
+                    Volver al Login
+                </a>
+            </div>
+
+            <div class="mt-4 pt-3 border-top">
+                <p class="small text-muted mb-0">
+                    ¿No recibiste el correo o tienes dudas?
+                    <br>
+                    Contáctanos en:
+                    <a href="mailto:soporte@lospescadores.org" class="fw-bold text-decoration-none" style="color: var(--header-footer);">
+                        soporte@lospescadores.org
+                    </a>
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<style>
+    /* Estilo local para el botón si no lo toma del layout */
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+        transition: 0.3s;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul);
+            color: white;
+            transform: translateY(-2px);
+        }
+</style>

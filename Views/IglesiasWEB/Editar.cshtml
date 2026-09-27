@@ -1,0 +1,943 @@
+﻿@model RedAJP.Models.IglesiaWebEdicionViewModel
+@{
+    ViewData["Title"] = "Editor WEB - " + Model.NombreIglesia;
+    Layout = "~/Views/Shared/Principal.cshtml";
+}
+<script>
+    window.addEventListener('load', function() {
+        activarMenu('submenu-paginasweb');
+    });
+</script>
+<style>
+    .dynamic-row {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .img-preview {
+        object-fit: cover;
+        width: 100%;
+        height: 120px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+
+    .img-preview-small {
+        object-fit: cover;
+        width: 80px;
+        height: 80px;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    .cursor-grab {
+        cursor: grab;
+    }
+
+        .cursor-grab:active {
+            cursor: grabbing;
+        }
+
+    .sortable-ghost {
+        opacity: 0.4;
+        background-color: #f8f9fa;
+        border: 2px dashed #005f73;
+        border-radius: 8px;
+    }
+
+    .btn-remove-new {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 12px;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    /* =========================================================
+           ESTILOS MODERNOS PARA LOS TABS DE NAVEGACIÓN
+           ========================================================= */
+    .nav-tabs-custom {
+        background-color: #f8f9fa !important; /* Fondo gris muy clarito para el contenedor */
+        border: 1px solid #e9ecef !important;
+        gap: 5px; /* Separación entre botones */
+    }
+
+        .nav-tabs-custom .nav-link {
+            border: none !important;
+            color: #6c757d; /* Texto gris para inactivos */
+            border-radius: 8px !important;
+            padding: 0.75rem 1.25rem;
+            transition: all 0.3s ease;
+            background-color: transparent;
+        }
+
+            .nav-tabs-custom .nav-link:hover {
+                color: #005f73;
+                background-color: #e9ecef; /* Hover suave */
+            }
+
+            .nav-tabs-custom .nav-link.active {
+                background-color: #005f73 !important; /* Tu color principal */
+                color: #ffffff !important; /* Texto blanco */
+                box-shadow: 0 4px 10px rgba(0, 95, 115, 0.25);
+                transform: translateY(-2px); /* Pequeño efecto de elevación */
+            }
+
+            .nav-tabs-custom .nav-link i {
+                transition: transform 0.3s ease;
+            }
+
+            .nav-tabs-custom .nav-link.active i {
+                transform: scale(1.15); /* Hace el ícono un poquito más grande cuando está activo */
+            }
+</style>
+
+<div class="fade-in py-4 px-2">
+    <div class="container">
+
+        <div class="mb-3">
+            <a href="@Url.Action("Index", "IglesiasWeb")" class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm px-3">
+                <i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-header border-0 py-3 text-white d-flex align-items-center justify-content-between" style="background-color: var(--header-footer);">
+                <h6 class="mb-0 fw-bold text-uppercase ls-1">
+                    <i class="fa-solid fa-pen-to-square me-2"></i> @Model.NombreIglesia
+                </h6>
+                <div>
+                    @if (ViewBag.EsBorrador == true)
+                    {
+                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-pencil me-1"></i> Editando Borrador</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success"><i class="fa-solid fa-globe me-1"></i> Editando Versión Pública</span>
+                    }
+                </div>
+            </div>
+
+            <div class="bg-white pt-3 px-3 border-bottom">
+                <ul class="nav nav-tabs nav-tabs-custom rounded-4 p-1 mb-3 border-0" id="editorTabs" role="tablist">
+                    <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#basico" type="button"><i class="fa-solid fa-gear me-1"></i> Básicos</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#historia" type="button"><i class="fa-solid fa-book-open me-1"></i> Historia</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#avisos" type="button"><i class="fa-solid fa-bullhorn me-1"></i> Avisos</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#eventos" type="button"><i class="fa-solid fa-calendar-days me-1"></i> Eventos</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#galeria" type="button"><i class="fa-solid fa-images me-1"></i> Galería</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#multimedia" type="button"><i class="fa-brands fa-youtube me-1"></i> Multimedia</button></li>
+                </ul>
+            </div>
+
+            <div class="card-body bg-light-subtle p-4">
+                <form id="formEditorWeb" action="@Url.Action("GuardarBorrador", "IglesiasWeb")" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="IdIglesia" value="@Model.IdIglesia" />
+                    <input type="hidden" name="sIdIglesia" value="@Model.sIdIglesia" />
+                    <input type="hidden" name="NombreIglesia" value="@Model.NombreIglesia" />
+
+                    <div class="tab-content" id="editorTabsContent">
+
+                        <div class="tab-pane fade show active" id="basico">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary fw-bold text-uppercase ls-1 mb-3">Configuración Web</h6>
+
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold text-dark small mb-1">URL Personalizada</label>
+                                        <div class="input-group input-group-sm shadow-sm">
+                                            <span class="input-group-text bg-light text-success border-end-0">LOSPESCADORES.ORG/WEB/</span>
+                                            <input type="text" name="Slug" id="Slug" class="form-control border-start-0 ps-0" value="@Model.Slug" placeholder="nombre-de-mi-iglesia" required pattern="^[a-z0-9\-]+$">
+                                        </div>
+                                        <small class="text-warning">
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                            <strong>Nota importante:</strong> Si cambias esta URL, todos los enlaces y códigos QR que hayas compartido anteriormente dejarán de funcionar.
+                                        </small>
+                                        @Html.ValidationMessageFor(m => m.Slug, "", new { @class = "text-danger small d-block mt-1" })
+                                    </div>
+
+                                    <div class="row g-3 align-items-center mb-3">
+                                        <div class="col-sm-8">
+                                            <div class="form-floating">
+                                                <select name="PlantillaId" id="selectPlantilla" class="form-select rounded-3" onchange="actualizarPreviaPlantilla()">
+                                                    @if (ViewBag.Plantillas != null)
+                                                    {
+                                                        foreach (var p in ViewBag.Plantillas)
+                                                        {
+                                                            <option value="@p.Id"
+                                                                    data-img="/Images/plantillas/@(p.Imagen).jpg"
+                                                                    data-personalizable="@(p.EsPersonalizable ? "true" : "false")"
+                                                                    selected="@(Model.PlantillaId == p.Id)">
+                                                                @p.Nombre
+                                                            </option>
+                                                        }
+                                                    }
+                                                </select>
+                                                <label>Plantilla de Diseño</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4 d-flex flex-column">
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-top border-bottom-0 fw-bold w-100" onclick="verDemoPlantilla()">
+                                                <i class="fa-solid fa-eye me-1"></i> Ver demo
+                                            </button>
+                                            <div id="wrapperPrevia" class="rounded-bottom shadow-sm border border-secondary bg-white d-flex align-items-center justify-content-center overflow-hidden" style="height: 80px; width: 100%;">
+                                                <img id="imgPreviaPlantilla" src="" class="img-fluid w-100 h-100" style="object-fit: cover; display: none;" />
+                                                <div id="msgPlantillaModular" class="text-center p-2" style="display: none;">
+                                                    <i class="fa-solid fa-palette text-primary fs-3 mb-1"></i>
+                                                    <small class="d-block text-dark fw-bold" style="font-size: 0.65rem; line-height: 1.1;">DISEÑO<br>PERSONALIZADO</small>
+                                                </div>
+                                                <div id="iconPreviaPlantilla" class="text-center" style="display: none;">
+                                                    <i class="fa-solid fa-file-image text-muted opacity-25" style="font-size: 2.5rem;"></i>
+                                                    <small class="d-block text-muted" style="font-size: 0.6rem; line-height: 1;">SIN VISTA<br>PREVIA</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    <!-- NOTA PARA PLANTILLA MODULAR -->
+                                    <div id="noteModular" class="alert alert-info border-0 shadow-sm rounded-4 note-modular-animation py-3 px-3 mb-0 mt-3" style="display: none; background-color: #f0f9ff; border-left: 4px solid #0ea5e9 !important;">
+                                        <div class="d-flex">
+                                            <div class="me-3">
+                                                <i class="fa-solid fa-wand-magic-sparkles text-info fs-3"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="fw-bold text-info mb-1" style="font-size: 0.9rem;">Plantilla Modular</h6>
+                                                <p class="mb-0 text-dark opacity-75" style="font-size: 0.8rem; line-height: 1.4;">
+                                                    Esta plantilla permite <strong>personalizar su estructura visual</strong>. Una vez que guardes los cambios, podrás organizar bloques, cambiar colores y fuentes usando el botón <span class="badge bg-primary px-2"><i class="fa-solid fa-palette me-1"></i> Personalizar Diseño</span> que aparecerá en tu panel principal.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <h6 class="text-primary fw-bold text-uppercase ls-1 mb-3">Contacto Directo</h6>
+                                    <div class="form-floating mb-3">
+                                        <input type="text" name="Whatsapp" class="form-control rounded-3" placeholder="WA" value="@Model.Whatsapp" />
+                                        <label><i class="fa-brands fa-whatsapp text-success me-1"></i> WhatsApp (Solo números)</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input type="text" name="Telefono" class="form-control rounded-3" placeholder="Tel" value="@Model.Telefono" />
+                                        <label><i class="fa-solid fa-phone me-1"></i> Teléfono llamadas</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="text-primary fw-bold text-uppercase ls-1 mb-0">Horarios de Reunión</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold" onclick="agregarHorario()">
+                                            <i class="fa-solid fa-plus me-1"></i> Añadir Horario
+                                        </button>
+                                    </div>
+
+                                    <div class="bg-light p-3 rounded-4 border">
+                                        <input type="hidden" name="HorariosIglesia" id="hiddenHorarios" value="" />
+
+                                        <div id="contenedor-horarios" class="d-flex flex-column gap-2"></div>
+                                    </div>
+                                    <small class="text-muted fw-bold d-block mt-2"><i class="fa-solid fa-bolt text-warning me-1"></i> Nota: Al guardar, este horario modificará el perfil principal de la iglesia y será visible en todo el sistema.</small>
+                                </div>
+
+                                <div class="col-12">
+                                    <h6 class="text-primary fw-bold text-uppercase ls-1 mb-3">Redes Sociales (Enlaces completos)</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <div class="form-floating">
+                                                <input type="text" name="FacebookUrl" class="form-control rounded-3" placeholder="FB" value="@Model.FacebookUrl" />
+                                                <label><i class="fa-brands fa-facebook text-primary"></i> Facebook</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-floating">
+                                                <input type="text" name="InstagramUrl" class="form-control rounded-3" placeholder="IG" value="@Model.InstagramUrl" />
+                                                <label><i class="fa-brands fa-instagram text-danger"></i> Instagram</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-floating">
+                                                <input type="text" name="YoutubeUrl" class="form-control rounded-3" placeholder="YT" value="@Model.YoutubeUrl" />
+                                                <label><i class="fa-brands fa-youtube text-danger"></i> YouTube</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="historia">
+                            <h6 class="text-primary fw-bold text-uppercase ls-1 mb-3">Historia / Quiénes Somos</h6>
+                            <p class="small text-muted mb-2">Puedes pegar enlaces a imágenes y se adaptarán automáticamente a la página.</p>
+                            <textarea name="Historia" class="form-control rounded-3" style="height: 350px;" placeholder="Escribe aquí la historia de la congregación...">@Model.Historia</textarea>
+                        </div>
+
+                        <div class="tab-pane fade" id="avisos">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="text-primary fw-bold text-uppercase ls-1 mb-0">Avisos</h6>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="agregarAviso()"><i class="fa-solid fa-plus me-1"></i> Nuevo Aviso</button>
+                            </div>
+                            <div id="contenedor-avisos">
+                                @if (Model.Avisos != null)
+                                {
+                                    for (int i = 0; i < Model.Avisos.Count; i++)
+                                    {
+                                        <div class="card p-3 mb-3 dynamic-row border-warning border-start border-4 shadow-sm" data-tipo="aviso">
+                                            <input type="hidden" name="Avisos.Index" value="@i" />
+                                            <input type="hidden" name="Avisos[@i].Id" value="@Model.Avisos[i].Id" />
+                                            <div class="row g-2">
+                                                <div class="col-md-6">
+                                                    <label class="small fw-bold text-muted">Título Obligatorio</label>
+                                                    <input type="text" name="Avisos[@i].Titulo" class="form-control" value="@Model.Avisos[i].Titulo" required />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="small fw-bold text-muted">Fecha Inicio</label>
+                                                    <input type="date" name="Avisos[@i].FechaInicio" class="form-control" value="@Model.Avisos[i].FechaInicio.ToString("yyyy-MM-dd")" required />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="small fw-bold text-muted">Expira (Fin)</label>
+                                                    <input type="date" name="Avisos[@i].FechaExpiracion" class="form-control" value="@Model.Avisos[i].FechaExpiracion.ToString("yyyy-MM-dd")" required />
+                                                </div>
+                                                <div class="col-11">
+                                                    <label class="small fw-bold text-muted">Descripción (Opcional)</label>
+                                                    <input type="text" name="Avisos[@i].Descripcion" class="form-control" value="@Model.Avisos[i].Descripcion" />
+                                                </div>
+                                                <div class="col-1 d-flex align-items-end">
+                                                    <button type="button" class="btn btn-danger w-100" onclick="eliminarFila(this)"><i class="fa-solid fa-trash"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="eventos">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="text-primary fw-bold text-uppercase ls-1 mb-0">Próximos Eventos</h6>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="agregarEvento()"><i class="fa-solid fa-plus me-1"></i> Nuevo Evento</button>
+                            </div>
+                            <div id="contenedor-eventos">
+                                @if (Model.Eventos != null)
+                                {
+                                    for (int i = 0; i < Model.Eventos.Count; i++)
+                                    {
+                                        <div class="card p-3 mb-3 dynamic-row border-info border-start border-4 shadow-sm" data-tipo="evento">
+                                            <input type="hidden" name="Eventos.Index" value="@i" />
+                                            <input type="hidden" name="Eventos[@i].Id" value="@Model.Eventos[i].Id" />
+                                            <input type="hidden" name="Eventos[@i].ImagenUrl" value="@Model.Eventos[i].ImagenUrl" />
+
+                                            <div class="row g-2">
+                                                <div class="col-md-2 text-center">
+                                                    @if (!string.IsNullOrEmpty(Model.Eventos[i].ImagenUrl))
+                                                    {
+                                                        <img id="imgEvento_@i" src="@Model.Eventos[i].ImagenUrl" class="img-preview-small mb-1" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <img id="imgEvento_@i" src="https://via.placeholder.com/150?text=Flyer" class="img-preview-small mb-1" />
+                                                    }
+                                                </div>
+                                                <div class="col-md-10">
+                                                    <div class="row g-2">
+                                                        <div class="col-md-5">
+                                                            <label class="small fw-bold text-muted">Título</label>
+                                                            <input type="text" name="Eventos[@i].Titulo" class="form-control" value="@Model.Eventos[i].Titulo" required />
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="small fw-bold text-muted">Fecha</label>
+                                                            <input type="date" name="Eventos[@i].Fecha" class="form-control" value="@Model.Eventos[i].Fecha.ToString("yyyy-MM-dd")" required />
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="small fw-bold text-muted">Horarios</label>
+                                                            <input type="text" name="Eventos[@i].Horarios" class="form-control" value="@Model.Eventos[i].Horarios" required />
+                                                        </div>
+                                                        <div class="col-md-11">
+                                                            <label class="small fw-bold text-muted">Cambiar Flyer (JPG, PNG)</label>
+                                                            <input type="file" name="Eventos[@i].NuevaImagen" class="form-control form-control-sm" accept=".jpg,.png,.jpeg,.webp" onchange="previewImagenUnica(this, 'imgEvento_@i')" />
+                                                        </div>
+                                                        <div class="col-md-1 d-flex align-items-end">
+                                                            <button type="button" class="btn btn-danger btn-sm w-100 mb-1" onclick="eliminarFila(this)"><i class="fa-solid fa-trash"></i></button>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <input type="text" name="Eventos[@i].Descripcion" class="form-control form-control-sm" placeholder="Breve descripción..." value="@Model.Eventos[i].Descripcion" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="galeria">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="text-primary fw-bold text-uppercase ls-1 mb-0">Galería (Máximo 10)</h6>
+                            </div>
+                            <div class="alert alert-warning small py-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Formatos: JPG, PNG, WEBP. Max 10MB. <strong>Arrastra las imágenes para reordenarlas.</strong></div>
+
+                            <div class="mb-4 card p-3 bg-white border-0 shadow-sm rounded-4">
+                                <label class="fw-bold text-muted mb-2"><i class="fa-solid fa-upload me-1"></i> Subir Nuevas Fotos</label>
+                                <button type="button" class="btn btn-outline-primary mb-2" onclick="document.getElementById('inputNuevasFotos').click();">
+                                    <i class="fa-solid fa-images me-2"></i> Seleccionar Imágenes
+                                </button>
+                                <input type="file" id="inputNuevasFotos" name="NuevasImagenesGaleria" class="d-none" accept=".jpg,.jpeg,.png,.webp" multiple onchange="agregarNuevasFotos(this)" />
+                                <div id="preview-nuevas-fotos" class="d-flex flex-wrap gap-3 mt-2"></div>
+                            </div>
+
+                            <div class="mb-4 card p-3 bg-light border-0 shadow-sm rounded-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="fw-bold text-muted mb-0"><i class="fa-solid fa-link me-1"></i> Añadir Imágenes por URL Directa (Sin Cargar)</label>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill fw-bold" onclick="agregarUrlGaleria()">+ Añadir Enlace</button>
+                                </div>
+                                <div id="contenedor-urls" class="d-flex flex-column gap-2 mt-2"></div>
+                            </div>
+
+                            <h6 class="fw-bold text-muted border-bottom pb-2">Fotos Guardadas (Arrastra para reordenar)</h6>
+                            <div class="row g-3" id="contenedor-galeria">
+                                @if (Model.Galeria != null)
+                                {
+                                    for (int i = 0; i < Model.Galeria.Count; i++)
+                                    {
+                                        <div class="col-6 col-md-4 col-lg-3 text-center dynamic-row cursor-grab" data-tipo="galeria" id="imgBox_@i">
+                                            <input type="hidden" name="Galeria.Index" value="@i" />
+                                            <input type="hidden" name="Galeria[@i].Id" value="@Model.Galeria[i].Id" />
+                                            <input type="hidden" name="Galeria[@i].UrlImagen" value="@Model.Galeria[i].UrlImagen" />
+                                            <input type="hidden" class="input-orden" name="Galeria[@i].Orden" value="@Model.Galeria[i].Orden" />
+                                            <input type="hidden" id="hdnDel_@i" name="Galeria[@i].Eliminar" value="false" />
+
+                                            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                                                <div class="position-relative">
+                                                    <span class="badge bg-dark position-absolute top-0 start-0 m-1"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
+                                                    <img src="@Model.Galeria[i].UrlImagen" class="img-preview pointer-events-none" draggable="false" />
+                                                </div>
+                                                <div class="p-2 bg-white">
+                                                    <input type="text" name="Galeria[@i].Titulo" class="form-control form-control-sm mb-2" placeholder="Título (Opcional)" value="@Model.Galeria[i].Titulo" />
+                                                    <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="eliminarFotoVisual('@i')">
+                                                        <i class="fa-solid fa-trash"></i> Quitar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="multimedia">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="text-primary fw-bold text-uppercase ls-1 mb-0">Videos y Transmisiones</h6>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="agregarMulti()"><i class="fa-solid fa-plus me-1"></i> Enlazar Video</button>
+                            </div>
+                            <div id="contenedor-multi">
+                                @if (Model.Multimedia != null)
+                                {
+                                    for (int i = 0; i < Model.Multimedia.Count; i++)
+                                    {
+                                        <div class="card p-3 mb-2 dynamic-row shadow-sm border-0 bg-light" data-tipo="multimedia">
+                                            <input type="hidden" name="Multimedia.Index" value="@i" />
+                                            <input type="hidden" name="Multimedia[@i].Id" value="@Model.Multimedia[i].Id" />
+                                            <input type="hidden" name="Multimedia[@i].Orden" value="@Model.Multimedia[i].Orden" />
+
+                                            <div class="row g-2">
+                                                <div class="col-12">
+                                                    <div class="input-group">
+                                                        <span class="input-group-text bg-white"><i class="fa-brands fa-youtube text-danger"></i></span>
+                                                        <input type="url" name="Multimedia[@i].UrlEmbed" class="form-control" placeholder="URL del video de YouTube" value="@Model.Multimedia[i].UrlEmbed" required />
+                                                        <button type="button" class="btn btn-danger" onclick="eliminarFila(this)"><i class="fa-solid fa-xmark"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <input type="text" name="Multimedia[@i].Titulo" class="form-control form-control-sm" placeholder="Título del Video / Predicación" value="@Model.Multimedia[i].Titulo" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="mt-5 pt-4 border-top d-flex flex-wrap justify-content-center align-items-center gap-3">
+
+                        @if (ViewBag.EsBorrador == true && ViewBag.TienePublicada == true)
+                        {
+                            <button type="button" class="btn btn-outline-danger rounded-pill px-4 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#modalDescartar">
+                                <i class="fa-solid fa-trash-can me-2"></i> DESCARTAR BORRADOR
+                            </button>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Index", "IglesiasWeb")" class="btn btn-light border rounded-pill px-4 py-2">
+                                <i class="fa-solid fa-arrow-left me-2"></i> REGRESAR
+                            </a>
+                        }
+
+                        <button type="submit" name="salir" value="false" class="btn btn-outline-primary px-4 py-2 rounded-pill fw-bold">
+                            <i class="fa-solid fa-save me-2"></i> GUARDAR BORRADOR
+                        </button>
+
+                        <button type="submit" name="salir" value="true" class="btn btn-nautico px-4 py-2 fw-bold shadow-lg rounded-pill">
+                            <i class="fa-solid fa-check me-2"></i> GUARDAR Y SALIR
+                        </button>
+
+                        @if (ViewBag.EsBorrador == true)
+                        {
+                            <button type="button" class="btn btn-success px-4 py-2 fw-bold shadow-lg rounded-pill" data-bs-toggle="modal" data-bs-target="#modalPublicarEditor">
+                                <i class="fa-solid fa-cloud-arrow-up me-2"></i> PUBLICAR AHORA
+                            </button>
+                        }
+                    </div>
+
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            <i class="fa-solid fa-circle-info me-1"></i>
+                            Los cambios se guardarán pero no serán visibles al público hasta que los <strong>Publiques</strong>.
+                        </small>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="template-aviso">
+    <div class="card p-3 mb-3 dynamic-row border-warning border-start border-4 shadow-sm">
+        <input type="hidden" name="Avisos.Index" value="__INDEX__" />
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="small fw-bold text-muted">Título Obligatorio</label>
+                <input type="text" name="Avisos[__INDEX__].Titulo" class="form-control" required />
+            </div>
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted">Fecha Inicio</label>
+                <input type="date" name="Avisos[__INDEX__].FechaInicio" class="form-control" required />
+            </div>
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted">Expira (Fin)</label>
+                <input type="date" name="Avisos[__INDEX__].FechaExpiracion" class="form-control" required />
+            </div>
+            <div class="col-11">
+                <label class="small fw-bold text-muted">Descripción (Opcional)</label>
+                <input type="text" name="Avisos[__INDEX__].Descripcion" class="form-control" />
+            </div>
+            <div class="col-1 d-flex align-items-end">
+                <button type="button" class="btn btn-danger w-100" onclick="eliminarFila(this)"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="template-horario">
+    <div class="card p-2 dynamic-row horario-row shadow-sm border-0">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <label class="small text-muted fw-bold mb-1">Día</label>
+                <select class="form-select form-select-sm horario-dia">
+                    <option value="Domingo">Domingo</option>
+                    <option value="Lunes">Lunes</option>
+                    <option value="Martes">Martes</option>
+                    <option value="Miércoles">Miércoles</option>
+                    <option value="Jueves">Jueves</option>
+                    <option value="Viernes">Viernes</option>
+                    <option value="Sábado">Sábado</option>
+                    <option value="Diario">Diario</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="small text-muted fw-bold mb-1">Hora</label>
+                <input type="text" class="form-control form-control-sm horario-hora" placeholder="Ej. 10:00 AM" />
+            </div>
+            <div class="col-md-5">
+                <label class="small text-muted fw-bold mb-1">Actividad</label>
+                <input type="text" class="form-control form-control-sm horario-act" placeholder="Ej. Culto Principal" />
+            </div>
+            <div class="col-md-1 text-end mt-4">
+                <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="eliminarFila(this)"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="template-evento">
+    <div class="card p-3 mb-3 dynamic-row border-info border-start border-4 shadow-sm">
+        <input type="hidden" name="Eventos.Index" value="__INDEX__" />
+        <div class="row g-2">
+            <div class="col-md-2 text-center">
+                <img id="imgEvento___INDEX__" src="https://via.placeholder.com/150?text=Flyer" class="img-preview-small mb-1" />
+            </div>
+            <div class="col-md-10">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <label class="small fw-bold text-muted">Título</label>
+                        <input type="text" name="Eventos[__INDEX__].Titulo" class="form-control" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small fw-bold text-muted">Fecha</label>
+                        <input type="date" name="Eventos[__INDEX__].Fecha" class="form-control" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small fw-bold text-muted">Horarios</label>
+                        <input type="text" name="Eventos[__INDEX__].Horarios" class="form-control" required />
+                    </div>
+                    <div class="col-md-11">
+                        <label class="small fw-bold text-muted">Subir Flyer (Opcional)</label>
+                        <input type="file" name="Eventos[__INDEX__].NuevaImagen" class="form-control form-control-sm" accept=".jpg,.png,.jpeg,.webp" onchange="previewImagenUnica(this, 'imgEvento___INDEX__')" />
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger btn-sm w-100 mb-1" onclick="eliminarFila(this)"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="col-12">
+                        <input type="text" name="Eventos[__INDEX__].Descripcion" class="form-control form-control-sm" placeholder="Breve descripción..." />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="template-multimedia">
+    <div class="card p-3 mb-2 dynamic-row shadow-sm border-0 bg-light">
+        <input type="hidden" name="Multimedia.Index" value="__INDEX__" />
+        <input type="hidden" name="Multimedia[__INDEX__].Orden" value="99" />
+        <div class="row g-2">
+            <div class="col-12">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-brands fa-youtube text-danger"></i></span>
+                    <input type="url" name="Multimedia[__INDEX__].UrlEmbed" class="form-control" placeholder="URL directa del video (YouTube)" required />
+                    <button type="button" class="btn btn-danger" onclick="eliminarFila(this)"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="col-12">
+                <input type="text" name="Multimedia[__INDEX__].Titulo" class="form-control form-control-sm" placeholder="Título del Video / Predicación" />
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="template-galeria-url">
+    <div class="card p-2 mb-2 dynamic-row shadow-sm border-0">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-link"></i></span>
+                    <input type="url" name="NuevasUrls" class="form-control" placeholder="https://ejemplo.com/imagen.jpg" required />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <input type="text" name="NuevasUrlsTitulos" class="form-control form-control-sm" placeholder="Título de la imagen" />
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-sm btn-danger w-100" onclick="eliminarFila(this)"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+    </div>
+</template>
+<div class="modal fade" id="modalDescartar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-danger text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-trash-can me-2"></i> Descartar Borrador</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="fs-5 mb-0">¿Estás seguro de que quieres eliminar tus cambios actuales?</p>
+                <small class="text-muted d-block mt-2">La página volverá exactamente a como está la versión en línea actualmente. Esta acción no se puede deshacer.</small>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light border rounded-pill px-4" data-bs-dismiss="modal">Mantener Cambios</button>
+                <form action="@Url.Action("DescartarBorrador", "IglesiasWeb")" method="post" class="m-0 p-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sId" value="@Model.sIdIglesia" />
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Sí, Descartar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPublicarEditor" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Publicar Cambios</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="fs-5 mb-0">¿Estás seguro de que deseas publicar esto en vivo?</p>
+                <small class="text-muted d-block mt-2">Cualquier persona que visite el sitio web verá estos cambios inmediatamente.</small>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light border rounded-pill px-4" data-bs-dismiss="modal">Seguir Editando</button>
+                <form action="@Url.Action("Publicar", "IglesiasWeb")" method="post" class="m-0 p-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sId" value="@Model.sIdIglesia" />
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">Sí, Publicar Ahora</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        // =========================================================
+        // 0. CARGAR PREVIA DE PLANTILLA Y DRAG&DROP
+        // =========================================================
+        document.addEventListener("DOMContentLoaded", function() {
+            actualizarPreviaPlantilla(); 
+            inicializarHorarios();
+            var galeriaContainer = document.getElementById('contenedor-galeria');
+            if (galeriaContainer) {
+                new Sortable(galeriaContainer, { animation: 150, ghostClass: 'sortable-ghost', cursor: 'grabbing' });
+            }
+        });
+        function actualizarPreviaPlantilla() {
+            const select = document.getElementById('selectPlantilla');
+            const img = document.getElementById('imgPreviaPlantilla');
+            const icon = document.getElementById('iconPreviaPlantilla');
+            const msgModular = document.getElementById('msgPlantillaModular');
+            const notaModular = document.getElementById('noteModular');
+
+            if (!select || select.selectedIndex === -1) return;
+
+            const opcionSeleccionada = select.selectedOptions[0];
+            const urlImagen = opcionSeleccionada.dataset.img;
+            const esPersonalizable = opcionSeleccionada.dataset.personalizable === "true";
+
+            // Ocultar todo por defecto
+            img.style.display = 'none';
+            icon.style.display = 'none';
+            msgModular.style.display = 'none';
+            if (notaModular) notaModular.style.display = 'none';
+
+            if (esPersonalizable) {
+                // Muestra el icono de la paleta y la nota informativa
+                msgModular.style.display = 'block';
+                if (notaModular) notaModular.style.display = 'block';
+            }
+            else if (urlImagen) {
+                // Lógica para plantillas estáticas
+                img.onerror = () => {
+                    img.style.display = 'none';
+                    icon.style.display = 'block';
+                };
+                img.src = urlImagen;
+                img.style.display = 'block';
+            } else {
+                icon.style.display = 'block';
+            }
+        }
+
+        // =========================================================
+        // 1. REINDEXACIÓN AL ENVIAR FORMULARIO
+        // =========================================================
+        $('#formEditorWeb').on('submit', function () {
+            $('#contenedor-avisos > .dynamic-row').each(function (index) {
+                $(this).find('input, select, textarea').each(function () {
+                    var name = $(this).attr('name');
+                    if (name && !name.includes('Avisos.Index')) { $(this).attr('name', name.replace(/Avisos\[.*?\]/, 'Avisos[' + index + ']')); }
+                });
+                $(this).find('input[name="Avisos.Index"]').val(index);
+            });
+
+            $('#contenedor-eventos > .dynamic-row').each(function (index) {
+                $(this).find('input, select, textarea').each(function () {
+                    var name = $(this).attr('name');
+                    if (name && !name.includes('Eventos.Index')) { $(this).attr('name', name.replace(/Eventos\[.*?\]/, 'Eventos[' + index + ']')); }
+                });
+                $(this).find('input[name="Eventos.Index"]').val(index);
+            });
+
+            $('#contenedor-galeria > .dynamic-row').each(function (index) {
+                $(this).find('input').each(function () {
+                    var name = $(this).attr('name');
+                    if (name && !name.includes('Galeria.Index')) { $(this).attr('name', name.replace(/Galeria\[.*?\]/, 'Galeria[' + index + ']')); }
+                });
+                $(this).find('input[name="Galeria.Index"]').val(index);
+                $(this).find('.input-orden').val(index + 1); // Fuerza el orden visual a la BD
+            });
+
+            $('#contenedor-multi > .dynamic-row').each(function (index) {
+                $(this).find('input').each(function () {
+                    var name = $(this).attr('name');
+                    if (name && !name.includes('Multimedia.Index')) { $(this).attr('name', name.replace(/Multimedia\[.*?\]/, 'Multimedia[' + index + ']')); }
+                });
+                $(this).find('input[name="Multimedia.Index"]').val(index);
+            });
+
+            // COMPILAR HORARIOS A TEXTO PLANO SEPARADO POR BARRAS ( | )
+            let horariosFinal = [];
+            $('#contenedor-horarios .horario-row').each(function() {
+                let d = $(this).find('.horario-dia').val().trim();
+                let h = $(this).find('.horario-hora').val().trim();
+                let a = $(this).find('.horario-act').val().trim();
+
+                if(h !== '' || a !== '') {
+                    // Removemos si escribieron | por error para no romper la lectura futura
+                    h = h.replace(/\|/g, '-');
+                    a = a.replace(/\|/g, '-');
+                    horariosFinal.push(`${d} | ${h} | ${a}`);
+                }
+            });
+            $('#hiddenHorarios').val(horariosFinal.join('\n'));
+            return true;
+        });
+
+        // =========================================================
+        // 2. GESTOR DE ARCHIVOS NUEVOS CON TÍTULOS (DATATRANSFER)
+        // =========================================================
+        const globalDataTransfer = new DataTransfer();
+        const inputFile = document.getElementById('inputNuevasFotos');
+        const previewContainer = document.getElementById('preview-nuevas-fotos');
+
+        function agregarNuevasFotos(input) {
+            if (input.files) {
+                Array.from(input.files).forEach(file => {
+                    if (file.size > 10 * 1024 * 1024) { alert(`El archivo ${file.name} es demasiado grande.`); return; }
+                    globalDataTransfer.items.add(file);
+
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var div = document.createElement('div');
+                        div.className = 'position-relative text-center dynamic-row bg-light p-2 rounded shadow-sm border';
+                        div.style.width = '140px';
+
+                        var img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'img-preview-small shadow-sm w-100 mb-2 rounded';
+
+                        // Inyección del input para el Título
+                        var titleInput = document.createElement('input');
+                        titleInput.type = 'text';
+                        titleInput.name = 'NuevasImagenesTitulos';
+                        titleInput.className = 'form-control form-control-sm mb-1';
+                        titleInput.placeholder = 'Título de foto';
+
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-danger btn-remove-new';
+                        btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                        btn.onclick = function() { eliminarFotoNueva(file.name, div); };
+
+                        div.appendChild(img);
+                        div.appendChild(titleInput);
+                        div.appendChild(btn);
+                        previewContainer.appendChild(div);
+                    }
+                    reader.readAsDataURL(file);
+                });
+                inputFile.files = globalDataTransfer.files;
+            }
+        }
+
+        function eliminarFotoNueva(fileName, divElement) {
+            divElement.remove();
+            const newDt = new DataTransfer();
+            for (let i = 0; i < globalDataTransfer.files.length; i++) {
+                if (globalDataTransfer.files[i].name !== fileName) newDt.items.add(globalDataTransfer.files[i]);
+            }
+            globalDataTransfer.items.clear();
+            for (let i = 0; i < newDt.files.length; i++) globalDataTransfer.items.add(newDt.files[i]);
+            inputFile.files = globalDataTransfer.files;
+        }
+
+        // =========================================================
+        // 3. FUNCIONES COMPARTIDAS
+        // =========================================================
+        function eliminarFila(btn) { $(btn).closest('.dynamic-row').remove(); }
+
+        function eliminarFotoVisual(id) {
+            document.getElementById('hdnDel_' + id).value = 'true';
+            document.getElementById('imgBox_' + id).style.display = 'none';
+        }
+
+        function previewImagenUnica(input, imgId) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) { document.getElementById(imgId).src = e.target.result; }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function inyectarTemplate(templateId, contenedorId) {
+            var templateHtml = document.getElementById(templateId).innerHTML;
+            var uid = 'Nuevo_' + Date.now();
+            var finalHtml = templateHtml.replace(/__INDEX__/g, uid);
+            document.getElementById(contenedorId).insertAdjacentHTML('beforeend', finalHtml);
+        }
+
+        function agregarAviso() { inyectarTemplate('template-aviso', 'contenedor-avisos'); }
+        function agregarEvento() { inyectarTemplate('template-evento', 'contenedor-eventos'); }
+        function agregarMulti() { inyectarTemplate('template-multimedia', 'contenedor-multi'); }
+        function agregarUrlGaleria() { inyectarTemplate('template-galeria-url', 'contenedor-urls'); }
+
+                // ====== GESTOR DE HORARIOS ESTRUCTURADOS ======
+        const rawHorariosStr = `@Html.Raw((Model.HorariosIglesia ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", ""))`;
+
+        function inicializarHorarios() {
+            const lineas = rawHorariosStr.split(/\r?\n/);
+            let encontrados = 0;
+
+            lineas.forEach(linea => {
+                if (!linea.trim()) return;
+                const partes = linea.split(' | ');
+
+                // Si respeta el formato "Día | Hora | Actividad" lo dibuja hermoso
+                if (partes.length === 3) {
+                    agregarHorario(partes[0].trim(), partes[1].trim(), partes[2].trim());
+                    encontrados++;
+                }
+            });
+
+            // Si el texto está vacío o era texto viejo sin formato, ponemos 1 fila limpia en blanco
+            if (encontrados === 0) agregarHorario('Domingo', '', '');
+        }
+
+        function agregarHorario(dia = 'Domingo', hora = '', act = '') {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = document.getElementById('template-horario').innerHTML;
+            const row = tempDiv.firstElementChild;
+
+            const selectDia = row.querySelector('.horario-dia');
+            // Si el día guardado en la BD no existe en el Select, lo creamos dinámicamente
+            if (!Array.from(selectDia.options).some(opt => opt.value === dia) && dia !== "") {
+                selectDia.add(new Option(dia, dia));
+            }
+            selectDia.value = dia;
+            row.querySelector('.horario-hora').value = hora;
+            row.querySelector('.horario-act').value = act;
+
+            document.getElementById('contenedor-horarios').appendChild(row);
+        }
+        function verDemoPlantilla() {
+            const select = document.getElementById('selectPlantilla');
+            if (!select || select.selectedIndex === -1) {
+                alert("Por favor, selecciona una plantilla primero.");
+                return;
+            }
+            const plantillaId = select.value;
+            // Abrimos la ruta del WebController en una nueva pestaña
+            window.open('/web/demo/' + plantillaId, '_blank');
+        }
+    </script>
+}

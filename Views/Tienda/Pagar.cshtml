@@ -1,0 +1,294 @@
+﻿@model RedAJP.Models.CheckoutViewModel
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Finalizar Compra";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-tienda');
+    });
+</script>
+
+<div class="fade-in py-4">
+    <div class="mb-4">
+        <a href="@Url.Action("Carrito")" class="btn btn-link text-decoration-none text-muted ps-0">
+            <i class="fa-solid fa-arrow-left me-2"></i> Volver al Carrito
+        </a>
+        <h2 class="fw-bold mt-2">Finalizar Compra</h2>
+    </div>
+
+    <form id="formCheckout">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-address-card me-2 text-primary"></i> Datos de Contacto</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Teléfono / WhatsApp</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-phone"></i></span>
+                                <input type="tel" class="form-control border-start-0 ps-1 fw-bold text-dark"
+                                       name="TelefonoContacto"
+                                       id="inputTelefono"
+                                       value="@Model.TelefonoContacto"
+                                       placeholder=""
+                                       maxlength="15"
+                                       style="letter-spacing: 1px; font-size: 1.1rem;"
+                                       required>
+                            </div>
+                            <div class="form-text small">Te contactaremos a este número cuando tu pedido esté listo.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Comentarios o Instrucciones Adicionales</label>
+                            <textarea class="form-control" name="Comentarios" rows="3" placeholder="Referencia breve (ej. ubicación, iglesia..) o comentarios sobre tu compra">@Model.Comentarios</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white border-bottom py-3" data-bs-toggle="collapse" data-bs-target="#listaArticulos" style="cursor: pointer;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-box me-2 text-primary"></i> Resumen de Artículos (@Model.CantidadArticulos)</h6>
+                            <i class="fa-solid fa-chevron-down text-muted"></i>
+                        </div>
+                    </div>
+                    <div class="collapse show" id="listaArticulos">
+                        <div class="card-body p-0">
+                            @foreach (var item in Model.ItemsResumen)
+                            {
+                                <div class="d-flex align-items-center p-3 border-bottom gap-3">
+                                    <div class="rounded-3 bg-light overflow-hidden flex-shrink-0 border" style="width: 60px; height: 60px;">
+                                        @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                                        {
+                                            <img src="@item.ImagenUrl" class="w-100 h-100 object-fit-cover">
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                                <i class="fa-solid fa-image opacity-50"></i>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <h6 class="mb-0 fw-bold text-dark text-truncate">@item.Nombre</h6>
+                                        <div class="d-flex align-items-center mt-1">
+                                            <span class="badge bg-light text-dark border me-2">x @item.Cantidad</span>
+                                            @if (!string.IsNullOrEmpty(item.Instrucciones))
+                                            {
+                                                <small class="text-muted text-truncate" style="max-width: 150px;">
+                                                    @item.Instrucciones
+                                                </small>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="text-end">
+                                        <span class="fw-bold text-dark">$@item.Subtotal.ToString("N2")</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-lg rounded-4 bg-light sticky-top" style="top: 100px; z-index: 1;">
+                    <div class="card-body p-4">
+                        <h4 class="fw-bold mb-4 text-center">Confirmar Pago</h4>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Subtotal Productos</span>
+                            <span class="fs-5 fw-bold text-dark" id="lblSubtotalBase">$@Model.TotalPagar.ToString("N2")</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-2 text-success" id="rowDescuento" style="display:none;">
+                            <span><i class="fa-solid fa-tag me-1"></i> Descuento</span>
+                            <span class="fw-bold" id="lblDescuento">-$0.00</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                            <span class="text-muted small">Gastos de Gestión (Stripe)</span>
+                            <span class="text-muted small" id="lblComision">Calculado al pagar</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="fs-5 fw-bold">Total a Pagar</span>
+                            <span class="fs-3 fw-bold text-primary" id="lblTotalFinal">$@Model.TotalPagar.ToString("N2")</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Código de Descuento</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-ticket"></i></span>
+                                <input type="text" name="CodigoCupon" id="txtCupon" class="form-control border-start-0 ps-1 text-uppercase"
+                                       placeholder="Escribe tu código"
+                                       oninput="this.value = this.value.toUpperCase()">
+                                <button type="button" class="btn btn-dark" onclick="validarCupon()" id="btnValidar">
+                                    Aplicar
+                                </button>
+                            </div>
+                            <div id="msgCupon" class="form-text mt-1"></div>
+                        </div>
+
+                        <div id="seccion-generar">
+                            <button type="button" onclick="procesarOrden()" class="btn btn-dark w-100 rounded-pill py-3 fw-bold shadow-sm hover-scale">
+                                <i class="fa-solid fa-credit-card me-2"></i> IR A PAGAR
+                            </button>
+                            <p class="text-center mt-3 small text-muted">
+                                Al confirmar, serás redirigido a la pasarela segura de Stripe.
+                            </p>
+                        </div>
+
+                        <div id="loader-checkout" class="text-center my-3" style="display: none;">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 fw-bold text-dark">Conectando con Stripe...</p>
+                        </div>
+
+                        <div class="mt-4 text-center">
+                            <small class="text-muted d-block mb-2">Pagos procesados por</small>
+                            <span class="fs-4 fw-bold fst-italic text-secondary"><i class="fa-brands fa-stripe fa-lg me-1 text-primary"></i> stripe</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    async function procesarOrden() {
+        const form = document.getElementById('formCheckout');
+
+        // Validación nativa (teléfono, requeridos, etc.)
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        // UI Loading
+        document.getElementById('seccion-generar').style.display = 'none';
+        document.getElementById('loader-checkout').style.display = 'block';
+
+        // FormData capturará automáticamente el teléfono, comentarios Y EL CUPÓN
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('@Url.Action("ProcesarOrden", "Tienda")', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Manejo de errores de Stock
+                if (data.errorType === 'stock_mismatch') {
+                    alert(data.message);
+                    window.location.href = '@Url.Action("Carrito", "Tienda")';
+                    return;
+                }
+                throw new Error(data.message || "Error al procesar");
+            }
+
+            // ÉXITO: Redirigir a la URL de Stripe recibida
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error("No se recibió el enlace de pago.");
+            }
+
+        } catch (error) {
+            console.error(error);
+            // Restaurar UI
+            document.getElementById('seccion-generar').style.display = 'block';
+            document.getElementById('loader-checkout').style.display = 'none';
+
+            document.getElementById('loader-checkout').innerHTML =
+                `<div class="alert alert-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i> ${error.message} <br><a href="javascript:location.reload()" class="fw-bold">Reintentar</a></div>`;
+        }
+    }
+
+    async function validarCupon() {
+        const txtCupon = document.getElementById('txtCupon');
+        const btnValidar = document.getElementById('btnValidar');
+        const msgCupon = document.getElementById('msgCupon');
+        const codigo = txtCupon.value.trim();
+
+        if (!codigo) {
+            msgCupon.innerHTML = '<span class="text-danger">Escribe un código primero.</span>';
+            return;
+        }
+
+        // UI Loading
+        btnValidar.disabled = true;
+        btnValidar.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        msgCupon.innerHTML = '';
+
+        try {
+            const formData = new FormData();
+            formData.append('codigo', codigo);
+            // Obtenemos el Token AntiForgery del formulario principal
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            formData.append('__RequestVerificationToken', token);
+
+            const response = await fetch('@Url.Action("ValidarCuponTienda", "Tienda")', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.valido) {
+                // Éxito visual
+                msgCupon.innerHTML = `<span class="text-success fw-bold"><i class="fa-solid fa-check"></i> ${data.mensaje}</span>`;
+
+                // Actualizar Valores Visuales
+                document.getElementById('rowDescuento').style.display = 'flex';
+                document.getElementById('lblDescuento').innerText = '-$' + data.descuento.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                document.getElementById('lblComision').innerText = '$' + data.comision.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                document.getElementById('lblTotalFinal').innerText = '$' + data.nuevoTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                txtCupon.classList.add('is-valid');
+            } else {
+                // Error
+                msgCupon.innerHTML = `<span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> ${data.mensaje}</span>`;
+                txtCupon.classList.add('is-invalid');
+                document.getElementById('rowDescuento').style.display = 'none';
+            }
+
+        } catch (error) {
+            console.error(error);
+            msgCupon.innerHTML = '<span class="text-danger">Error de conexión.</span>';
+        } finally {
+            btnValidar.disabled = false;
+            btnValidar.innerHTML = 'Aplicar';
+        }
+    }
+
+    document.getElementById('txtCupon').addEventListener('input', function() {
+        this.classList.remove('is-invalid', 'is-valid');
+        document.getElementById('msgCupon').innerHTML = '';
+    });
+</script>
+
+<style>
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+</style>

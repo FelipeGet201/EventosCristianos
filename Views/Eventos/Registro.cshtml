@@ -1,0 +1,2185 @@
+@using RedAJP.Models
+@using RedAJP.Globales
+@using Npgsql
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@model RedAJP.Models.RegistroEventoViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Registro al Evento";
+
+    // 1. Datos del Evento
+    int idEvento = ViewBag.Id_Evento != null ? Convert.ToInt32(ViewBag.Id_Evento) : 0;
+    string sidEventoEncriptado = ViewBag.Id_Evento_Encriptado != null ? Convert.ToString(ViewBag.Id_Evento_Encriptado) : "";
+    string titulo = ViewBag.TituloEvento as string ?? "Evento";
+    decimal costoBase = ViewBag.CostoUnitario != null ? Convert.ToDecimal(ViewBag.CostoUnitario) : 0;
+    
+    // Bandera de Bloqueo
+    bool eventoBloqueado = ViewBag.EventoBloqueado != null && (bool)ViewBag.EventoBloqueado;
+
+    // 2. Configuración
+    int tipoRegistro = ViewBag.TipoRegistro != null ? Convert.ToInt32(ViewBag.TipoRegistro) : 1;
+    bool esGrupal = tipoRegistro == 2;
+    bool permitirPago = ViewBag.Permitir_Pago != null && (bool)ViewBag.Permitir_Pago;
+
+    // 3. Cupos
+    int cupoMax = ViewBag.CupoMaximo != null ? (int)ViewBag.CupoMaximo : 0;
+    int ocupados = ViewBag.TotalOcupados != null ? (int)ViewBag.TotalOcupados : 0;
+    bool hayCupo = cupoMax == 0 || ocupados < cupoMax;
+    int lugaresDisponibles = cupoMax == 0 ? 9999 : (cupoMax - ocupados);
+
+    // 4. Listas de Datos
+    var preguntasDef = ViewBag.PreguntasDefinidas as List<PreguntaDefinicion> ?? new List<PreguntaDefinicion>();
+    var registrados = ViewBag.Registrados as List<AsistenteRegistrado> ?? new List<AsistenteRegistrado>();
+    var subtipos = ViewBag.Subtipos as List<SubtipoEventoItem> ?? new List<SubtipoEventoItem>();
+    bool tieneHistorial = registrados.Count > 0;
+    
+    // Si está bloqueado, nunca abrimos el formulario inicial
+    bool iniciarFormularioAbierto = !tieneHistorial && hayCupo && !eventoBloqueado;
+
+    var listaGrupos = registrados.Select(r => r.EtiquetaGrupo)
+                                 .Where(g => !string.IsNullOrWhiteSpace(g))
+                                 .Distinct()
+                                 .OrderBy(g => g)
+                                 .ToList();
+
+    // 5. Propuesta Automática
+    var listaPropuesta = ViewBag.Asistentes as List<AsistenteItem> ?? new List<AsistenteItem>();
+
+    var jsonSubtipos = System.Text.Json.JsonSerializer.Serialize(subtipos);
+    var jsonProductosExtra = System.Text.Json.JsonSerializer.Serialize(ViewBag.ProductosExtra as List<ProductoExtraItem> ?? new List<ProductoExtraItem>());
+    var jsonPropuesta = System.Text.Json.JsonSerializer.Serialize(listaPropuesta);
+    var jsonRegistrados = System.Text.Json.JsonSerializer.Serialize(registrados);
+
+    // 6. CÁLCULO PARA EL TEMPORIZADOR FLOTANTE GLOBAL
+    var pendientesDePago = registrados.Where(r => !r.EstaLiquidadado && !r.EstaBloqueado && r.PagosRealizados == 0);
+    int segundosRestantesGlobal = pendientesDePago.Any() ? pendientesDePago.Max(r => r.SegundosRestantesApartado) : 0;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-eventos');
+    });
+    var dataSubtipos = @Html.Raw(jsonSubtipos);
+    var asistentesPropuestos = @Html.Raw(jsonPropuesta);
+    var listaRegistrados = @Html.Raw(jsonRegistrados);
+    var catalogoExtras = @Html.Raw(jsonProductosExtra);
+</script>
+
+<style>
+    /* ESTILOS ORIGINALES */
+    .header-evento h2 {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        color: white;
+    }
+
+    .badge-costo {
+        background-color: #ffc107;
+        color: #212529;
+        font-weight: 800;
+    }
+
+    .btn-volver-arriba {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0,0,0,0.3);
+        border: 2px solid rgba(255,255,255,0.5);
+        color: white;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+        .btn-volver-arriba:hover {
+            background-color: white;
+            color: var(--header-footer);
+        }
+
+    .oculto {
+        display: none !important;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chk-persona {
+        width: 1.3em;
+        height: 1.3em;
+        cursor: pointer;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .btn-expandir {
+        border: none;
+        background: none;
+        color: var(--acento-coral);
+        padding: 0 5px;
+        transition: color 0.3s;
+    }
+
+        .btn-expandir:hover {
+            color: #ff8f70;
+        }
+
+    .btn-historial {
+        background-color: white;
+        color: var(--color-primario, #0d6efd);
+        border: 1px solid rgba(0,0,0,0.15);
+        transition: all 0.2s ease;
+    }
+
+    .btn-historial:hover, 
+    .btn-historial:focus {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        background-color: #f8f9fa !important;
+        color: var(--color-primario, #0d6efd) !important;
+        opacity: 1 !important;
+    }
+
+    @@media (min-width: 768px) {
+        .btn-width-md-auto {
+            width: auto !important;
+        }
+    }
+
+    .badge-granular {
+        font-size: 0.7rem;
+        padding: 0.4em 0.8em;
+        border-radius: 50px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s;
+    }
+
+        .badge-granular:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+    .btn-accion {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        background: white;
+        color: #6c757d;
+        transition: all 0.2s;
+        text-decoration: none;
+        margin-left: 2px;
+    }
+
+        .btn-accion:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-accion.ver:hover {
+            color: #198754;
+            border-color: #198754;
+            background-color: #d1e7dd;
+        }
+
+        .btn-accion.share:hover {
+            color: #0d6efd;
+            border-color: #0d6efd;
+            background-color: #cfe2ff;
+        }
+
+        .btn-accion.edit:hover {
+            color: #fd7e14;
+            border-color: #fd7e14;
+            background-color: #ffe5d0;
+        }
+
+        .btn-accion.del:hover {
+            color: #dc3545;
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+    /* --- CONTADOR FLOTANTE --- */
+    .floating-timer {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 50px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        border: 2px solid rgba(255,255,255,0.1);
+        transition: all 0.3s ease;
+    }
+
+    @@media (max-width: 768px) {
+        .floating-timer {
+            bottom: 0;
+            right: 0;
+            left: 0;
+            border-radius: 0;
+            border: none;
+            border-top: 2px solid rgba(255,255,255,0.1);
+            justify-content: center;
+            padding: 12px 15px;
+        }
+    }
+
+    .timer-icon {
+        font-size: 1.5rem;
+    }
+
+    .timer-text-container {
+        line-height: 1.1;
+    }
+
+    .timer-text {
+        font-size: 0.85rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.9;
+    }
+
+    .timer-subtext {
+        font-size: 0.7rem;
+        opacity: 0.8;
+    }
+
+    .timer-countdown {
+        font-size: 1.6rem;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 1px;
+        background: rgba(0,0,0,0.25);
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-left: 15px;
+        min-width: 95px;
+        text-align: center;
+    }
+
+    .pulse-animation {
+        animation: pulseTimer 1.5s infinite;
+    }
+
+    @@keyframes pulseTimer {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15);}
+        100% { transform: scale(1); }
+    }
+
+    /* ========================================================= */
+    /* TABLA RESPONSIVA A TARJETAS (TABLE-TO-CARDS)              */
+    /* ========================================================= */
+    @@media (max-width: 991.98px) {
+        .table-responsive { 
+            overflow-x: visible !important;
+            background: transparent !important;
+        }
+        
+        .responsive-table {
+            background-color: transparent !important;
+        }
+
+        .responsive-table thead { 
+            display: none;
+        }
+        
+        .responsive-table tbody tr:not(.collapse) {
+            display: block;
+            margin-bottom: 1.5rem !important; 
+            border: 1px solid #ced4da !important;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: #ffffff !important; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08) !important;
+        }
+
+        .responsive-table tbody tr:not(.collapse):hover {
+            background-color: #ffffff !important;
+        }
+        
+        .responsive-table tbody td {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f1f3f5 !important;
+            padding: 1rem !important;
+            text-align: right;
+        }
+        
+        .responsive-table tbody td:last-child { 
+            border-bottom: none;
+            background-color: #f8f9fa;
+        }
+        
+        .responsive-table tbody td::before {
+            content: attr(data-label);
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-right: 1rem;
+            flex-shrink: 0;
+            text-align: left;
+        }
+        
+        .responsive-table tbody td > div.d-flex {
+            justify-content: flex-end;
+            width: auto;
+            flex-grow: 1;
+        }
+        
+        .responsive-table tbody tr.collapse { 
+            display: none;
+        }
+        
+        .responsive-table tbody tr.collapse.show { 
+            display: block;
+            border: 1px solid #ced4da !important; 
+            border-top: none; 
+            margin-top: -1.5rem; 
+            margin-bottom: 1.5rem; 
+            border-radius: 0 0 0.75rem 0.75rem; 
+            background-color: #fcfcfc !important;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08) !important;
+        }
+        
+        .responsive-table tbody tr.collapse td { 
+            display: block;
+            text-align: left; 
+        }
+        
+        .responsive-table tbody tr.collapse td::before { 
+            display: none;
+        }
+    }
+
+    /* --- NUEVOS ESTILOS PARA TABS Y GRUPOS --- */
+    .nav-pills .nav-link { 
+        color: #495057;
+        background-color: rgba(255, 255, 255, 0.6);
+        font-weight: bold; 
+        border-radius: 20px; 
+        padding: 6px 18px;
+        font-size: 0.85rem; 
+        transition: all 0.3s ease; 
+        border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    
+    .nav-pills .nav-link.active { 
+        background-color: var(--color-primario, #0d6efd);
+        color: white; 
+        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3); 
+        border-color: var(--color-primario, #0d6efd);
+    }
+    
+    .nav-pills .nav-link:not(.active):hover { 
+        background-color: #ffffff;
+        color: var(--color-primario, #0d6efd);
+        border-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .fila-oculta { display: none !important; }
+    .badge-grupo { font-size: 0.65rem; background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; padding: 2px 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+
+    /* --- ESTILOS MEJORADOS PARA TARJETAS DE ADICIONALES (PRODUCTOS EXTRA) --- */
+    .contenedor-extras-registro {
+        margin-top: 0.5rem;
+    }
+
+    .item-extra-registro .card {
+        border-radius: 16px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .item-extra-registro .card:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 22px rgba(13, 110, 253, 0.1) !important;
+        border-color: rgba(13, 110, 253, 0.35) !important;
+    }
+
+    /* Título de Producto */
+    .item-extra-registro .card .fw-bold.text-primary {
+        color: #0f172a !important;
+        font-size: 0.88rem !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.2px;
+        margin-bottom: 2px;
+    }
+
+    /* Precio Badge en Estado Inactivo por defecto (NO seleccionado -> Gris neutro) */
+    .item-extra-registro .card .badge.bg-success {
+        background: #cbd5e1 !important;
+        color: #475569 !important;
+        border-radius: 20px !important;
+        padding: 4px 10px !important;
+        font-weight: 700 !important;
+        font-size: 0.76rem !important;
+        box-shadow: none !important;
+        transition: all 0.25s ease !important;
+    }
+
+    .item-extra-registro .card .badge.bg-light {
+        background: #f1f5f9 !important;
+        color: #475569 !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 20px !important;
+        padding: 3px 8px !important;
+        font-size: 0.65rem !important;
+        font-weight: 600 !important;
+    }
+
+    /* Precio Badge en Estado Activo (SÍ seleccionado -> Verde Esmeralda Vibrante) */
+    .item-extra-registro:has(.btn-si-extra.btn-success) .card .badge.bg-success,
+    .item-extra-registro:has(.inp-cant-extra:not([value="0"])) .card .badge.bg-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+    }
+
+    /* Botones Grupo (NO / SÍ) */
+    .item-extra-registro .btn-group-extra {
+        background: #f1f5f9 !important;
+        border-radius: 30px !important;
+        padding: 3px !important;
+        border: 1px solid #cbd5e1 !important;
+        display: flex !important;
+        gap: 2px !important;
+    }
+
+    /* Botón NO */
+    .item-extra-registro .btn-no-extra.btn-secondary {
+        background: #64748b !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 20px !important;
+        font-weight: 700 !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 2px 5px rgba(100, 116, 139, 0.25) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .item-extra-registro .btn-no-extra.btn-outline-secondary {
+        background: transparent !important;
+        color: #94a3b8 !important;
+        border: none !important;
+        border-radius: 20px !important;
+        font-weight: 600 !important;
+        font-size: 0.75rem !important;
+        transition: all 0.2s ease !important;
+    }
+
+    /* Botón SÍ */
+    .item-extra-registro .btn-si-extra.btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 20px !important;
+        font-weight: 800 !important;
+        font-size: 0.78rem !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .item-extra-registro .btn-si-extra.btn-outline-success {
+        background: transparent !important;
+        color: #10b981 !important;
+        border: none !important;
+        border-radius: 20px !important;
+        font-weight: 700 !important;
+        font-size: 0.75rem !important;
+        transition: all 0.2s ease !important;
+    }
+
+    /* Resplandor verde suave en la tarjeta cuando SÍ está seleccionado */
+    .item-extra-registro:has(.btn-si-extra.btn-success) .card {
+        border-color: #10b981 !important;
+        background: linear-gradient(145deg, #f0fdf4 0%, #ffffff 100%) !important;
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15) !important;
+    }
+
+    /* Selector +/- para cantidades mayores a 1 */
+    .item-extra-registro .input-group-sm {
+        background: #f1f5f9;
+        border-radius: 25px;
+        padding: 2px;
+        border: 1px solid #cbd5e1;
+    }
+
+    .item-extra-registro .btn-menos-extra,
+    .item-extra-registro .btn-mas-extra {
+        border-radius: 50% !important;
+        width: 26px !important;
+        height: 26px !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: none !important;
+        background: #ffffff !important;
+        color: #475569 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .item-extra-registro .btn-menos-extra:hover,
+    .item-extra-registro .btn-mas-extra:hover {
+        background: #1e293b !important;
+        color: #ffffff !important;
+    }
+
+    .item-extra-registro .inp-cant-extra {
+        background: transparent !important;
+        border: none !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        font-size: 0.85rem !important;
+    }
+</style>
+
+<div class="container py-5 fade-in" style="padding-bottom: 100px !important;">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <div class="header-evento mb-4 position-relative text-center">
+                <a href="@Url.Action("Detalle", new { sid = sidEventoEncriptado })" class="btn-volver-arriba rounded-circle position-absolute top-0 start-0 mt-1"><i class="fa-solid fa-arrow-left"></i></a>
+                <h2 class="fw-bold mb-2">@titulo</h2>
+                
+                <div class="d-flex justify-content-center align-items-center gap-3 mt-3">
+                    @if (!subtipos.Any())
+                    {
+                        <span class="badge badge-costo rounded-pill px-3 py-2"><i class="fa-solid fa-tag me-1"></i> $@costoBase.ToString("N2") / persona</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-info text-dark rounded-pill px-3 py-2"><i class="fa-solid fa-layer-group me-1"></i> Precios Variados</span>
+                    }
+                </div>
+
+                <!-- BOTONES DISCRETOS DE DOCUMENTOS LEGALES -->
+                <div class="mt-2 d-flex justify-content-center align-items-center flex-wrap gap-2">
+                    @if (!string.IsNullOrEmpty(ViewBag.UrlTerminos as string))
+                    {
+                        <button type="button" class="btn btn-sm bg-white text-secondary border shadow-xs rounded-pill px-3 py-1 fw-semibold small" onclick="abrirLectorPDF('Términos y Condiciones', '@ViewBag.UrlTerminos')" title="Ver Términos y Condiciones">
+                            <i class="fa-solid fa-scale-balanced text-warning me-1"></i> Términos
+                        </button>
+                    }
+                    @if (!string.IsNullOrEmpty(ViewBag.UrlPrivacidad as string))
+                    {
+                        <button type="button" class="btn btn-sm bg-white text-secondary border shadow-xs rounded-pill px-3 py-1 fw-semibold small" onclick="abrirLectorPDF('Aviso de Privacidad', '@ViewBag.UrlPrivacidad')" title="Ver Aviso de Privacidad">
+                            <i class="fa-solid fa-shield-halved text-info me-1"></i> Privacidad
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @if (eventoBloqueado)
+            {
+                <div class="alert alert-danger shadow-sm border-0 rounded-4 p-4 mb-4 d-flex align-items-center">
+                    <i class="fa-solid fa-lock fa-2x me-3 opacity-75"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Evento Bloqueado por Logística</h6>
+                        <p class="mb-0 small">El evento ya no admite nuevas inscripciones ni modificaciones. Sin embargo, puedes continuar y liquidar tus pagos pendientes con normalidad.</p>
+                    </div>
+                </div>
+            }
+
+            <div class="row g-4 mb-4 @(hayCupo && ViewBag.TieneMapa != null && (bool)ViewBag.TieneMapa && !eventoBloqueado ? "justify-content-between" : "justify-content-end")">
+                @if (hayCupo && ViewBag.TieneMapa != null && (bool)ViewBag.TieneMapa && !eventoBloqueado)
+                {
+                    <div class="col-12 col-md-5 col-lg-4">
+                        <div class="text-white opacity-75 mb-1 text-center text-md-start" style="font-size: 0.7rem;">
+                            <i class="fa-solid fa-circle-info me-1"></i> Aparta lugares antes de que se agoten.
+                        </div>
+                        <a href="@Url.Action("RegistroRapido", new { sid = sidEventoEncriptado })" 
+                            class="btn btn-warning rounded-pill fw-bold shadow-sm w-100 d-flex align-items-center justify-content-center py-2">
+                            <i class="fa-solid fa-bolt me-2"></i> Pre-Registro Rápido
+                        </a>
+                    </div>
+                }
+                @if (tieneHistorial)
+                {
+                    <div class="@(ViewBag.TieneMapa != null && (bool)ViewBag.TieneMapa && !eventoBloqueado ? "col-12 col-md-5 col-lg-4 d-flex align-items-end" : "col-12 col-md-auto")">
+                        <a href="@Url.Action("MisTransferencias", new { sid = sidEventoEncriptado })" 
+                            class="btn btn-historial rounded-pill fw-bold shadow-sm w-100 d-flex align-items-center justify-content-center py-2 px-4">
+                            <i class="fa-solid fa-list-ul me-2"></i> Ver Mis Transferencias
+                        </a>
+                    </div>
+                }
+            </div>
+
+            @if (tieneHistorial)
+            {                
+                @if (esGrupal)
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <ul class="nav nav-pills" id="pills-tab">
+                            @if (listaGrupos.Count > 1)
+                            {
+                                <li class="nav-item">
+                                    <button type="button" class="nav-link active" onclick="filtrarGrupo('Todos')">Todos</button>
+                                </li>
+                            }
+                            @foreach (var grupo in listaGrupos)
+                            {
+                                <li class="nav-item">
+                                    <button type="button" class="nav-link @(listaGrupos.Count == 1 ? "active" : "")" onclick="filtrarGrupo('@grupo')">@grupo</button>
+                                </li>
+                            }
+                        </ul>
+        
+                        @if (!eventoBloqueado)
+                        {
+                            <div id="btnOrganizar" class="d-none">
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill fw-bold" onclick="abrirModalGrupo()">
+                                    <i class="fa-solid fa-folder-plus me-1 text-primary"></i> Mover a Grupo
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <form action="@Url.Action("PrepararPago")" method="post" id="formPagarSeleccionados">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idEvento" value="@idEvento" />
+
+                    <div class="card border-0 shadow-lg rounded-4 mb-4 overflow-hidden">
+                        <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check me-2 text-primary"></i>Tu Lista (@registrados.Count)</h6>
+                            @if (permitirPago)
+                            {
+                                <div class="form-check form-switch small m-0">
+                                    <input class="form-check-input" type="checkbox" id="chkTodos" onchange="toggleTodos(this)">
+                                    <label class="form-check-label text-muted cursor-pointer" for="chkTodos">Seleccionar visibles</label>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="p-0 bg-light"> 
+                            <div class="table-responsive p-3 p-lg-0"> 
+                                <table class="table table-hover mb-0 align-middle responsive-table">
+                                    <thead class="bg-light text-uppercase small">
+                                        <tr>
+                                            <th class="ps-4 py-3" style="width: 50px;">#</th>
+                                            <th>Nombre</th>
+                                            <th>Modalidad / Costo</th>
+                                            <th class="text-center">Estado</th>
+                                            <th class="text-end pe-4" style="min-width: 140px;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in registrados)
+                                        {
+                                            string jsonR = System.Text.Json.JsonSerializer.Serialize(item.Respuestas);
+                                            <tr class="fila-asistente" data-grupo="@item.EtiquetaGrupo">
+                                                <td class="ps-4" data-label="Selección">
+                                                    @if (item.EstaLiquidadado)
+                                                    {
+                                                        <i class="fa-solid fa-check text-success small"></i>
+                                                    }
+                                                    else if (permitirPago)
+                                                    {
+                                                        if (item.EstaBloqueado)
+                                                        {
+                                                            if (item.EstatusTransaccion == "waiting_proof")
+                                                            {
+                                                                <i class="fa-solid fa-clock text-warning" title="Pendiente de subir comprobante" style="cursor: help;"></i>
+                                                            }
+                                                            else if (item.EstatusTransaccion == "rejected")
+                                                            {
+                                                                <i class="fa-solid fa-circle-exclamation text-danger" title="Transferencia rechazada" style="cursor: help;"></i>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="fa-solid fa-hourglass-half text-primary" title="En revisión" style="cursor: help;"></i>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <input type="checkbox" name="idsSeleccionados" value="@item.Id_Asistente" 
+                                                                   class="form-check-input chk-persona" 
+                                                                   data-pendiente="@(item.NombreCompleto == "(PENDIENTE)" ? "true" : "false")"
+                                                                   onchange="verificarSeleccion()">
+                                                        }
+                                                    }
+                                                </td>
+                                                <td data-label="Asistente">
+                                                    <div class="d-flex align-items-center">
+                                                        <button type="button" class="btn-expandir me-2" data-bs-toggle="collapse" data-bs-target="#collapse-@item.Id_Asistente" title="Ver detalles">
+                                                            <i class="fa-solid fa-circle-plus fs-5 icono-toggle"></i>
+                                                        </button>
+                                                        <div>
+                                                            <div class="fw-bold text-secondary">@item.NombreCompleto</div>
+                                                            @if (esGrupal)
+                                                            {
+                                                                <span class="badge badge-grupo rounded-pill mt-1">@item.EtiquetaGrupo</span>
+                                                            }
+                                                        </div>
+                                                        @if (!item.EstaLiquidadado && !item.EstaBloqueado && item.PagosRealizados == 0 && item.SegundosRestantesApartado > 0)
+                                                        {
+                                                            <span class="badge bg-warning text-dark ms-2 pulse-animation" title="El lugar se liberará si el temporizador llega a cero" style="font-size: 0.65rem;">
+                                                                <i class="fa-solid fa-stopwatch me-1"></i> Reserva
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="small" data-label="Modalidad / Costo">
+                                                    <div class="fw-bold text-dark">@(item.NombreSubtipo ?? "General")</div>
+                                                    <div class="text-muted">
+                                                        @if (item.CostoExtras > 0)
+                                                        {
+                                                            <span>$@item.CostoBaseModalidad.ToString("N2")</span>
+                                                            <span class="badge bg-secondary ms-1 fw-normal" title="Incluye adicionales">+ $@item.CostoExtras.ToString("N2") Extras</span>
+                                                            <div class="fw-bold text-dark mt-1" style="font-size: 0.8rem;">Total: $@item.CostoReal.ToString("N2")</div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>$@item.CostoReal.ToString("N2")</span>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="text-center" data-label="Estatus de Pago">
+                                                    @if (item.EstaLiquidadado)
+                                                    {
+                                                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3">
+                                                            <i class="fa-solid fa-check-double me-1"></i> Completado
+                                                        </span>
+                                                    }
+                                                    else if (item.EstaBloqueado)
+                                                    {
+                                                        if (item.EstatusTransaccion == "rejected")
+                                                        {
+                                                            <a href="@Url.Action("RetomarTransferencia", "Eventos", new { idTransaccion = item.IdTransaccionPendiente })" class="badge-granular bg-danger text-white border-0 shadow-sm">
+                                                                <i class="fa-solid fa-rotate-right"></i> Corregir
+                                                            </a>
+                                                        }
+                                                        else if (item.EstatusTransaccion == "waiting_proof")
+                                                        {
+                                                            <a href="@Url.Action("RetomarTransferencia", "Eventos", new { idTransaccion = item.IdTransaccionPendiente })" class="badge-granular bg-warning text-dark border-0 shadow-sm">
+                                                                <i class="fa-solid fa-upload"></i> Subir Foto
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge-granular bg-primary bg-opacity-10 text-primary border border-primary cursor-pointer" title="Tu pago está siendo validado por un administrador">
+                                                                <i class="fa-solid fa-magnifying-glass"></i> En Revisión
+                                                            </span>
+                                                        }
+                                                    }
+                                                    else if (item.TieneVencidos)
+                                                    {
+                                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-3 fw-bold">
+                                                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Atrasado (@item.PagosRealizados/@item.TotalPagosCalendario)
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @if (item.PagosRealizados == 0 && item.SegundosRestantesApartado > 0)
+                                                        {
+                                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-3 pulse-animation" title="Requiere pago inmediato">
+                                                                <i class="fa-solid fa-stopwatch me-1"></i> Por Pagar
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-3">
+                                                                <i class="fa-solid fa-check me-1"></i> En Curso (@item.PagosRealizados/@item.TotalPagosCalendario)
+                                                            </span>
+                                                        }
+                                                    }
+                                                </td>
+                                                <td class="text-end pe-lg-4" data-label="Acciones">
+                                                    <div class="d-flex justify-content-end">
+                                                        @if (item.NombreCompleto != "(PENDIENTE)")
+                                                        {
+                                                            <a href="@Url.Action("Pagar", "Eventos", new { token = item.TokenExterno })" target="_blank" class="btn-accion ver" title="Ver Estado de Cuenta"><i class="fa-solid fa-eye"></i></a>
+                                                            <button type="button" class="btn-accion share" title="Copiar Link" onclick="copiarLinkPago('@item.TokenExterno', '@item.NombreCompleto')"><i class="fa-solid fa-share-nodes"></i></button>
+                                                            <button type="button" class="btn-accion" style="color: #0d6efd;" title="Mostrar QR de Acceso" onclick="mostrarQR('@item.TokenExterno', '@Html.Raw(item.NombreCompleto.Replace("'", "\\'"))', @item.EstaLiquidadado.ToString().ToLower())"><i class="fa-solid fa-qrcode"></i></button>
+                                                        }
+
+                                                        @if (!item.EstaBloqueado && !eventoBloqueado)
+                                                        {
+                                                            <button type="button" class="btn-accion edit" title="Editar" data-id="@item.Id_Asistente" onclick="prepararEdicion(@item.Id_Asistente)">
+                                                                <i class="fa-solid fa-pen-to-square"></i>
+                                                            </button>
+                                                            @if (item.PagosRealizados == 0 && !item.EstaLiquidadado)
+                                                            {
+                                                                <button type="button" class="btn-accion del" title="Borrar" onclick="confirmarBorrar(@item.Id_Asistente, '@item.NombreCompleto')">
+                                                                    <i class="fa-solid fa-trash"></i>
+                                                                </button>
+                                                            }
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr class="collapse bg-light bg-opacity-25" id="collapse-@item.Id_Asistente">
+                                                <td colspan="5" class="p-0">
+                                                    <div class="p-4 border-bottom">
+                                                        <div class="row g-3">
+                                                            <div class="col-md-3"><small class="text-muted fw-bold d-block">Edad</small><span>@item.Edad años</span></div>
+                                                            <div class="col-md-3"><small class="text-muted fw-bold d-block">Género</small><span>@(item.Genero == "H" ? "Hombre" : "Mujer")</span></div>
+                                                            @foreach (var preg in preguntasDef)
+                                                            {
+                                                                var resp = item.Respuestas.FirstOrDefault(r => r.Id_Pregunta == preg.Id_Pregunta);
+                                                                var valor = resp != null ? resp.Valor : "-";
+                                                                <div class="col-md-3">
+                                                                    <small class="text-muted fw-bold d-block" title="@preg.Texto">@preg.Texto</small>
+                                                                    <span class="text-dark">@valor</span>
+                                                                </div>
+                                                            }
+                                                            @if (item.ProductosExtra != null && item.ProductosExtra.Any())
+                                                            {
+                                                                <div class="col-12 mt-2 pt-2 border-top">
+                                                                    <small class="text-muted fw-bold d-block mb-1">
+                                                                        <i class="fa-solid fa-cart-plus me-1 text-primary"></i>Productos Adicionales (Extras):
+                                                                    </small>
+                                                                    <div class="d-flex flex-wrap gap-2">
+                                                                        @foreach (var ext in item.ProductosExtra)
+                                                                        {
+                                                                            <span class="badge bg-white text-dark border shadow-sm p-2">
+                                                                                <span class="fw-bold">@ext.NombreProducto</span> (x@(ext.CantidadComprada)): $@ext.Total.ToString("N2")
+                                                                                @if (ext.CantidadPagada > 0)
+                                                                                {
+                                                                                    <span class="text-success ms-2"><i class="fa-solid fa-circle-check"></i> @ext.CantidadPagada pagada@(ext.CantidadPagada > 1 ? "s" : "")</span>
+                                                                                }
+                                                                                @if (ext.CantidadPendiente > 0)
+                                                                                {
+                                                                                    <span class="text-secondary ms-2"><i class="fa-solid fa-clock"></i> @ext.CantidadPendiente pendiente@(ext.CantidadPendiente > 1 ? "s" : "")</span>
+                                                                                }
+                                                                            </span>
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        @if (permitirPago)
+                        {
+                            <div class="card-footer bg-light border-0 p-3">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <div class="small text-muted fst-italic">
+                                        <span><i class="fa-solid fa-info-circle me-1"></i>Puedes seleccionar varias personas para realizar pagos en grupo.</span>
+                                    </div>
+                                    <button type="submit" id="btnPagarMasa" class="btn btn-warning fw-bold shadow-sm px-4 rounded-pill py-2 w-100 btn-width-md-auto" disabled>
+                                        Ir a Pagar <i class="fa-solid fa-chevron-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </form>
+            }
+
+            @if (hayCupo && !eventoBloqueado)
+            {
+                @if (tieneHistorial && esGrupal)
+                {
+                    <div id="botonAbrirFormulario" class="text-center mb-4 @(iniciarFormularioAbierto ? "oculto" : "")">
+                        <button type="button" class="btn btn-outline-light rounded-pill px-4 fw-bold border-2" onclick="abrirNuevoRegistro()">
+                            <i class="fa-solid fa-plus me-1"></i> Agregar a alguien más
+                        </button>
+                    </div>
+                }
+
+                @if (!tieneHistorial)
+                {
+                    <!-- PANTALLA DE ACEPTACIÓN LEGAL PREVIA -->
+                    <div id="cardAceptacionLegal" class="card border-0 shadow-lg rounded-4 overflow-hidden mb-5">
+                    <div class="card-header bg-dark text-white p-3 ps-4 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold"><i class="fa-solid fa-scale-balanced me-2 text-warning"></i> Términos de Participación y Aviso de Privacidad</h6>
+                    </div>
+                    <div class="card-body p-4 p-md-5">
+                        <p class="text-secondary fw-semibold mb-4">
+                            Para continuar con la inscripción a este evento, es indispensable leer y aceptar los términos y condiciones de participación así como nuestro aviso de privacidad integral.
+                        </p>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-md-6">
+                                <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fa-solid fa-file-pdf text-danger fs-4 me-2"></i>
+                                            <span class="fw-bold text-dark">Términos y Condiciones</span>
+                                        </div>
+                                        <small class="text-muted d-block mb-3">Reglamento y condiciones de participación del evento.</small>
+                                    </div>
+                                    <div>
+                                        @if (!string.IsNullOrEmpty(ViewBag.UrlTerminos as string))
+                                        {
+                                            <div class="d-flex gap-2 mb-3">
+                                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill flex-fill" onclick="abrirLectorPDF('Términos y Condiciones', '@ViewBag.UrlTerminos')">
+                                                    <i class="fa-solid fa-eye me-1"></i> Leer PDF
+                                                </button>
+                                                <a href="@ViewBag.UrlTerminos" target="_blank" download="Terminos_Condiciones.pdf" class="btn btn-sm btn-primary rounded-pill flex-fill">
+                                                    <i class="fa-solid fa-download me-1"></i> Descargar
+                                                </a>
+                                            </div>
+                                        }
+                                        <div class="form-check">
+                                            <input class="form-check-input chk-legal-req" type="checkbox" id="chkTerminosLegal" onchange="evaluarAceptacionLegal()">
+                                            <label class="form-check-label fw-bold text-dark small cursor-pointer" for="chkTerminosLegal">
+                                                He leído y acepto los Términos y Condiciones de Participación
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fa-solid fa-file-shield text-info fs-4 me-2"></i>
+                                            <span class="fw-bold text-dark">Aviso de Privacidad</span>
+                                        </div>
+                                        <small class="text-muted d-block mb-3">Lineamientos sobre el tratamiento y protección de datos personales.</small>
+                                    </div>
+                                    <div>
+                                        @if (!string.IsNullOrEmpty(ViewBag.UrlPrivacidad as string))
+                                        {
+                                            <div class="d-flex gap-2 mb-3">
+                                                <button type="button" class="btn btn-sm btn-outline-info rounded-pill flex-fill" onclick="abrirLectorPDF('Aviso de Privacidad', '@ViewBag.UrlPrivacidad')">
+                                                    <i class="fa-solid fa-eye me-1"></i> Leer PDF
+                                                </button>
+                                                <a href="@ViewBag.UrlPrivacidad" target="_blank" download="Aviso_Privacidad.pdf" class="btn btn-sm btn-info text-white rounded-pill flex-fill">
+                                                    <i class="fa-solid fa-download me-1"></i> Descargar
+                                                </a>
+                                            </div>
+                                        }
+                                        <div class="form-check">
+                                            <input class="form-check-input chk-legal-req" type="checkbox" id="chkPrivacidadLegal" onchange="evaluarAceptacionLegal()">
+                                            <label class="form-check-label fw-bold text-dark small cursor-pointer" for="chkPrivacidadLegal">
+                                                He leído y acepto el Aviso de Privacidad Integral
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center pt-2">
+                            <button type="button" id="btnConfirmarLegal" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow btn-lg text-uppercase" disabled onclick="confirmarAceptacionLegal()">
+                                <i class="fa-solid fa-circle-check me-2"></i> He leído y estoy de acuerdo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+                <div id="cardNuevoRegistro" class="card border-0 shadow-lg rounded-4 overflow-hidden mb-5 @(iniciarFormularioAbierto ? "" : "oculto")">
+                    <div class="card-header bg-dark text-white p-3 ps-4 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold"><i class="fa-solid fa-user-plus me-2 text-warning"></i> Nuevo Registro</h6>
+                        @if (tieneHistorial)
+                        {
+                            <button type="button" class="btn-close btn-close-white" onclick="cancelarNuevoRegistro()"></button>
+                        }
+                    </div>
+
+                    <div class="card-body p-3 p-md-4">
+                        <form method="post" action="@Url.Action("ProcesarRegistro")" id="formRegistro">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id_Evento" value="@idEvento" />
+                            <input type="hidden" name="CostoUnitario" value="@costoBase" id="hdnCosto" />
+
+                            @if (cupoMax > 0)
+                            {
+                                <div class="text-end mb-3"><span class="badge bg-info text-dark">@lugaresDisponibles lugares disponibles</span></div>
+                            }
+
+                            <div id="contenedorAsistentes"></div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top flex-wrap gap-3">
+                                @if (esGrupal)
+                                {
+                                    <button type="button" id="btnAgregarOtro" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="agregarFila()"><i class="fa-solid fa-plus me-1"></i> Otro</button>
+                                }
+                                else
+                                {
+                                    <div></div>
+                                }
+
+                                <div class="text-end w-100 w-md-auto">
+                                    <h3 class="fw-bold text-dark mb-2" id="lblTotal">$0.00</h3>
+                                    <button type="submit" class="btn btn-primary px-5 rounded-pill fw-bold shadow w-100 w-md-auto">Registrar</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (!tieneHistorial && !hayCupo && !eventoBloqueado)
+            {
+                <div class="alert alert-secondary text-center p-4 mt-4"><h5>Cupo Lleno</h5></div>
+            }
+        </div>
+    </div>
+</div>
+
+<div id="floating-timer" class="floating-timer d-none fade-in">
+    <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="d-flex align-items-center">
+            <div class="timer-icon pulse-animation"><i class="fa-solid fa-stopwatch"></i></div>
+            <div class="ms-3 timer-text-container text-start">
+                <div class="timer-text" id="timer-title">Reserva Activa</div>
+                <div class="timer-subtext" id="timer-subtitle">Completa tu pago pronto</div>
+            </div>
+        </div>
+        <div class="timer-countdown" id="countdown-display">00:00</div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">Editar Datos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <form action="@Url.Action("ProcesarRegistro")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id_Evento" value="@idEvento" />
+                <input type="hidden" name="Asistentes[0].Id_Asistente" id="edit_id" />
+
+                <div class="modal-body">
+                    <div id="alertBloqueo" class="alert alert-warning small d-none">
+                        <i class="fa-solid fa-lock me-1"></i> No puedes cambiar la modalidad porque ya tienes pagos registrados o en proceso.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nombre Completo</label>
+                        <input type="text" name="Asistentes[0].NombreCompleto" id="edit_nombre" class="form-control" required />
+                    </div>
+ 
+                    @if (esGrupal)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold d-flex justify-content-between align-items-center">
+                                <span>Grupo <span class="fw-normal text-muted" style="font-size: 0.75rem;">(Control personal)</span></span>
+                                <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Etiqueta opcional para clasificar a tus inscritos en tu panel (ej: Familia, Bus 1). Solo para tu uso interno."></i>
+                            </label>
+                            <input type="text" name="Asistentes[0].EtiquetaGrupo" id="edit_etiqueta" class="form-control" list="gruposSugeridos" placeholder="Ej: Familia, Bus 1 (Opcional)..." />
+                            <div class="form-text mt-1 text-muted" style="font-size: 0.72rem;">
+                                <i class="fa-solid fa-tags text-primary me-1"></i>Nombre libre para clasificar a los participantes en tu panel.
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <input type="hidden" name="Asistentes[0].EtiquetaGrupo" id="edit_etiqueta" value="General" />
+                    }
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><label class="form-label small fw-bold">Edad</label><input type="number" name="Asistentes[0].Edad" id="edit_edad" class="form-control" required /></div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Género</label>
+                            <select name="Asistentes[0].Genero" id="edit_genero" class="form-select">
+                                <option value="H">Hombre</option>
+                                <option value="M">Mujer</option>
+                            </select>
+                            <input type="hidden" name="Asistentes[0].Genero" id="hdn_edit_genero" disabled />
+                            <div id="alertBloqueoGenero" class="text-danger small fw-bold mt-1 d-none">
+                                <i class="fa-solid fa-lock"></i> Bloqueado por Hospedaje
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (subtipos.Any())
+                    {
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-primary">Modalidad</label>
+                            <select name="Asistentes[0].Id_Subtipo_Seleccionado" id="edit_subtipo" class="form-select" onchange="actualizarExtrasModalEdit(this)">
+                                <option value="" data-costo="0">-- Entrada General --</option>
+                                @foreach (var s in subtipos)
+                                {
+                                    int disponibles = s.Cupo - s.Ocupados;
+                                    string dis = disponibles <= 0 ? "disabled" : "";
+                                    string txtDisponibilidad = disponibles <= 0 ? " - ❌ AGOTADO" : $" - Quedan {disponibles}";
+                                    string lbl = $"{s.Nombre} (${s.Costo:N0}){txtDisponibilidad}";
+                                    <!option value="@s.Id_Subtipo" data-costo="@s.Costo" @dis>@lbl</!option>
+                                }
+                            </select>
+                            <input type="hidden" name="Asistentes[0].Id_Subtipo_Seleccionado" id="hdn_edit_subtipo" disabled />
+                        </div>
+                    }
+                    else
+                    {
+                        <input type="hidden" name="Asistentes[0].Id_Subtipo_Seleccionado" id="hdn_edit_subtipo" value="" />
+                    }
+
+                    <div class="mb-3 border-top pt-3" id="seccionExtrasEdit">
+                        <label class="form-label small fw-bold text-dark d-flex align-items-center justify-content-between mb-2">
+                            <span><i class="fa-solid fa-cart-plus me-1 text-primary"></i>Productos Adicionales (Extras)</span>
+                            <small class="text-muted fw-normal" style="font-size: 0.72rem;">Solo unidades sin pagar pueden modificarse</small>
+                        </label>
+                        <div id="contenedorExtrasEdit" class="d-flex flex-column gap-2"></div>
+                    </div>
+
+                    <div id="contenedorPreguntasEdit">
+                        @for (int i = 0; i < preguntasDef.Count; i++)
+                        {
+                            var p = preguntasDef[i];
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold" title="@p.Texto">@p.Texto</label>
+                                <input type="hidden" name="Asistentes[0].Respuestas[@i].Id_Pregunta" value="@p.Id_Pregunta" />
+                                @if (p.Tipo == RedAJP.Models.TipoPregunta.Booleano)
+                                {
+                                    <select name="Asistentes[0].Respuestas[@i].Valor" class="form-select inp-resp-edit" data-idpreg="@p.Id_Pregunta"><option value="Sí">Sí</option><option value="No">No</option></select>
+                                }
+                                else if (p.Tipo == RedAJP.Models.TipoPregunta.OpcionMultiple)
+                                {
+                                    <select name="Asistentes[0].Respuestas[@i].Valor" class="form-select inp-resp-edit" data-idpreg="@p.Id_Pregunta">
+                                        <option value="">- Selecciona -</option>
+                                        @foreach(var op in p.Opciones){
+                                            <option value="@op">@op</option>
+                                        }
+                                    </select>
+                                }
+                                else
+                                {
+                                    <input type="text" name="Asistentes[0].Respuestas[@i].Valor" class="form-control inp-resp-edit" data-idpreg="@p.Id_Pregunta" />
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary fw-bold">Guardar Cambios</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMasivoGrupo" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-light">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-tags text-primary me-1"></i>Organizar grupo interno</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <label class="form-label fw-bold small text-muted text-uppercase">Mover seleccionados a grupo interno:</label>
+                <p class="small text-muted mb-2" style="font-size: 0.75rem;">Asigna un nombre de grupo para clasificar y filtrar a las personas seleccionadas en tu panel.</p>
+                <input type="text" id="txtNuevoGrupoMasivo" class="form-control mb-3" list="gruposSugeridos" placeholder="Ej: Familia, Bus 1...">
+                <button type="button" class="btn btn-primary w-100 rounded-pill fw-bold" onclick="aplicarGrupoMasivo()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<datalist id="gruposSugeridos">
+    @foreach(var g in listaGrupos) { 
+        <option value="@g">@g</option> 
+    }
+</datalist>
+
+<form id="formEliminar" action="@Url.Action("EliminarAsistente")" method="post">
+    @Html.AntiForgeryToken() <input type="hidden" name="idAsistente" id="hdnIdBorrar" />
+</form>
+
+<template id="tplFila">
+    <div class="card mb-3 shadow-sm border-light fila-persona bg-light bg-opacity-50 fade-in">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex justify-content-between mb-3">
+                <h6 class="fw-bold text-muted small text-uppercase mb-0">Datos Asistente</h6>
+                <button type="button" class="btn-close" onclick="eliminarFila(this)"></button>
+            </div>
+            <div class="row g-3">
+                @if (esGrupal)
+                {
+                    <div class="col-md-4"><label class="form-label small fw-bold">Nombre Completo</label><input name="Asistentes[IDX].NombreCompleto" class="form-control inp-nombre" required placeholder="Nombre Apellido" /></div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold d-flex justify-content-between align-items-center">
+                            <span>Grupo <span class="fw-normal text-muted" style="font-size: 0.75rem;">(Control personal)</span></span>
+                            <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Etiqueta opcional para clasificar a tus inscritos en tu panel (ej: Familia, Bus 1). Es solo para tu control interno."></i>
+                        </label>
+                        <input name="Asistentes[IDX].EtiquetaGrupo" class="form-control inp-grupo" list="gruposSugeridos" placeholder="Ej: Familia, Bus 1 (Opcional)..." />
+                        <div class="form-text mt-1 text-muted" style="font-size: 0.72rem;">
+                            <i class="fa-solid fa-tags text-primary me-1"></i>Para filtrar en tu panel.
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-6"><label class="form-label small fw-bold">Nombre Completo</label><input name="Asistentes[IDX].NombreCompleto" class="form-control inp-nombre" required placeholder="Nombre Apellido" /></div>
+                    <input type="hidden" name="Asistentes[IDX].EtiquetaGrupo" class="inp-grupo" value="General" />
+                }
+                <div class="col-6 col-md-1"><label class="form-label small fw-bold">Edad</label><input name="Asistentes[IDX].Edad" type="number" class="form-control inp-edad" value="18" required min="1" max="100" /></div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small fw-bold">Género</label>
+                    <select name="Asistentes[IDX].Genero" class="form-select sel-genero">
+                        <option value="H">Hombre</option>
+                        <option value="M">Mujer</option>
+                    </select>
+                </div>
+
+                @if (subtipos.Any())
+                {
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-primary">Modalidad</label>
+                        <select name="Asistentes[IDX].Id_Subtipo_Seleccionado" class="form-select sel-subtipo" required onchange="actualizarExtrasForm(this); calcularTotal()">
+                            <option value="" data-costo="0">-- Selecciona --</option>
+                            @foreach (var s in subtipos)
+                            {
+                                int disponibles = s.Cupo - s.Ocupados;
+                                string dis = disponibles <= 0 ? "disabled" : "";
+                                string txtDisponibilidad = disponibles <= 0 ? " - ❌ AGOTADO" : $" - Quedan {disponibles}";
+                                string lbl = $"{s.Nombre} (${s.Costo:N0}){txtDisponibilidad}";
+                                <!option value="@s.Id_Subtipo" data-costo="@s.Costo" @dis>@lbl</!option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                @if (ViewBag.ProductosExtra != null && ((List<RedAJP.Models.ProductoExtraItem>)ViewBag.ProductosExtra).Any())
+                {
+                    <div class="col-12 mt-3 contenedor-extras-root">
+                        <label class="form-label small fw-bold text-success mb-2"><i class="fa-solid fa-cart-plus me-1"></i> Adicionales Disponibles</label>
+                        <div class="row g-2 contenedor-extras-registro">
+                        @{
+                            int idxProd = 0;
+                            foreach (var p in (List<RedAJP.Models.ProductoExtraItem>)ViewBag.ProductosExtra)
+                            {
+                                string dataSub = p.Id_Subtipo.HasValue ? p.Id_Subtipo.Value.ToString() : "";
+                                <div class="col-md-4 col-lg-3 item-extra-registro" data-subtipo="@dataSub">
+                                    <div class="card shadow border-1 border-primary h-100 bg-light" style="border-radius: 10px;">
+                                        <div class="card-body p-2 text-center">
+                                            <div class="small fw-bold text-primary text-truncate" title="@p.Nombre_Producto">@p.Nombre_Producto</div>
+                                            @if (!string.IsNullOrEmpty(p.Descripcion))
+                                            {
+                                                <div class="small text-muted text-truncate mb-1" style="font-size: 0.75rem;" title="@p.Descripcion">@p.Descripcion</div>
+                                            }
+                                            <div class="d-flex justify-content-center align-items-center gap-1 mb-2">
+                                                <div class="badge bg-success">$@p.Precio.ToString("N2")</div>
+                                                <div class="badge bg-light text-dark border" style="font-size: 0.65rem;" title="M&iacute;nimos y M&aacute;ximos por persona">M&iacute;n: @p.Cantidad_Minima - M&aacute;x: @p.Cantidad_Maxima</div>
+                                            </div>
+                                            <input type="hidden" name="Asistentes[IDX].ProductosExtra[@idxProd].Id_ProductoExtra" value="@p.Id_ProductoExtra" />
+                                            @if (p.Cantidad_Minima == 0 && p.Cantidad_Maxima == 1)
+                                            {
+                                                <div class="btn-group btn-group-sm w-100 btn-group-extra" role="group">
+                                                    <button type="button" class="btn btn-secondary btn-no-extra">NO</button>
+                                                    <button type="button" class="btn btn-outline-success btn-si-extra">S&Iacute;</button>
+                                                </div>
+                                                <input type="hidden" name="Asistentes[IDX].ProductosExtra[@idxProd].Cantidad" class="inp-cant-extra" 
+                                                       value="0" min="@p.Cantidad_Minima" max="@p.Cantidad_Maxima" data-precio="@p.Precio" />
+                                            }
+                                            else
+                                            {
+                                                <div class="input-group input-group-sm">
+                                                    <button class="btn btn-outline-secondary btn-menos-extra" type="button"><i class="fa-solid fa-minus"></i></button>
+                                                    <input type="number" name="Asistentes[IDX].ProductosExtra[@idxProd].Cantidad" class="form-control text-center inp-cant-extra" 
+                                                           value="0" min="@p.Cantidad_Minima" max="@p.Cantidad_Maxima" data-precio="@p.Precio" readonly />
+                                                    <button class="btn btn-outline-secondary btn-mas-extra" type="button"><i class="fa-solid fa-plus"></i></button>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                idxProd++;
+                            }
+                        }
+                        </div>
+                    </div>
+                }
+
+                @for (int p = 0; p < preguntasDef.Count; p++)
+                {
+                    var def = preguntasDef[p];
+                    <div class="col-md-12 col-lg-6">
+                        <label class="form-label small fw-bold" title="@def.Texto">@def.Texto</label>
+                        <input type="hidden" name="Asistentes[IDX].Respuestas[@p].Id_Pregunta" value="@def.Id_Pregunta" />
+                        
+                        @if (def.Tipo == RedAJP.Models.TipoPregunta.Booleano)
+                        {
+                            <select name="Asistentes[IDX].Respuestas[@p].Valor" class="form-select inp-resp"><option value="Sí">Sí</option><option value="No">No</option></select>
+                        }
+                        else if (def.Tipo == RedAJP.Models.TipoPregunta.OpcionMultiple)
+                        {
+                            <select name="Asistentes[IDX].Respuestas[@p].Valor" class="form-select inp-resp">
+                                <option value="">- Selecciona -</option>
+                                @foreach(var op in def.Opciones){
+                                    <option value="@op">@op</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <input name="Asistentes[IDX].Respuestas[@p].Valor" class="form-control inp-resp" />
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</template>
+
+<div class="modal fade" id="modalBorrar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-danger text-white border-0 py-3 justify-content-center">
+                <i class="fa-solid fa-triangle-exclamation fa-3x opacity-50"></i>
+            </div>
+            <div class="modal-body text-center p-4">
+                <h5 class="fw-bold mb-2 text-dark">¿Eliminar Registro?</h5>
+                <p class="text-muted small mb-4">
+                    Estás a punto de eliminar a <strong id="lblNombreBorrar" class="text-danger"></strong>.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-danger rounded-pill fw-bold shadow-sm" onclick="ejecutarBorradoReal()">
+                        Sí, Eliminar
+                    </button>
+                    <button type="button" class="btn btn-light rounded-pill text-muted fw-bold" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- VARIABLES GLOBALES ---
+    var maxLugares = @lugaresDisponibles;
+    var esGrupal = @(esGrupal.ToString().ToLower());
+    var costoBaseGeneral = @costoBase;
+    var timerInterval = null;
+    var tiempoRestanteBD = @segundosRestantesGlobal;
+    var idParaBorrar = 0;
+    var modalBorrarBS = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var collapses = document.querySelectorAll('.collapse');
+        collapses.forEach(el => {
+            el.addEventListener('show.bs.collapse', function () { var btn = document.querySelector(`[data-bs-target="#${this.id}"]`); if(btn) btn.querySelector('.icono-toggle').classList.replace('fa-circle-plus', 'fa-circle-minus'); });
+            el.addEventListener('hide.bs.collapse', function () { var btn = document.querySelector(`[data-bs-target="#${this.id}"]`); if(btn) btn.querySelector('.icono-toggle').classList.replace('fa-circle-minus', 'fa-circle-plus'); });
+        });
+
+        // Inicializar Propuesta Automática (Si el form está visible)
+        if (!document.getElementById('cardNuevoRegistro').classList.contains('oculto') && document.querySelectorAll('.fila-persona').length === 0) {
+            inicializarFilas();
+        }
+
+        // Sincronizar select con hidden input en el modal si está deshabilitado
+        var editSub = document.getElementById('edit_subtipo');
+        var hdnSub = document.getElementById('hdn_edit_subtipo');
+        if(editSub && hdnSub) {
+            editSub.addEventListener('change', function() { hdnSub.value = this.value; });
+        }
+
+        // Inicializar el modal de borrado
+        var elModal = document.getElementById('modalBorrar');
+        if(elModal) modalBorrarBS = new bootstrap.Modal(elModal);
+
+        // INICIALIZAR CONTADOR VISUAL BASADO EN LA BD
+        inicializarContador();
+    });
+
+    // --- LÓGICA DE FILTRADO Y GRUPOS ---
+    function filtrarGrupo(grupo) {
+        document.querySelectorAll('#pills-tab .nav-link').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText === grupo);
+        });
+        document.querySelectorAll('.fila-asistente').forEach(fila => {
+            if (grupo === 'Todos') { fila.classList.remove('fila-oculta'); } 
+            else { fila.classList.toggle('fila-oculta', fila.dataset.grupo !== grupo); }
+        });
+        // Resetear el check global al cambiar de tab para evitar confusiones visuales
+        var chkGlobal = document.getElementById('chkTodos');
+        if(chkGlobal) chkGlobal.checked = false;
+        
+        // Ejecutar manualmente la deselección de checks ocultos y evaluar
+        var checkboxes = document.querySelectorAll('.chk-persona');
+        for(var i=0; i<checkboxes.length; i++) { 
+            if(checkboxes[i].closest('.fila-asistente').classList.contains('fila-oculta')) {
+                checkboxes[i].checked = false;
+            }
+        }
+        verificarSeleccion();
+    }
+
+    function abrirModalGrupo() {
+        new bootstrap.Modal(document.getElementById('modalMasivoGrupo')).show();
+    }
+
+    async function aplicarGrupoMasivo() {
+        const ids = Array.from(document.querySelectorAll('.chk-persona:checked')).map(c => c.value);
+        const grupo = document.getElementById('txtNuevoGrupoMasivo').value;
+        if(!grupo) { alert("Escribe un nombre de grupo"); return; }
+        
+        const params = new URLSearchParams();
+        params.append('idEvento', '@idEvento');
+        params.append('nuevoGrupo', grupo);
+        ids.forEach(id => params.append('idsAsistentes', id));
+
+        const resp = await fetch('@Url.Action("ActualizarGrupoMasivo")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        });
+        if (resp.ok) window.location.reload();
+        else alert("Error al actualizar");
+    }
+
+    // --- LÓGICA DEL CONTADOR VISUAL ---
+    function inicializarContador() {
+        var timerElement = document.getElementById('floating-timer');
+        // Solo mostrar si realmente hay tiempo restante extraído de la BD
+        if (tiempoRestanteBD > 0) {
+            timerElement.classList.remove('d-none');
+            iniciarReloj();
+        } else {
+            timerElement.classList.add('d-none');
+            if(timerInterval) clearInterval(timerInterval);
+        }
+    }
+
+    function iniciarReloj() {
+        if(timerInterval) clearInterval(timerInterval);
+        var display = document.getElementById('countdown-display');
+        var container = document.getElementById('floating-timer');
+
+        // Pintado inicial inmediato
+        actualizarUI(display, container);
+        timerInterval = setInterval(function() {
+            tiempoRestanteBD--;
+            
+            if (tiempoRestanteBD <= 0) {
+                // El tiempo expiró
+                clearInterval(timerInterval);
+                tiempoRestanteBD = 0;
+    
+                actualizarUI(display, container);
+                
+                // Refrescamos la página automáticamente a los 3 segundos para que los lugares 
+                // se liberen visualmente y desaparezca el registro del usuario (se vuelve fantasma).
+                setTimeout(function() {
+                    window.location.reload(); 
+                }, 3000); 
+
+            } else {
+                actualizarUI(display, container);
+            }
+        }, 1000);
+    }
+
+    function actualizarUI(display, container) {
+        if (tiempoRestanteBD <= 0) {
+            display.innerText = "00:00";
+            display.classList.add('text-danger');
+            document.getElementById('timer-title').innerText = "Tiempo Expirado";
+            document.getElementById('timer-subtitle').innerText = "Actualizando disponibilidad...";
+            container.style.background = 'linear-gradient(135deg, #c0392b 0%, #96281b 100%)';
+        } else {
+            var m = Math.floor(tiempoRestanteBD / 60);
+            var s = tiempoRestanteBD % 60;
+            display.innerText = (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+            // Alerta visual de los últimos 5 minutos (Rojo)
+            if(tiempoRestanteBD <= 300) {
+                container.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+                display.style.color = "#ffc107";
+            } else {
+                // Estado Normal (Azul Corporativo)
+                container.style.background = 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)';
+                display.style.color = "white";
+            }
+        }
+    }
+    // ------------------------------------------
+
+    function toggleTodos(source) {
+        var visibleRows = document.querySelectorAll('.fila-asistente:not(.fila-oculta)');
+        visibleRows.forEach(fila => {
+            var chk = fila.querySelector('.chk-persona');
+            if(chk && !chk.disabled) chk.checked = source.checked;
+        });
+        verificarSeleccion();
+    }
+
+    function verificarSeleccion() {
+        var seleccionados = document.querySelectorAll('.chk-persona:checked');
+        var btn = document.getElementById('btnPagarMasa');
+        var btnOrg = document.getElementById('btnOrganizar');
+        
+        if (btn) {
+            if (seleccionados.length === 0) {
+                btn.disabled = true;
+            } else {
+                var hayPendientes = Array.from(seleccionados).some(chk => chk.dataset.pendiente === "true");
+                btn.disabled = hayPendientes;
+            }
+        }
+        
+        if (btnOrg) btnOrg.classList.toggle('d-none', seleccionados.length === 0);
+    }
+
+    function copiarLinkPago(token, nombre) {
+        var dominio = window.location.origin;
+        var url = dominio + '/Eventos/Pagar?token=' + token;
+        navigator.clipboard.writeText(url).then(function() { if(typeof mostrarMensaje === 'function') mostrarMensaje('Enlace Copiado', 'Link para <b>' + nombre + '</b> copiado.', 'exito'); else alert('Copiado'); });
+    }
+
+    // 1. Esta función se llama al dar click en el icono de basura
+    function confirmarBorrar(id, nombre) {
+        // Guardamos el ID en la variable global
+        idParaBorrar = id;
+        // Actualizamos el texto del modal
+        var lbl = document.getElementById('lblNombreBorrar');
+        if(lbl) lbl.innerText = nombre;
+
+        // Mostramos el modal
+        if(modalBorrarBS) modalBorrarBS.show();
+    }
+
+    // 2. Esta función se llama al confirmar en el modal
+    function ejecutarBorradoReal() {
+        if(idParaBorrar > 0) {
+            // Asignamos el valor al form oculto original y lo enviamos
+            document.getElementById('hdnIdBorrar').value = idParaBorrar;
+            document.getElementById('formEliminar').submit();
+        }
+    }
+
+    function calcularTotal() {
+        var total = 0;
+        var filas = document.querySelectorAll('.fila-persona');
+        filas.forEach(row => {
+            var sel = row.querySelector('.sel-subtipo');
+            if(sel) {
+                var opt = sel.options[sel.selectedIndex];
+                total += parseFloat(opt.getAttribute('data-costo') || 0);
+            } else {
+                total += costoBaseGeneral;
+            }
+
+            // Sumar extras
+            var extras = row.querySelectorAll('.inp-cant-extra');
+            extras.forEach(ext => {
+                let cant = parseInt(ext.value) || 0;
+                let precio = parseFloat(ext.getAttribute('data-precio') || 0);
+                total += cant * precio;
+            });
+        });
+        var lbl = document.getElementById('lblTotal'); if(lbl) lbl.innerText = '$' + total.toFixed(2);
+    }
+
+    function actualizarExtrasForm(selElement) {
+        var fila = selElement.closest('.fila-persona');
+        if (!fila) return;
+        var subtipoId = selElement.value;
+        var itemsExtra = fila.querySelectorAll('.item-extra-registro');
+        itemsExtra.forEach(item => {
+            var reqSub = item.getAttribute('data-subtipo');
+            if (!reqSub || reqSub === subtipoId) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+                var inp = item.querySelector('.inp-cant-extra');
+                if (inp) inp.value = 0;
+                var btnGroup = item.querySelector('.btn-group-extra');
+                if (btnGroup) {
+                    var btnNo = btnGroup.querySelector('.btn-no-extra');
+                    var btnSi = btnGroup.querySelector('.btn-si-extra');
+                    if (btnNo) btnNo.className = 'btn btn-secondary btn-no-extra';
+                    if (btnSi) btnSi.className = 'btn btn-outline-success btn-si-extra';
+                }
+            }
+        });
+    }
+
+    // Delegación para botones +/- de extras
+    document.addEventListener('click', function(e) {
+        var btnNo = e.target.closest('.btn-no-extra');
+        var btnSi = e.target.closest('.btn-si-extra');
+        
+        if (btnNo || btnSi) {
+            var container = (btnNo || btnSi).closest('.card-body');
+            var inp = container.querySelector('.inp-cant-extra');
+            var btnGroup = container.querySelector('.btn-group-extra');
+            var localBtnNo = btnGroup.querySelector('.btn-no-extra');
+            var localBtnSi = btnGroup.querySelector('.btn-si-extra');
+
+            if (btnNo) {
+                localBtnNo.className = 'btn btn-secondary btn-no-extra';
+                localBtnSi.className = 'btn btn-outline-success btn-si-extra';
+                inp.value = 0;
+            } else if (btnSi) {
+                localBtnNo.className = 'btn btn-outline-secondary btn-no-extra';
+                localBtnSi.className = 'btn btn-success btn-si-extra';
+                inp.value = 1;
+            }
+            calcularTotal();
+            return;
+        }
+
+        if (e.target.closest('.btn-mas-extra') || e.target.closest('.btn-menos-extra')) {
+            var isMas = e.target.closest('.btn-mas-extra') != null;
+            var container = e.target.closest('.input-group');
+            var inp = container.querySelector('.inp-cant-extra');
+            var current = parseInt(inp.value) || 0;
+            var min = parseInt(inp.getAttribute('min')) || 0;
+            var max = parseInt(inp.getAttribute('max')) || 999;
+            
+            if (isMas && current < max) {
+                inp.value = current + 1;
+                calcularTotal();
+            } else if (!isMas && current > min) {
+                inp.value = current - 1;
+                calcularTotal();
+            }
+        }
+    });
+
+    function reindexar() {
+        var filas = document.querySelectorAll('.fila-persona');
+        filas.forEach((fila, i) => { fila.querySelectorAll('input, select').forEach(input => { if(input.name) input.name = input.name.replace(/Asistentes\[\d+\]/, `Asistentes[${i}]`); }); });
+        calcularTotal();
+    }
+
+    // --- AGREGAR FILA (PROPS PASCALCASE) ---
+    function agregarFila(datos = null) {
+        insertarFilaEnDOM(datos ? datos.NombreCompleto : "", datos ? datos.Edad : "", datos ? datos.Genero : "", datos ? datos.EtiquetaGrupo : "");
+    }
+
+    function insertarFilaEnDOM(nombreVal, edadVal, generoVal, grupoVal) {
+        var actuales = document.querySelectorAll('.fila-persona').length;
+        if (!esGrupal && actuales >= 1) return;
+        if (actuales >= maxLugares) { alert("Cupo lleno."); return; }
+
+        var template = document.getElementById('tplFila').innerHTML;
+        var html = template.replace(/IDX/g, '9999');
+        var div = document.createElement('div');
+        div.innerHTML = html;
+
+        if(nombreVal) { var inp = div.querySelector('.inp-nombre'); if(inp) inp.value = nombreVal; }
+        if(grupoVal) { var inpG = div.querySelector('.inp-grupo'); if(inpG) inpG.value = grupoVal; }
+        if(edadVal && edadVal > 0) { var inpEdad = div.querySelector('.inp-edad'); if(inpEdad) inpEdad.value = edadVal; }
+        if(generoVal) { var sel = div.querySelector('.sel-genero'); if(sel) sel.value = generoVal; }
+
+        document.getElementById('contenedorAsistentes').appendChild(div.firstElementChild);
+        reindexar();
+    }
+
+    function eliminarFila(btn) { btn.closest('.fila-persona').remove(); reindexar(); if(document.querySelectorAll('.fila-persona').length===0) cancelarNuevoRegistro(); }
+
+    function abrirNuevoRegistro() {
+        document.getElementById('botonAbrirFormulario').classList.add('oculto');
+        document.getElementById('cardNuevoRegistro').classList.remove('oculto');
+        if(document.querySelectorAll('.fila-persona').length === 0) inicializarFilas();
+    }
+
+    function cancelarNuevoRegistro() {
+        document.getElementById('contenedorAsistentes').innerHTML = ''; calcularTotal();
+        document.getElementById('cardNuevoRegistro').classList.add('oculto');
+        document.getElementById('botonAbrirFormulario').classList.remove('oculto');
+    }
+
+    // --- ACTUALIZACIÓN DINÁMICA DE EXTRAS EN MODAL EDITAR ---
+    function actualizarExtrasModalEdit(selElement) {
+        var idSubtipo = selElement.value ? parseInt(selElement.value) : null;
+        var idAsistente = parseInt(document.getElementById('edit_id').value) || 0;
+        var datos = listaRegistrados.find(x => x.Id_Asistente === idAsistente);
+        renderizarExtrasModalEdit(datos, idSubtipo);
+    }
+
+    function renderizarExtrasModalEdit(datos, idSubtipo) {
+        var contExtras = document.getElementById('contenedorExtrasEdit');
+        var seccExtras = document.getElementById('seccionExtrasEdit');
+        if (!contExtras) return;
+
+        contExtras.innerHTML = '';
+        var extrasCompatibles = (catalogoExtras || []).filter(e => e.Activo && (!e.Id_Subtipo || e.Id_Subtipo == idSubtipo));
+
+        if (extrasCompatibles.length === 0) {
+            if (seccExtras) seccExtras.classList.add('d-none');
+        } else {
+            if (seccExtras) seccExtras.classList.remove('d-none');
+            extrasCompatibles.forEach((ext, idx) => {
+                var comprado = (datos && datos.ProductosExtra ? datos.ProductosExtra : []).find(p => p.Id_ProductoExtra === ext.Id_ProductoExtra);
+                var cantActual = comprado ? comprado.CantidadComprada : 0;
+                var cantPagada = comprado ? comprado.CantidadPagada : 0;
+                var cMin = Math.max(cantPagada, ext.Cantidad_Minima || 0);
+                var cMax = ext.Cantidad_Maxima > 0 ? ext.Cantidad_Maxima : 1;
+
+                var itemDiv = document.createElement('div');
+                itemDiv.className = 'p-2 bg-light rounded border d-flex justify-content-between align-items-center flex-wrap gap-2';
+
+                var infoDiv = document.createElement('div');
+                infoDiv.innerHTML = `
+                    <div class="fw-bold small text-dark">${ext.Nombre_Producto}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">
+                        $${ext.Precio.toLocaleString('en-US', { minimumFractionDigits: 2 })} c/u
+                        ${cantPagada > 0 ? `<span class="badge bg-success bg-opacity-10 text-success border border-success ms-1"><i class="fa-solid fa-lock me-1"></i>${cantPagada} pagada${cantPagada > 1 ? 's' : ''}</span>` : ''}
+                    </div>
+                `;
+                itemDiv.appendChild(infoDiv);
+
+                var controlDiv = document.createElement('div');
+                controlDiv.className = 'd-flex align-items-center gap-1';
+
+                var hdnId = document.createElement('input');
+                hdnId.type = 'hidden';
+                hdnId.name = `Asistentes[0].ProductosExtra[${idx}].Id_ProductoExtra`;
+                hdnId.value = ext.Id_ProductoExtra;
+                controlDiv.appendChild(hdnId);
+
+                if (cMax === 1) {
+                    if (cantPagada >= 1) {
+                        controlDiv.innerHTML += `
+                            <input type="hidden" name="Asistentes[0].ProductosExtra[${idx}].Cantidad" value="1" />
+                            <span class="badge bg-success p-2"><i class="fa-solid fa-check me-1"></i>Incluido (Pagado)</span>
+                        `;
+                    } else {
+                        var sel = document.createElement('select');
+                        sel.name = `Asistentes[0].ProductosExtra[${idx}].Cantidad`;
+                        sel.className = 'form-select form-select-sm';
+                        sel.style.width = '100px';
+                        sel.innerHTML = `
+                            <option value="0" ${cantActual === 0 ? 'selected' : ''}>No</option>
+                            <option value="1" ${cantActual >= 1 ? 'selected' : ''}>Sí</option>
+                        `;
+                        controlDiv.appendChild(sel);
+                    }
+                } else {
+                    var btnMinus = document.createElement('button');
+                    btnMinus.type = 'button';
+                    btnMinus.className = 'btn btn-sm btn-outline-secondary px-2 py-1';
+                    btnMinus.innerHTML = '<i class="fa-solid fa-minus"></i>';
+
+                    var inpCant = document.createElement('input');
+                    inpCant.type = 'number';
+                    inpCant.name = `Asistentes[0].ProductosExtra[${idx}].Cantidad`;
+                    inpCant.value = cantActual;
+                    inpCant.min = cMin;
+                    inpCant.max = cMax;
+                    inpCant.readOnly = true;
+                    inpCant.className = 'form-control form-control-sm text-center fw-bold';
+                    inpCant.style.width = '55px';
+
+                    var btnPlus = document.createElement('button');
+                    btnPlus.type = 'button';
+                    btnPlus.className = 'btn btn-sm btn-outline-secondary px-2 py-1';
+                    btnPlus.innerHTML = '<i class="fa-solid fa-plus"></i>';
+
+                    if (cantActual <= cMin) btnMinus.disabled = true;
+                    if (cantActual >= cMax) btnPlus.disabled = true;
+
+                    btnMinus.onclick = function() {
+                        var val = parseInt(inpCant.value) || 0;
+                        if (val > cMin) {
+                            inpCant.value = val - 1;
+                            btnPlus.disabled = false;
+                            if (val - 1 <= cMin) btnMinus.disabled = true;
+                        }
+                    };
+
+                    btnPlus.onclick = function() {
+                        var val = parseInt(inpCant.value) || 0;
+                        if (val < cMax) {
+                            inpCant.value = val + 1;
+                            btnMinus.disabled = false;
+                            if (val + 1 >= cMax) btnPlus.disabled = true;
+                        }
+                    };
+
+                    controlDiv.appendChild(btnMinus);
+                    controlDiv.appendChild(inpCant);
+                    controlDiv.appendChild(btnPlus);
+                }
+
+                itemDiv.appendChild(controlDiv);
+                contExtras.appendChild(itemDiv);
+            });
+        }
+    }
+
+    // --- MODAL EDICIÓN CON CANDADO ---
+    function prepararEdicion(idAsistente) {
+        // Buscar datos en el JSON local
+        var datos = listaRegistrados.find(x => x.Id_Asistente === idAsistente);
+        if(!datos) return;
+
+        document.getElementById('edit_id').value = datos.Id_Asistente;
+        document.getElementById('edit_nombre').value = datos.NombreCompleto;
+        document.getElementById('edit_edad').value = datos.Edad;
+        
+        var elGrupo = document.getElementById('edit_etiqueta');
+        if(elGrupo) elGrupo.value = datos.EtiquetaGrupo || 'General';
+
+        // --- NUEVA LÓGICA DE BLOQUEO DE GÉNERO ---
+        var selGen = document.getElementById('edit_genero');
+        var hdnGen = document.getElementById('hdn_edit_genero');
+        var alertGen = document.getElementById('alertBloqueoGenero');
+
+        if(selGen) {
+            selGen.value = datos.Genero;
+            // Evaluamos si está asignado a un alojamiento
+            if (datos.EstaAsignadoAlojamiento) {
+                selGen.disabled = true;
+                if(hdnGen) {
+                    hdnGen.value = datos.Genero;
+                    hdnGen.disabled = false; // Activamos el hidden para que se envíe el dato
+                }
+                if(alertGen) alertGen.classList.remove('d-none');
+            } else {
+                selGen.disabled = false;
+                if(hdnGen) hdnGen.disabled = true;
+                if(alertGen) alertGen.classList.add('d-none');
+            }
+        }
+        // -----------------------------------------
+
+        // --- GESTIÓN DE MODALIDAD CON CANDADO DE PAGO ---
+        var selSub = document.getElementById('edit_subtipo');
+        var hdnSub = document.getElementById('hdn_edit_subtipo');
+        var alertBlock = document.getElementById('alertBloqueo');
+
+        // Si ya tiene pagos completados o pagos en revisión/comprobante
+        var tienePagosModalidad = (datos.PagosRealizados > 0) || datos.EstaBloqueado || (datos.EsPagado);
+
+        if (selSub) {
+            selSub.value = datos.IdSubtipo || "";
+            if (tienePagosModalidad) {
+                selSub.disabled = true;
+                if (hdnSub) {
+                    hdnSub.value = datos.IdSubtipo || "";
+                    hdnSub.disabled = false; // Envía el valor bloqueado
+                }
+                if (alertBlock) alertBlock.classList.remove('d-none');
+            } else {
+                selSub.disabled = false;
+                if (hdnSub) {
+                    hdnSub.disabled = true;
+                }
+                if (alertBlock) alertBlock.classList.add('d-none');
+            }
+        }
+
+        // Renderizar los extras compatibles con la modalidad actual
+        renderizarExtrasModalEdit(datos, datos.IdSubtipo);
+
+        // Llenar respuestas
+        var inputs = document.querySelectorAll('.inp-resp-edit');
+        inputs.forEach(i => i.value = '');
+        if (datos.Respuestas && datos.Respuestas.length > 0) {
+            datos.Respuestas.forEach(r => {
+                var input = document.querySelector(`.inp-resp-edit[data-idpreg="${r.Id_Pregunta}"]`);
+                if (input) input.value = r.Valor;
+            });
+        }
+
+        var myModal = new bootstrap.Modal(document.getElementById('modalEditar')); myModal.show();
+    }
+
+    // --- INICIALIZACIÓN ---
+    function inicializarFilas() {
+        if(asistentesPropuestos && asistentesPropuestos.length > 0) {
+            asistentesPropuestos.forEach(p => insertarFilaEnDOM(p.NombreCompleto, p.Edad, p.Genero, p.EtiquetaGrupo));
+        } else {
+            agregarFila();
+        }
+    }
+
+    function crearTarjetaCompositeQR(qrCanvas, nombre, esPagado, subtexto) {
+        var width = 380;
+        var height = 460;
+        var canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        var ctx = canvas.getContext('2d');
+
+        // Fondo Blanco
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+
+        // Borde elegante exterior
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(2, 2, width - 4, height - 4);
+
+        // Header banner tenue (verde o rojo)
+        ctx.fillStyle = esPagado ? '#F0FDF4' : '#FEF2F2';
+        ctx.fillRect(4, 4, width - 8, 80);
+
+        // Insignia Pequeña: ✔️ o ❌
+        ctx.save();
+        if (esPagado) {
+            ctx.fillStyle = '#16A34A';
+            ctx.beginPath();
+            ctx.arc(36, 44, 20, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✓', 36, 44);
+        } else {
+            ctx.fillStyle = '#DC2626';
+            ctx.beginPath();
+            ctx.arc(36, 44, 20, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✕', 36, 44);
+        }
+        ctx.restore();
+
+        // Nombre Completo de la persona (Multilínea sin recortar)
+        ctx.fillStyle = '#0F172A';
+        var fontSize = 15;
+        var nombreTexto = (nombre || 'ASISTENTE').trim();
+        if (nombreTexto.length > 32) fontSize = 12;
+        else if (nombreTexto.length > 24) fontSize = 13;
+
+        ctx.font = 'bold ' + fontSize + 'px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+
+        var palabras = nombreTexto.split(' ');
+        var linea1 = '';
+        var linea2 = '';
+        var maxAnchoTexto = 295;
+
+        for (var i = 0; i < palabras.length; i++) {
+            var prueba = linea1 + (linea1 ? ' ' : '') + palabras[i];
+            if (ctx.measureText(prueba).width <= maxAnchoTexto) {
+                linea1 = prueba;
+            } else {
+                linea2 = palabras.slice(i).join(' ');
+                break;
+            }
+        }
+
+        if (linea2) {
+            ctx.fillText(linea1, 68, 14);
+            ctx.fillText(linea2, 68, 14 + fontSize + 2);
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillStyle = esPagado ? '#15803D' : '#B91C1C';
+            ctx.fillText(esPagado ? '✓ PAGADO / LIQUIDADO' : '✕ PAGO PENDIENTE', 68, 14 + (fontSize + 2) * 2 + 2);
+        } else {
+            ctx.fillText(linea1, 68, 20);
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillStyle = esPagado ? '#15803D' : '#B91C1C';
+            ctx.fillText(esPagado ? '✓ PAGADO / LIQUIDADO' : '✕ PAGO PENDIENTE', 68, 46);
+        }
+
+        // Línea separadora
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(10, 84);
+        ctx.lineTo(width - 10, 84);
+        ctx.stroke();
+
+        // Dibujar QR en el centro (240x240 px)
+        var qrSize = 240;
+        var qrX = (width - qrSize) / 2;
+        var qrY = 100;
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+        // Pie de página
+        ctx.fillStyle = '#64748B';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        if (subtexto) {
+            ctx.fillText(subtexto, width / 2, height - 26);
+        }
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#334155';
+        ctx.fillText('CÓDIGO DE ACCESO OFICIAL - RED AJP', width / 2, height - 10);
+
+        return canvas;
+    }
+
+    function mostrarQR(tokenExterno, nombre, esPagado) {
+        var qrContainer = document.getElementById('qrCodeContainer');
+        qrContainer.innerHTML = '';
+        
+        var tempDiv = document.createElement('div');
+        tempDiv.style.display = 'none';
+        document.body.appendChild(tempDiv);
+
+        var urlCompleto = window.location.origin + '@Url.Action("Pagar", "Eventos")' + '?token=' + tokenExterno;
+
+        new QRCode(tempDiv, {
+            text: urlCompleto,
+            width: 250,
+            height: 250,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+
+        setTimeout(() => {
+            var rawCanvas = tempDiv.querySelector('canvas');
+            var btnDownload = document.getElementById('btnDownloadQR');
+            if (rawCanvas) {
+                var finalCanvas = crearTarjetaCompositeQR(rawCanvas, nombre, !!esPagado, 'CÓDIGO INDIVIDUAL');
+                finalCanvas.style.maxWidth = '100%';
+                finalCanvas.style.height = 'auto';
+                finalCanvas.style.borderRadius = '16px';
+                finalCanvas.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+
+                qrContainer.innerHTML = '';
+                qrContainer.appendChild(finalCanvas);
+                
+                btnDownload.href = finalCanvas.toDataURL("image/png");
+                btnDownload.download = (esPagado ? 'QR_PAGADO_' : 'QR_PENDIENTE_') + nombre.replace(/ /g, '_') + '.png';
+                btnDownload.style.display = 'inline-block';
+            } else {
+                btnDownload.style.display = 'none';
+            }
+            if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+        }, 250);
+
+        new bootstrap.Modal(document.getElementById('modalQR')).show();
+    }
+
+    function evaluarAceptacionLegal() {
+        const terminos = document.getElementById('chkTerminosLegal')?.checked || false;
+        const privacidad = document.getElementById('chkPrivacidadLegal')?.checked || false;
+        const btn = document.getElementById('btnConfirmarLegal');
+        if (btn) {
+            btn.disabled = !(terminos && privacidad);
+        }
+    }
+
+    function confirmarAceptacionLegal() {
+        sessionStorage.setItem('legalesAceptados_' + @idEvento, 'true');
+        const cardLegal = document.getElementById('cardAceptacionLegal');
+        if (cardLegal) cardLegal.classList.add('d-none');
+        
+        const cardRegistro = document.getElementById('cardNuevoRegistro');
+        if (cardRegistro) cardRegistro.classList.remove('oculto');
+    }
+
+    window.addEventListener('load', function() {
+        const tieneHistorial = @(tieneHistorial.ToString().ToLower());
+        const iniciarFormularioAbierto = @(iniciarFormularioAbierto.ToString().ToLower());
+        const aceptados = sessionStorage.getItem('legalesAceptados_' + @idEvento) === 'true';
+        
+        const cardLegal = document.getElementById('cardAceptacionLegal');
+        const cardRegistro = document.getElementById('cardNuevoRegistro');
+
+        if (cardLegal) {
+            if (aceptados || tieneHistorial) {
+                cardLegal.classList.add('d-none');
+                if (cardRegistro && iniciarFormularioAbierto) {
+                    cardRegistro.classList.remove('oculto');
+                }
+            } else {
+                cardLegal.classList.remove('d-none');
+                if (cardRegistro) {
+                    cardRegistro.classList.add('oculto');
+                }
+            }
+        }
+
+        // Inicializar tooltips de Bootstrap
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+
+    function abrirLectorPDF(titulo, url) {
+        const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+        if (esMovil) {
+            window.open(url, '_blank');
+        } else {
+            document.getElementById('pdfModalTitle').textContent = titulo;
+            document.getElementById('pdfIframe').src = url;
+            document.getElementById('btnPdfDownloadModal').href = url;
+            new bootstrap.Modal(document.getElementById('modalLectorPDF')).show();
+        }
+    }
+</script>
+
+<!-- Librería para generar el QR al vuelo -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- Modal QR -->
+<div class="modal fade" id="modalQR" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content border-0 rounded-4 shadow p-3">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-qrcode me-2 text-primary"></i>Código de Acceso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-3">
+                <div class="d-inline-block w-100 mb-3" id="qrCodeContainer">
+                    <!-- Aquí se inyecta el canvas de la tarjeta QR -->
+                </div>
+
+                <a id="btnDownloadQR" class="btn btn-primary rounded-pill w-100 fw-bold shadow-sm py-2 fs-6" style="display:none;">
+                    <i class="fa-solid fa-download me-2"></i>Descargar QR
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Lector PDF Adaptativo -->
+<div class="modal fade" id="modalLectorPDF" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl h-100 my-0 py-4">
+        <div class="modal-content rounded-4 border-0 shadow-lg h-100 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="pdfModalTitle">Visor de Documento</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <a id="btnPdfDownloadModal" href="#" target="_blank" download class="btn btn-sm btn-outline-light rounded-pill px-3">
+                        <i class="fa-solid fa-download me-1"></i> Descargar
+                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100">
+                <iframe id="pdfIframe" src="" class="w-100 h-100 border-0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>

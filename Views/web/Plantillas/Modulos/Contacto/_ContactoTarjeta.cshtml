@@ -1,0 +1,45 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<div class="container py-5 fade-in-up" id="contacto">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="row g-0 rounded-4 overflow-hidden shadow-lg" style="background: var(--theme-surface); border: 1px solid rgba(128, 128, 128, 0.2);">
+                <div class="col-md-5 p-5 d-flex flex-column justify-content-center">
+                    <h3 class="mb-4" style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-primary);">Visítanos</h3>
+
+                    <div class="mb-4">
+                        <p class="mb-1 fw-bold" style="color: var(--theme-text-main); font-family: var(--theme-font-body);">Dirección</p>
+                        <p class="mb-0" style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">@(string.IsNullOrWhiteSpace(Model.DireccionCompleta) ? "Sin dirección" : Model.DireccionCompleta)</p>
+                        <p class="mb-0" style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">@Model.Municipio</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <p class="mb-1 fw-bold" style="color: var(--theme-text-main); font-family: var(--theme-font-body);">Contacto</p>
+                        @if (!string.IsNullOrWhiteSpace(Model.Telefono))
+                        {
+                            <p class="mb-1" style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">T: @Model.Telefono</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+                        {
+                            <p class="mb-0" style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">W: @Model.Whatsapp</p>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="h-100 min-vh-100" style="min-height: 350px !important;">
+                        @if (Model.Latitud.HasValue && Model.Longitud.HasValue)
+                        {
+                            <iframe src="https://maps.google.com/maps?q=@Model.Latitud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),@Model.Longitud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)&z=15&output=embed" style="width: 100%; height: 100%; border:0;" frameborder="0" allowfullscreen></iframe>
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center h-100 w-100" style="background: var(--theme-bg); color: var(--theme-text-muted);">
+                                Mapa no disponible
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

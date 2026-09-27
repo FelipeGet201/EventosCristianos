@@ -1,0 +1,235 @@
+﻿@model List<dynamic>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Proyectos Especiales";
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+
+    bool puedeCrear = ViewBag.PuedeCrear ?? false;
+    bool puedeEditar = ViewBag.PuedeEditar ?? false;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-caja');
+        }
+    });
+</script>
+<div class="container fade-in py-4 py-md-5">
+    
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Caja")" class="text-decoration-none">Tesorería</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Proyectos Especiales</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold m-0" style="color: var(--header-footer);">
+                <i class="fa-solid fa-folder-open text-primary me-2"></i>Proyectos y Causas
+            </h2>
+            <p class="text-muted mb-0">Administra fondos y metas de donación independientes.</p>
+        </div>
+        <div>
+            @if (puedeCrear || puedeEditar)
+            {
+                <button class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm fw-bold text-uppercase fs-6 tracking-wide" onclick="abrirModalProyectoNuevo()">
+                    <i class="fa-solid fa-plus me-2"></i> Crear Proyecto
+                </button>
+            }
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="text-center py-5 card border-0 shadow-sm rounded-4 bg-light">
+            <div class="p-4"><i class="fa-solid fa-boxes-stacked fa-3x text-muted opacity-50 mb-3"></i>
+                <h5 class="fw-bold text-secondary">No hay proyectos registrados todavía</h5>
+                <p class="text-muted small">Crea un proyecto para recibir donaciones dirigidas desde la web.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var p in Model)
+            {
+                bool haExpirado = !p.Es_Permanente && p.Fecha_Limite < DateTime.Now;
+                
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative bg-white transition-all card-proyecto">
+                        <div style="height: 4px; background-color: @(p.Activo ? (p.Es_Permanente ? "#00d2d3" : (haExpirado ? "var(--acento-coral)" : "var(--pez-azul)")) : "#6c757d");"></div>
+                        
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge @(p.Activo ? (p.Es_Permanente ? "bg-info bg-opacity-10 text-info border border-info" : (haExpirado ? "bg-warning bg-opacity-10 text-warning border border-warning" : "bg-success bg-opacity-10 text-success border border-success")) : "bg-secondary bg-opacity-10 text-secondary border border-secondary") rounded-pill px-3 py-2 fw-bold small text-uppercase">
+                                    @(p.Activo ? (p.Es_Permanente ? "♾️ Permanente" : (haExpirado ? "⏳ Expirado" : "🟢 Activo")) : "⚪ Inactivo")
+                                </span>
+                                
+                                @if (puedeEditar)
+                                {
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" checked="@p.Activo" onchange="toggleProyectoActivo(@p.Id_Proyecto, this.checked)">
+                                    </div>
+                                }
+                            </div>
+
+                            <h4 class="fw-bold text-dark mb-2">@p.Titulo</h4>
+                            <p class="text-secondary small text-justify text-line-clamp flex-grow-1 mb-4">@p.Descripcion</p>
+
+                            <div class="bg-light p-3 rounded-4 mb-3 shadow-inner">
+                                <div class="row g-2 text-center">
+                                    <div class="col-4 border-end">
+                                        <small class="text-muted d-block text-uppercase ls-1" style="font-size:0.65rem;">Recaudado</small>
+                                        <span class="fw-bold text-success" style="font-size:0.95rem;">@(((decimal)p.Recaudado).ToString("C0", cultura))</span>
+                                    </div>
+                                    <div class="col-4 border-end">
+                                        <small class="text-muted d-block text-uppercase ls-1" style="font-size:0.65rem;">Gastado</small>
+                                        <span class="fw-bold text-danger" style="font-size:0.95rem;">@(((decimal)p.Gastado).ToString("C0", cultura))</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block text-uppercase ls-1" style="font-size:0.65rem;">Disponible</small>
+                                        <span class="fw-bold text-primary" style="font-size:0.95rem;">@(((decimal)p.Disponible).ToString("C0", cultura))</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3 small text-muted border-top pt-3">
+                                <div>
+                                    @if (p.Es_Permanente)
+                                    {
+                                        <span><i class="fa-solid fa-infinity me-1 text-info"></i> Permanente</span>
+                                    }
+                                    else
+                                    {
+                                        <span><i class="fa-regular fa-calendar-clock me-1"></i> <strong>@p.Fecha_Limite.ToString("dd/MM/yyyy")</strong></span>
+                                    }
+                                </div>
+                                <div class="d-flex gap-2">
+                                    @if (puedeEditar)
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill fw-bold shadow-sm" 
+                                                data-id="@p.Id_Proyecto" 
+                                                data-titulo="@p.Titulo" 
+                                                data-desc="@p.Descripcion" 
+                                                data-fecha="@p.Fecha_Limite.ToString("yyyy-MM-dd")" 
+                                                data-perm="@(p.Es_Permanente.ToString().ToLower())"
+                                                onclick="abrirModalEditarProyecto(this)">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    }
+                                    <a href="@Url.Action("Detalle", "Proyectos", new { id = p.Id_Proyecto })" class="btn btn-light text-primary border rounded-pill px-3 py-1 btn-sm fw-bold shadow-sm">
+                                        Movimientos <i class="fa-solid fa-chevron-right small ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="modalProyecto" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-0 py-3 px-4">
+                <h5 class="modal-title fw-bold text-dark" id="modalProyectoTitulo"><i class="fa-solid fa-folder-plus text-primary me-2"></i>Nuevo Proyecto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="@Url.Action("Guardar", "Proyectos")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="Id_Proyecto" name="Id_Proyecto" value="0">
+
+                <div class="modal-body p-4">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control rounded-3" id="Titulo" name="Titulo" placeholder="Ej. Biblias" required maxlength="150">
+                        <label>Nombre del Proyecto</label>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <textarea class="form-control rounded-3" id="Descripcion" name="Descripcion" placeholder="Escribe aquí..." required style="height: 110px;"></textarea>
+                        <label>Descripción pública</label>
+                    </div>
+
+                    <div class="form-check form-switch mb-4 ps-5 bg-light p-3 rounded-3 border border-dashed">
+                        <input class="form-check-input" type="checkbox" id="Es_Permanente" name="Es_Permanente" value="true" onchange="toggleFechaLimite(this.checked)">
+                        <label class="form-check-label small fw-bold text-primary" for="Es_Permanente">
+                            <i class="fa-solid fa-infinity me-1"></i> Es un proyecto permanente (No caduca)
+                        </label>
+                    </div>
+
+                    <div class="form-floating mb-2" id="divFechaLimite">
+                        <input type="date" class="form-control rounded-3" id="Fecha_Limite" name="Fecha_Limite" required>
+                        <label>Fecha de término</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 p-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow fw-bold">Guardar Proyecto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ls-1 { letter-spacing: 0.5px; }
+    .text-line-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-proyecto { transition: all 0.2s ease-in-out; }
+    .card-proyecto:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; }
+    .border-dashed { border-style: dashed !important; }
+</style>
+
+<script>
+    function abrirModalProyectoNuevo() {
+        document.getElementById('modalProyectoTitulo').innerHTML = '<i class="fa-solid fa-folder-plus text-primary me-2"></i> Crear Proyecto';
+        document.getElementById('Id_Proyecto').value = 0;
+        document.getElementById('Titulo').value = "";
+        document.getElementById('Descripcion').value = "";
+        document.getElementById('Es_Permanente').checked = false;
+        document.getElementById('Fecha_Limite').value = new Date().toISOString().split('T')[0];
+        toggleFechaLimite(false);
+        
+        new bootstrap.Modal(document.getElementById('modalProyecto')).show();
+    }
+
+    function abrirModalEditarProyecto(btn) {
+        document.getElementById('modalProyectoTitulo').innerHTML = '<i class="fa-solid fa-pen text-primary me-2"></i> Editar Proyecto';
+        document.getElementById('Id_Proyecto').value = btn.getAttribute('data-id');
+        document.getElementById('Titulo').value = btn.getAttribute('data-titulo');
+        document.getElementById('Descripcion').value = btn.getAttribute('data-desc');
+        
+        let esPerm = btn.getAttribute('data-perm') === 'true';
+        document.getElementById('Es_Permanente').checked = esPerm;
+        document.getElementById('Fecha_Limite').value = btn.getAttribute('data-fecha');
+        
+        toggleFechaLimite(esPerm);
+        new bootstrap.Modal(document.getElementById('modalProyecto')).show();
+    }
+
+    function toggleFechaLimite(esPermanente) {
+        var inputFecha = document.getElementById('Fecha_Limite');
+        var container = document.getElementById('divFechaLimite');
+        if (esPermanente) {
+            container.classList.add('d-none');
+            inputFecha.required = false;
+            inputFecha.value = "";
+        } else {
+            container.classList.remove('d-none');
+            inputFecha.required = true;
+            if (!inputFecha.value) {
+                inputFecha.value = new Date().toISOString().split('T')[0];
+            }
+        }
+    }
+
+    function toggleProyectoActivo(id, activo) {
+        fetch('@Url.Action("ToggleActivo", "Proyectos")' + '?id=' + id + '&activo=' + activo, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value }
+        });
+    }
+</script>

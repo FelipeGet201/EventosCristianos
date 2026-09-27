@@ -1,0 +1,54 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<style>
+    .aviso-grid-card {
+        background-color: var(--theme-surface);
+        border-left: 5px solid var(--theme-accent);
+        border-top: 1px solid rgba(128, 128, 128, 0.2);
+        border-right: 1px solid rgba(128, 128, 128, 0.2);
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        height: 100%;
+        transition: transform 0.3s;
+    }
+
+        .aviso-grid-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+        }
+
+    .aviso-grid-title {
+        color: var(--theme-primary);
+        font-family: var(--theme-font-title);
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+@if (Model.Avisos != null && Model.Avisos.Any())
+{
+    <div class="container py-5 fade-in-up">
+        <h2 class="mb-4" style="font-family: var(--theme-font-title); color: var(--theme-primary); font-weight: 800;">
+            <i class="fa-solid fa-bullhorn me-2" style="color: var(--theme-accent);"></i> Avisos Importantes
+        </h2>
+        <div class="row g-4">
+            @foreach (var aviso in Model.Avisos)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="aviso-grid-card">
+                        <h6 class="aviso-grid-title">@(string.IsNullOrWhiteSpace(aviso.Titulo) ? "Aviso" : aviso.Titulo)</h6>
+                        <p class="small mb-3" style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">
+                            @(string.IsNullOrWhiteSpace(aviso.Descripcion) ? "Sin descripción adicional." : aviso.Descripcion)
+                        </p>
+                        <div class="small fw-bold border-top pt-2" style="color: var(--theme-text-main); font-family: var(--theme-font-body); border-color: rgba(128, 128, 128, 0.2) !important;">
+                            Válido hasta: @(aviso.FechaExpiracion == default ? "--/--" : aviso.FechaExpiracion.ToString("dd MMM yyyy"))
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

@@ -1,0 +1,529 @@
+﻿@model RedAJP.Models.CalendarioViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Calendario de Actividades";
+    bool esAdmin = ViewBag.EsAdmin != null && (bool)ViewBag.EsAdmin;
+}
+
+<style>
+    /* --- VARIABLES & UTILIDADES --- */
+    :root {
+        --hero-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+        --card-radius: 16px;
+    }
+
+    .btn-hero-info {
+        background: rgba(255, 255, 255, 0.1); /* Fondo semitransparente */
+        border: 1px solid rgba(255, 255, 255, 0.5); /* Borde sutil */
+        color: white !important; /* Texto blanco por defecto */
+        font-weight: 700;
+        font-size: 0.9rem;
+        border-radius: 50px;
+        padding: 0.5rem 1.5rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+
+        .btn-hero-info:hover {
+            background: white; /* Fondo blanco */
+            color: #212529 !important; /* TEXTO NEGRO OSCURO FIJO (Bootstrap dark) */
+            border-color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    /* TARJETA DESTACADA (Compacta & Hero) */
+    .card-hero {
+        background: var(--hero-gradient);
+        border: none;
+        border-left: 5px solid transparent;
+        border-radius: var(--card-radius);
+        color: white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        overflow: hidden;
+        position: relative;
+        transition: transform 0.3s ease;
+    }
+
+        .card-hero.locked {
+            border-left-color: #fd7e14; 
+        }
+        /* Efecto de fondo sutil */
+        .card-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .card-hero:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+    /* CAJA DE FECHA (Diseño Glassmorphism) */
+    .date-badge {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 10px 15px;
+        text-align: center;
+        min-width: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .date-month {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 700;
+        color: var(--acento-dorado);
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .date-day {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 0.9;
+        color: #fff;
+    }
+
+    /* TARJETAS DE LISTA (Clean) */
+    .card-list {
+        background: #fff;
+        border: 1px solid #f0f0f0;
+        border-radius: var(--card-radius);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent; /* Para indicador de estado */
+    }
+
+        .card-list:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+
+        .card-list.active {
+            border-left-color: var(--pez-azul);
+        }
+
+        .card-list.inactive {
+            border-left-color: #adb5bd;
+            background-color: #f9f9f9;
+            opacity: 0.85;
+        }
+
+        /* Color Naranja/Warning para los bloqueados */
+        .card-list.locked {
+            border-left-color: #fd7e14;
+        }
+
+        .card-list .date-badge {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            color: #333;
+        }
+
+        .card-list .date-day {
+            color: #333;
+        }
+
+        .card-list .date-month {
+            color: var(--pez-azul);
+        }
+
+    /* BOTONES DE ACCIÓN (Lógica Visual) */
+
+    /* 1. DEUDA (Urgente - Rojo Pulsante) */
+    .btn-status-debt {
+        background-color: #ffebee;
+        color: #c62828;
+        border: 1px solid #ffcdd2;
+        font-weight: 700;
+        border-radius: 50px;
+        padding: 0.5rem 1.2rem;
+        animation: pulse-red 2s infinite;
+    }
+
+        .btn-status-debt:hover {
+            background-color: #c62828;
+            color: white;
+            border-color: #c62828;
+        }
+
+    /* 2. FUTURO (Informativo - Azul/Gris) */
+    .btn-status-future {
+        background-color: rgba(255,255,255,0.15); /* En Hero */
+        color: white;
+        border: 1px solid rgba(255,255,255,0.3);
+        font-weight: 600;
+        border-radius: 50px;
+        padding: 0.5rem 1.2rem;
+    }
+
+    .card-list .btn-status-future { /* En Lista */
+        background-color: #e3f2fd;
+        color: #0277bd;
+        border-color: #b3e5fc;
+    }
+
+    /* 3. CONFIRMADO (Éxito - Verde) */
+    .btn-status-done {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+        font-weight: 700;
+        border-radius: 50px;
+        padding: 0.5rem 1.2rem;
+    }
+
+    /* 4. REGISTRO (Acción Principal - Dorado) */
+    .btn-status-register {
+        background-color: var(--acento-dorado);
+        color: var(--header-footer);
+        font-weight: 800;
+        border: none;
+        border-radius: 50px;
+        padding: 0.6rem 1.5rem;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+        transition: transform 0.2s;
+    }
+
+        .btn-status-register:hover {
+            background-color: #ffca28;
+            transform: scale(1.05);
+            color: var(--header-footer);
+        }
+
+    /* 5. LLENO (Gris) */
+    .btn-status-full {
+        background-color: #e0e0e0;
+        color: #757575;
+        border-radius: 50px;
+        font-weight: 600;
+        padding: 0.5rem 1.2rem;
+        cursor: not-allowed;
+    }
+
+    /* BOTONES ADMIN (Sutiles) */
+    .admin-tools {
+        display: inline-flex;
+        background: rgba(0,0,0,0.05);
+        border-radius: 30px;
+        padding: 3px;
+        margin-right: 10px;
+    }
+
+    .card-hero .admin-tools {
+        background: rgba(255,255,255,0.15);
+    }
+
+    .btn-tool {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: #555;
+        transition: all 0.2s;
+    }
+
+    .card-hero .btn-tool {
+        color: white;
+    }
+
+    .btn-tool:hover {
+        background: white;
+        color: var(--header-footer);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* ANIMACIONES */
+    @@keyframes pulse-red {
+        0% {
+            box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 8px rgba(229, 57, 53, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(229, 57, 53, 0);
+        }
+    }
+
+    /* RESPONSIVE TWEAKS */
+    @@media (max-width: 768px) {
+        .card-hero {
+            text-align: center;
+        }
+        /* Ajuste del contenedor de fechas y textos */
+        .date-badge {
+            margin: 0 auto 1rem auto;
+        }
+        /* --- LÓGICA DE BOTONES EN MÓVIL --- */
+        /* 1. Herramientas Admin y Botón Info: Comparten la primera línea */
+        .card-hero .admin-tools,
+        .card-hero .btn-hero-info {
+            flex: 1 1 auto; /* Crecen para llenar el espacio */
+            width: 48%; /* Ocupan casi la mitad cada uno */
+            justify-content: center;
+            margin: 0 !important; /* El gap del HTML se encarga del espacio */
+        }
+        /* 2. Botón Principal (Inscribirse/Pagar): Cae abajo y ocupa todo */
+        .card-hero .btn-status-register,
+        .card-hero .btn-status-debt,
+        .card-hero .btn-status-future,
+        .card-hero .btn-status-done,
+        .card-hero .btn-status-full {
+            flex-basis: 100%; /* Fuerza salto de línea */
+            width: 100%;
+            margin-top: 5px; /* Separación visual */
+        }
+    }
+</style>
+
+<div class="container py-5 fade-in">
+
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6 col-12 mb-3 mb-md-0">
+            <h2 class="fw-bold text-dark mb-0">Listado de Eventos</h2>
+            <p class="text-muted small mb-0">Preparate para lo que se viene.</p>
+        </div>
+
+        @if (esAdmin)
+        {
+            <div class="col-md-6 col-12 d-flex justify-content-md-end justify-content-between align-items-center gap-3">
+                <form method="get" action="@Url.Action("Index", "Eventos")" class="mb-0">
+                    <div class="form-check form-switch mb-0 d-flex align-items-center gap-2 px-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="chkPasados" name="mostrarPasados" value="true" @(ViewBag.MostrarPasados == true ? "checked" : "") onchange="this.form.submit()" style="width: 2.8rem; height: 1.4rem; cursor: pointer; border-color: #666; margin-left: 0;">
+                        <label class="form-check-label text-muted small fw-bold mt-1" for="chkPasados" style="cursor: pointer; user-select: none;">Visualizar pasados</label>
+                    </div>
+                </form>
+
+                <a href="@Url.Action("Editor", "Eventos", new { sid = "" })" class="btn btn-dark rounded-pill px-4 shadow-sm">
+                    <i class="fa-solid fa-plus me-2"></i> <span class="d-none d-sm-inline">Crear Evento</span>
+                </a>
+            </div>
+        }
+    </div>
+
+    @if (Model.EventoDestacado != null)
+    {
+        var ev = Model.EventoDestacado;
+
+        <div class="card card-hero mb-5 @(ev.Bloqueado ? "locked" : "")">
+            <div class="card-body p-3 p-md-4">
+                <div class="row align-items-center">
+
+                    <div class="col-12 col-md-auto mb-3 mb-md-0">
+                        <div class="date-badge">
+                            <span class="date-month">@ev.MesAbreviado</span>
+                            <span class="date-day">@ev.DiaNumero</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md text-md-start">
+                        <div class="d-inline-block mb-1">
+                            <span class="badge bg-warning text-dark border-0 rounded-1 small fw-bold"><i class="fa-solid fa-star me-1"></i> DESTACADO</span>
+                            @if (!ev.Activo)
+                            {
+                                <span class="badge bg-danger ms-1">OCULTO</span>
+                            }
+                            @if (ev.Bloqueado)
+                            {
+                                <span class="badge bg-warning text-dark border border-warning ms-1"><i class="fa-solid fa-lock me-1"></i> BLOQUEADO</span>
+                            }
+                        </div>
+
+                        <h3 class="fw-bold mb-1 text-white text-truncate">@ev.Titulo</h3>
+
+                        <div class="text-white-50 small d-flex align-items-center gap-3 flex-wrap justify-content-center justify-content-md-start">
+                            <span><i class="fa-regular fa-clock me-1 text-warning"></i> @ev.DiaSemHoraFormato</span>
+                            @if (ev.Requiere_Registro)
+                            {
+                                <span class="d-none d-md-inline">|</span>
+                                <span><i class="fa-solid fa-users me-1"></i> @(ev.TotalAsistentesGlobal > 0 ? $"{ev.TotalAsistentesGlobal} Asistentes" : "Cupo Disponible")</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-auto mt-3 mt-md-0">
+                        <div class="d-flex flex-wrap justify-content-md-end align-items-center gap-2">
+
+                            @if (esAdmin)
+                            {
+                                <div class="admin-tools">
+                                    <a href="@Url.Action("PanelControl", new { sid = ev.Id_Encriptado_Evento })" class="btn-tool" title="Panel"><i class="fa-solid fa-chart-pie"></i></a>
+                                    <a href="@Url.Action("Editor", new { sid = ev.Id_Encriptado_Evento })" class="btn-tool" title="Editar"><i class="fa-solid fa-pen"></i></a>
+                                </div>
+                            }
+
+                            <a href="@Url.Action("Detalle", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn-hero-info">
+                                <i class="fa-solid fa-circle-info me-1"></i> Info
+                            </a>
+
+                            @if (ev.Requiere_Registro)
+                            {
+                                if (ev.MiMontoDeuda > 0)
+                                {
+                                    <a href="@Url.Action("Registro", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn-status-debt text-decoration-none">
+                                        <i class="fa-solid fa-triangle-exclamation me-2"></i> Pagar $@ev.MiMontoDeuda.ToString("N0")
+                                    </a>
+                                }
+                                else if (ev.MiMontoFuturo > 0)
+                                {
+                                    <a href="@Url.Action("Registro", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn-status-future text-decoration-none">
+                                        <i class="fa-regular fa-clock me-2"></i> Resta $@ev.MiMontoFuturo.ToString("N0")
+                                    </a>
+                                }
+                                else if (ev.MiCantidadConfirmada > 0)
+                                {
+                                    <a href="@Url.Action("Registro", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn-status-done text-decoration-none">
+                                        <i class="fa-solid fa-circle-check me-2"></i> Todo Listo
+                                    </a>
+                                }
+                                else if (ev.HayCupo)
+                                {
+                                    <a href="@Url.Action("Registro", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn-status-register text-decoration-none">
+                                        @(ev.Permitir_Pago ? "Inscribirse" : "Registrarse") <i class="fa-solid fa-arrow-right ms-1"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn-status-full border-0" disabled>Cupo Lleno</button>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.ListaEventos.Any())
+    {
+        <h6 class="text-uppercase text-muted fw-bold mb-3 small ps-2" style="letter-spacing: 1px;">Agenda General</h6>
+
+        @foreach (var ev in Model.ListaEventos)
+        {
+            string claseEstado = ev.Activo ? (ev.Bloqueado ? "locked" : "active") : "inactive";
+
+            <div class="card card-list @claseEstado mb-3">
+                <div class="card-body p-3">
+                    <div class="row align-items-center gy-3">
+
+                        <div class="col-auto">
+                            <div class="date-badge">
+                                <span class="date-month">@ev.MesAbreviado</span>
+                                <span class="date-day">@ev.DiaNumero</span>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class="d-flex align-items-center mb-1 flex-wrap gap-2">
+                                <h5 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 100%;">@ev.Titulo</h5>
+                                @if (!ev.Activo)
+                                {
+                                    <span class="badge bg-secondary" style="font-size:0.6rem;">OCULTO</span>
+                                }
+                                @if (ev.Bloqueado)
+                                {
+                                    <span class="badge bg-warning text-dark border border-warning rounded-pill" style="font-size:0.65rem;"><i class="fa-solid fa-lock me-1"></i> BLOQUEADO</span>
+                                }
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fa-regular fa-clock me-1 text-primary"></i> @ev.DiaSemHoraFormato
+                                @if (ev.Requiere_Registro && ev.TotalAsistentesGlobal > 0)
+                                {
+                                    <span class="ms-2"><i class="fa-solid fa-user-group me-1"></i> @ev.TotalAsistentesGlobal</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-auto mt-2 mt-md-0 d-flex justify-content-end align-items-center gap-2 pt-2 pt-md-0 border-md-0">
+
+                            @if (esAdmin)
+                            {
+                                <div class="admin-tools bg-light">
+                                    <a href="@Url.Action("PanelControl", new { sid = ev.Id_Encriptado_Evento })" class="btn-tool" title="Panel"><i class="fa-solid fa-chart-pie"></i></a>
+                                    <a href="@Url.Action("Editor", new { sid = ev.Id_Encriptado_Evento })" class="btn-tool" title="Editar"><i class="fa-solid fa-pen"></i></a>
+                                </div>
+                            }
+
+                            <a href="@Url.Action("Detalle", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn btn-sm btn-light border rounded-pill px-3 fw-bold text-secondary">
+                                <i class="fa-solid fa-circle-info me-1"></i> Info
+                            </a>
+
+                            @if (ev.Requiere_Registro && ev.Activo)
+                            {
+                                if (ev.MiMontoDeuda > 0)
+                                {
+                                    <a href="@Url.Action("Registro", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn-status-debt py-1 px-3 fs-6 text-decoration-none">
+                                        Pagar $@ev.MiMontoDeuda.ToString("N0")
+                                    </a>
+                                }
+                                else if (ev.MiMontoFuturo > 0)
+                                {
+                                    <a href="@Url.Action("Registro", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn btn-sm btn-info text-white bg-opacity-10 text-info border-info rounded-pill px-3 fw-bold">
+                                        Resta $@ev.MiMontoFuturo.ToString("N0")
+                                    </a>
+                                }
+                                else if (ev.MiCantidadConfirmada > 0)
+                                {
+                                    <a href="@Url.Action("Registro", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn btn-sm btn-success bg-opacity-10 text-white border-success rounded-pill px-3 fw-bold">
+                                        <i class="fa-solid fa-check me-1"></i> Listo
+                                    </a>
+                                }
+                                else if (ev.HayCupo)
+                                {
+                                    <a href="@Url.Action("Registro", "Eventos", new { sid = ev.Id_Encriptado_Evento })" class="btn btn-sm btn-dark rounded-pill px-3 fw-bold shadow-sm">
+                                        Inscribirse
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-secondary rounded-pill px-3" disabled>Lleno</button>
+                                }
+                            }
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else if (Model.EventoDestacado == null)
+    {
+        <div class="text-center py-5">
+            <div class="mb-3 text-muted opacity-25"><i class="fa-regular fa-calendar-check fa-4x"></i></div>
+            <h5 class="text-muted fw-bold">Sin eventos próximos</h5>
+            <p class="text-muted small">Revisa más tarde para nuevas actividades.</p>
+        </div>
+    }
+
+</div>
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-eventos');
+        }
+    });
+</script>

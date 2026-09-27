@@ -1,0 +1,66 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<style>
+    .galeria-cine-item {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        position: relative;
+        background-color: var(--theme-surface);
+        aspect-ratio: 16/9;
+    }
+
+        .galeria-cine-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .galeria-cine-item:hover img {
+            transform: scale(1.05);
+        }
+
+    .galeria-cine-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 2rem 1rem 1rem;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        color: #ffffff;
+    }
+</style>
+
+<div class="container py-5 fade-in-up">
+    <div class="text-center mb-5">
+        <h2 style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-primary);">Archivo Visual</h2>
+    </div>
+
+    @if (Model.Galeria != null && Model.Galeria.Any())
+    {
+        <div class="row g-4">
+            @foreach (var img in Model.Galeria)
+            {
+                <div class="col-md-6">
+                    <div class="galeria-cine-item shadow-sm">
+                        @if (!string.IsNullOrWhiteSpace(img.UrlImagen))
+                        {
+                            <img src="@img.UrlImagen" alt="@(img.Titulo ?? "Foto")" loading="lazy" />
+                        }
+                        else
+                        {
+                            <div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background: var(--theme-bg); color: var(--theme-text-muted);">Sin imagen</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(img.Titulo))
+                        {
+                            <div class="galeria-cine-caption">
+                                <h6 class="m-0 fw-bold" style="font-family: var(--theme-font-title);">@img.Titulo</h6>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,193 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+@{
+    string coverBg = Model.Galeria != null && Model.Galeria.Any() && !string.IsNullOrWhiteSpace(Model.Galeria.First().UrlImagen)
+                    ? Model.Galeria.First().UrlImagen
+                    : "https://via.placeholder.com/800x600?text=Fondo";
+}
+
+<style>
+    .hero-bento-container {
+        padding-top: 100px;
+        padding-bottom: 4rem;
+        background-color: var(--theme-bg);
+    }
+
+    .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+
+    .bento-item {
+        background: var(--theme-surface);
+        border-radius: 24px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-decoration: none;
+        overflow: hidden;
+    }
+
+        .bento-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+        }
+
+    .bento-main {
+        grid-column: span 2;
+        grid-row: span 2;
+        position: relative;
+    }
+
+    /* Modificado el gradient a uno monocromático basado en la superficie */
+    .bento-main-bg {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(var(--theme-surface), var(--theme-surface)), url('@Html.Raw(coverBg)') center/cover;
+        background-blend-mode: overlay;
+        opacity: 0.95;
+        z-index: 0;
+    }
+
+    .bento-main-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .bento-wa {
+        grid-column: span 1;
+        grid-row: span 1;
+        background: #25d366;
+        color: white;
+        text-align: center;
+        border: none;
+    }
+
+    .bento-map {
+        grid-column: span 1;
+        grid-row: span 1;
+        background: var(--theme-accent);
+        color: white;
+        text-align: center;
+        border: none;
+    }
+
+    .bento-tel {
+        grid-column: span 2;
+        grid-row: span 1;
+        background: var(--theme-primary);
+        color: white;
+        border: none;
+    }
+
+    .bento-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+
+    .bento-wa:hover, .bento-map:hover {
+        color: white;
+    }
+
+    @Html.Raw("@") media (max-width: 991px) {
+        .bento-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .bento-main {
+            grid-column: span 2;
+        }
+
+        .bento-tel {
+            grid-column: span 2;
+        }
+    }
+    @Html.Raw("@") media (max-width: 575px) {
+        .bento-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .bento-main, .bento-wa, .bento-map, .bento-tel {
+            grid-column: span 1;
+        }
+    }
+</style>
+
+<section class="hero-bento-container fade-in-up">
+    <div class="container">
+        <div class="bento-grid">
+
+            <div class="bento-item bento-main">
+                <div class="bento-main-bg"></div>
+                <div class="bento-main-content">
+                    <span class="badge mb-3 px-3 py-2 rounded-pill fs-6" style="background-color: var(--theme-primary); color: var(--theme-bg);">
+                        <i class="fa-solid fa-location-dot me-2"></i>@(string.IsNullOrWhiteSpace(Model.Municipio) ? "Ubicación no disponible" : Model.Municipio)
+                    </span>
+                    <h1 class="display-4 mb-3" style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-text-main);">
+                        @(string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "Nuestra Iglesia" : Model.NombreIglesia)
+                    </h1>
+                    <p class="fs-5 mb-4" style="font-family: var(--theme-font-body); color: var(--theme-text-muted);">
+                        @(string.IsNullOrWhiteSpace(Model.DireccionCompleta) ? "Dirección no registrada." : Model.DireccionCompleta)
+                    </p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+            {
+                <a href="https://wa.me/52@(Model.Whatsapp)" target="_blank" class="bento-item bento-wa">
+                    <i class="fa-brands fa-whatsapp bento-icon"></i>
+                    <h3 style="font-family: var(--theme-font-title); font-weight: 700;">WhatsApp</h3>
+                    <p class="mb-0 opacity-75 small">Envíanos un mensaje</p>
+                </a>
+            }
+            else
+            {
+                <div class="bento-item text-center" style="background: transparent; cursor: not-allowed; border: 1px dashed rgba(128,128,128,0.3); color: var(--theme-text-muted);">
+                    <i class="fa-brands fa-whatsapp bento-icon opacity-25"></i>
+                    <h3 style="font-family: var(--theme-font-title); font-weight: 700;" class="opacity-50">WhatsApp</h3>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.MapaUrl))
+            {
+                <a href="@Model.MapaUrl" target="_blank" class="bento-item bento-map">
+                    <i class="fa-solid fa-location-arrow bento-icon"></i>
+                    <h3 style="font-family: var(--theme-font-title); font-weight: 700;">Cómo Llegar</h3>
+                    <p class="mb-0 opacity-75 small">Google Maps</p>
+                </a>
+            }
+            else
+            {
+                <div class="bento-item text-center" style="background: transparent; cursor: not-allowed; border: 1px dashed rgba(128,128,128,0.3); color: var(--theme-text-muted);">
+                    <i class="fa-solid fa-map-location-dot bento-icon opacity-25"></i>
+                    <h3 style="font-family: var(--theme-font-title); font-weight: 700;" class="opacity-50">Mapa</h3>
+                </div>
+            }
+
+            <div class="bento-item bento-tel d-flex flex-row align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.2); width: 70px; height: 70px;">
+                        <i class="fa-solid fa-phone fs-2 m-0" style="color: #ffffff;"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-family: var(--theme-font-title); font-weight: 700; color: #ffffff;" class="mb-1">Llamada Directa</h4>
+                        @if (!string.IsNullOrWhiteSpace(Model.Telefono))
+                        {
+                            <a href="tel:@Model.Telefono" class="fs-5 fw-bold text-decoration-none stretched-link" style="color: #ffffff;">@Model.Telefono</a>
+                        }
+                        else
+                        {
+                            <span style="color: rgba(255,255,255,0.6);">No disponible</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>

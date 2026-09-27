@@ -1,0 +1,64 @@
+﻿@model IEnumerable<RedAJP.Models.ComunidadAuditoriaViewModel>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Auditoría de Ediciones";
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-comunidad');
+        }
+    });
+</script>
+
+<div class="container-fluid py-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-warning"></i> Historial de Ediciones</h2>
+            <p class="text-muted small mb-0">Registro inmutable de cambios para el Mensaje #@ViewBag.IdMensaje</p>
+        </div>
+        <a href="@Url.Action("Detalle", new { id = ViewBag.IdMensaje })" class="btn btn-outline-secondary shadow-sm">
+            <i class="fa-solid fa-arrow-left me-2"></i> Volver al Mensaje
+        </a>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-secondary small fw-bold">FECHA</th>
+                                <th class="text-secondary small fw-bold">EDITOR</th>
+                                <th class="text-secondary small fw-bold text-danger">CONTENIDO ANTERIOR</th>
+                                <th class="text-secondary small fw-bold text-success">CONTENIDO NUEVO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var audit in Model)
+                            {
+                                <tr>
+                                    <td class="small text-nowrap">@audit.Fecha_Edicion.ToString("dd MMM yyyy HH:mm:ss", cultura)</td>
+                                    <td class="small fw-bold">@audit.NombreEditor</td>
+                                    <td class="small text-muted" style="white-space: pre-wrap;">@audit.Contenido_Anterior</td>
+                                    <td class="small text-dark" style="white-space: pre-wrap;">@audit.Contenido_Nuevo</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fa-regular fa-clipboard fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay registros de edición para este mensaje.</h5>
+        </div>
+    }
+</div>

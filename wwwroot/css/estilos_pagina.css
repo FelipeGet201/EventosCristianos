@@ -1,0 +1,598 @@
+﻿/* =========================================
+   ARCHIVO: css/estilos_pagina.css
+   TEMA: ARRECIFE VIVO + SISTEMA NÁUTICO
+   ========================================= */
+
+/* ---------------------------------------------------------
+   1. VARIABLES Y CONFIGURACIÓN BASE
+   --------------------------------------------------------- */
+:root {
+    --header-footer: #002b36; /* Azul Profundo */
+    --acento-dorado: #ffb74d; /* Dorado */
+    --acento-coral: #ff7043; /* Coral */
+    --pez-azul: #00bcd4; /* Cyan */
+    --alga-verde: #4db6ac; /* Verde Agua */
+    --texto-arena: #cfd8dc; /* Gris Claro */
+    --blanco-puro: #ffffff;
+}
+
+html {
+    background-color: var(--header-footer);
+    overscroll-behavior-y: none;
+}
+
+body {
+    background-color: transparent;
+    position: relative;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Resets Bootstrap */
+.nav-link:focus, .nav-link:active, .btn:focus,
+.form-control:focus, .form-check-input:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* ---------------------------------------------------------
+   2. ELEMENTOS UI (BOTONES, FOOTER, MODAL)
+   --------------------------------------------------------- */
+
+/* Botón Náutico General */
+.btn-nautico {
+    background-color: var(--header-footer);
+    color: var(--blanco-puro);
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+}
+
+    .btn-nautico:hover {
+        background-color: var(--acento-dorado);
+        color: var(--header-footer);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 183, 77, 0.4);
+    }
+
+/* Boyas Sociales y Carrito */
+.social-buoy {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.05);
+    color: var(--acento-dorado);
+    margin: 0 5px;
+    text-decoration: none;
+    border: 1px solid rgba(255,183,77,0.3);
+    transition: all 0.3s ease;
+}
+
+    .social-buoy i {
+        margin: 0 !important;
+        font-size: 1rem !important;
+        color: inherit;
+    }
+
+    .social-buoy:hover {
+        background-color: var(--acento-coral);
+        color: white;
+        border-color: var(--acento-coral);
+        transform: translateY(-3px);
+        box-shadow: 0 0 15px rgba(255, 112, 67, 0.6);
+    }
+
+/* Hover específico del carrito */
+#menuCarrito:hover .social-buoy {
+    transform: scale(1.1);
+    background-color: var(--blanco-puro) !important;
+    box-shadow: 0 0 10px rgba(255, 183, 77, 0.6);
+}
+
+    #menuCarrito:hover .social-buoy i {
+        color: var(--acento-coral) !important;
+    }
+
+/* Footer */
+footer {
+    background-color: var(--header-footer);
+    color: var(--texto-arena);
+    border-top: none;
+    font-size: 0.9rem;
+}
+
+/* Sistema de Mensajes (Modal Burbuja) */
+.modal-nautico .modal-content {
+    border: none;
+    border-radius: 30px;
+    background-color: var(--blanco-puro);
+    box-shadow: 0 25px 50px rgba(0, 43, 54, 0.5);
+    padding: 10px;
+    text-align: center;
+}
+
+.modal-nautico .modal-header {
+    border-bottom: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+}
+
+.modal-icono-grande {
+    font-size: 4.5rem;
+    margin-bottom: 15px;
+}
+
+.modal-titulo-nautico {
+    color: var(--header-footer);
+    font-weight: 800;
+    font-size: 1.6rem;
+}
+
+.modal-nautico .btn-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    opacity: 0.3;
+}
+
+.modal-nautico .modal-body {
+    font-size: 1.1rem;
+    color: #546e7a;
+    padding: 10px 30px 20px 30px;
+}
+
+.modal-nautico .modal-footer {
+    border-top: none;
+    justify-content: center;
+    padding-bottom: 25px;
+}
+
+.modal-nautico.tipo-error .modal-icono-grande {
+    color: var(--acento-coral);
+}
+
+.modal-nautico.tipo-exito .modal-icono-grande {
+    color: var(--alga-verde);
+}
+
+.modal-nautico.tipo-info .modal-icono-grande {
+    color: var(--pez-azul);
+}
+
+/* ---------------------------------------------------------
+   3. BARRA DE NAVEGACIÓN (ESTILOS BASE)
+   --------------------------------------------------------- */
+.navbar-nautica {
+    background-color: var(--header-footer);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    border-bottom: 2px solid var(--acento-dorado);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: var(--blanco-puro) !important;
+    font-size: 1.1rem;
+}
+
+    .navbar-brand:hover {
+        color: var(--pez-azul) !important;
+        transition: 0.3s;
+    }
+
+.nav-link {
+    color: var(--texto-arena) !important;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+/* DROPDOWNS */
+.dropdown-menu {
+    background-color: var(--header-footer);
+    border: 1px solid var(--acento-dorado);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    border-radius: 10px;
+    margin-top: 5px;
+}
+
+.dropdown-item {
+    color: var(--texto-arena);
+    padding: 8px 20px;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+/* --- CORRECCIÓN DEFINITIVA ESTADO ACTIVO --- */
+/* Usamos selectores más específicos para ganarle a Bootstrap */
+.navbar-nav .dropdown-menu .dropdown-item.active,
+.navbar-nav .dropdown-menu .dropdown-item:active {
+    background-color: rgba(255, 183, 77, 0.15) !important; /* Fondo Dorado Sutil */
+    color: var(--acento-dorado) !important; /* Texto Dorado */
+    font-weight: 700 !important;
+    padding-left: 25px !important; /* Desplazamiento */
+}
+
+    /* Forzar el color del icono también */
+    .navbar-nav .dropdown-menu .dropdown-item.active i,
+    .navbar-nav .dropdown-menu .dropdown-item:active i {
+        color: var(--acento-dorado) !important;
+    }
+
+/* Hover normal */
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: rgba(255, 183, 77, 0.1);
+    color: var(--acento-dorado);
+    padding-left: 25px;
+}
+
+.dropdown-item i {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+    color: var(--alga-verde);
+}
+
+.dropdown-item:hover i {
+    color: var(--acento-dorado);
+}
+
+.dropdown-divider {
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.dropdown-header {
+    color: var(--acento-coral);
+    font-weight: bold;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+@media (max-width: 1199px) and (min-width: 992px) {
+    .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario) {
+        padding: 0.5rem 0.5rem !important; /* Reduce espacio lateral */
+    }
+
+    .navbar-nautica .navbar-nav .nav-item .nav-link span {
+        font-size: 0.6rem; /* Texto ligeramente más pequeño */
+    }
+
+    /* === NUEVO: COMPRIMIR BOTÓN DE USUARIO EN PANTALLAS MEDIANAS === */
+
+    /* 1. Ocultar el texto del nombre */
+    .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario .nombre-usuario-texto {
+        display: none !important;
+    }
+
+    /* 2. Quitar el ancho mínimo forzado para que el botón se encoja */
+    .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario {
+        min-width: auto !important;
+        padding: 8px 12px !important;
+    }
+
+        /* 3. Acercar la flechita al círculo quitando el margen derecho sobrante */
+        .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario div.rounded-circle {
+            margin-right: 4px !important;
+        }
+}
+
+
+/* ===========================================================
+   4. RESPONSIVE: MÓVIL Y TABLET (max-width: 991px)
+   =========================================================== */
+@media (max-width: 991px) {
+    .navbar-collapse {
+        background-color: rgba(0, 43, 54, 0.98);
+        padding: 20px;
+        border-radius: 0 0 20px 20px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    .navbar-nav {
+        width: 100%;
+    }
+
+        .navbar-nav .nav-item {
+            width: 100%;
+            margin-bottom: 2px;
+        }
+
+        /* Enlaces Centrados */
+        .navbar-nav .nav-link {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 0 !important;
+            font-size: 1.1rem;
+            color: var(--texto-arena);
+        }
+
+            .navbar-nav .nav-link i {
+                font-size: 1.2rem;
+                margin-right: 10px !important;
+                color: var(--pez-azul);
+                width: auto;
+            }
+
+            /* Activo Móvil */
+            .navbar-nav .nav-link.active, .navbar-nav .nav-link.active i {
+                color: var(--acento-dorado) !important;
+                font-weight: bold;
+            }
+
+        /* Dropdowns Móvil */
+        .navbar-nav .dropdown-menu {
+            width: 80%;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--acento-dorado);
+            border-radius: 15px;
+            text-align: center;
+            margin: 5px 0 15px 0;
+            padding: 10px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+    .dropdown-item {
+        justify-content: center;
+        padding: 10px;
+    }
+
+    .border-end {
+        border: none !important;
+    }
+
+    .navbar-toggler {
+        margin-left: 10px;
+    }
+
+    /* --- AJUSTE CARRITO MÓVIL (BOYA BRILLANTE) --- */
+    .navbar-nautica #menuCarrito .social-buoy {
+        background: linear-gradient(135deg, var(--pez-azul) 0%, #00838f 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        box-shadow: 0 0 15px rgba(0, 188, 212, 0.6) !important;
+        width: 38px !important;
+        height: 38px !important;
+        display: flex !important;
+    }
+
+        .navbar-nautica #menuCarrito .social-buoy i {
+            color: white !important;
+            font-size: 0.9rem !important;
+            margin: 0 !important;
+        }
+
+    /* Botón Usuario Móvil */
+    .user-avatar-btn {
+        margin-top: 20px;
+        width: 100%;
+        background-color: rgba(255, 183, 77, 0.1);
+        border: 1px solid var(--acento-dorado);
+        border-radius: 50px;
+        display: flex !important;
+        justify-content: center !important;
+        padding: 10px !important;
+    }
+
+    /* Iconos generales de boyas en móvil (redes sociales) */
+    .social-buoy i {
+        color: var(--acento-dorado) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-title {
+        font-size: 0.9rem !important; /* Título más pequeño */
+    }
+
+    .card-body {
+        padding: 1rem !important; /* Menos relleno interno */
+    }
+
+    .fs-5 {
+        font-size: 1rem !important; /* Precio más pequeño */
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.75rem !important; /* Botón "Ver" más compacto */
+        font-size: 0.75rem !important;
+    }
+}
+
+/* ===========================================================
+   5. RESPONSIVE: ESCRITORIO (min-width: 992px)
+   MENÚ APILADO (Icono Arriba)
+   =========================================================== */
+@media (min-width: 992px) {
+    .navbar-nautica {
+        padding: 0;
+        min-height: 75px;
+    }
+
+        /* 1. Estructura Vertical (Icono Arriba / Texto Abajo) */
+        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario) {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0.5rem 1rem !important;
+            height: 100%;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+            /* 2. Iconos generales (ESTADO REPOSO: COLOR ARENA) */
+            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario) i {
+                font-size: 1.4rem;
+                margin-bottom: 4px;
+                margin-right: 0 !important;
+                /* Color neutro base */
+                color: var(--texto-arena) !important;
+                transition: all 0.3s ease;
+            }
+
+            /* 3. Texto general */
+            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario) span {
+                font-size: 0.7rem;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+                line-height: 1;
+                display: block;
+            }
+
+        /* 4. Flecha Dropdown General */
+        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menu-usuario).dropdown-toggle::after {
+            margin-left: 0;
+            margin-top: 3px;
+            display: block;
+            border-top: 0.3em solid;
+            border-right: 0.3em solid transparent;
+            border-left: 0.3em solid transparent;
+            opacity: 0.6;
+            color: inherit;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 5. Hover/Active (CORREGIDO: AHORA TIENE LA FUERZA PARA GANARLE AL GRIS) */
+        /* Agregamos los mismos :not(...) aquí para igualar la especificidad */
+        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario):hover,
+        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario).active,
+        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario).show {
+            color: var(--acento-dorado) !important;
+        }
+
+            /* FORZAR ICONO DORADO AL PASAR MOUSE O ESTAR ACTIVO */
+            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario):hover i,
+            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario).active i,
+            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario).show i {
+                color: var(--acento-dorado) !important;
+                transform: translateY(-2px);
+            }
+
+        /* Limpieza Bordes */
+        .navbar-nautica .navbar-nav .nav-item.border-start-lg {
+            border-left: none !important;
+        }
+
+        /* --- EXCEPCIÓN 1: CARRITO (Horizontal) --- */
+        .navbar-nautica .navbar-nav .nav-item .nav-link#menuCarrito {
+            padding: 0.5rem 1rem !important;
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+    #menuCarrito .social-buoy i {
+        color: var(--header-footer) !important;
+    }
+
+    #menuCarrito:hover .social-buoy {
+        background-color: var(--blanco-puro) !important;
+        transform: scale(1.1);
+    }
+
+        #menuCarrito:hover .social-buoy i {
+            color: var(--acento-coral) !important;
+        }
+
+    /* --- EXCEPCIÓN 2: BOTÓN USUARIO (Estilo Horizontal) --- */
+    .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 8px 20px !important;
+        height: auto !important;
+        margin-top: auto;
+        margin-bottom: auto;
+        min-width: 180px;
+    }
+
+        /* Avatar */
+        .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario div.rounded-circle {
+            margin-right: 10px !important;
+            margin-bottom: 0 !important;
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Nombre */
+        .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario span {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin: 0 !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+            text-align: left;
+            display: block !important;
+        }
+
+        /* Flecha */
+        .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario::after {
+            margin-left: 10px !important;
+            margin-top: 0 !important;
+            display: inline-block !important;
+            position: static !important;
+            border-top: 0.3em solid;
+            opacity: 0.8;
+            color: inherit;
+        }
+
+    /* Contenedor estilo píldora */
+    .user-avatar-btn {
+        border: 1px solid var(--acento-dorado);
+        border-radius: 50px;
+        background: rgba(255,255,255,0.08);
+    }
+}
+
+/* ===========================================================
+   6. PARCHE GLOBAL: APROVECHAR ESPACIO EN MÓVILES
+   (Agregado al final para sobrescribir reglas anteriores)
+   =========================================================== */
+
+@media (max-width: 576px) {
+    /* 1. Reducir el margen lateral del contenedor principal */
+    /* Bootstrap trae 12px o 15px por defecto. Lo bajamos a 5px */
+    .container, .container-fluid {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    /* 2. Ajustar las filas para que no se desborden por el cambio anterior */
+    .row {
+        margin-left: -4px !important;
+        margin-right: -4px !important;
+    }
+
+    /* 3. Columnas: Menos espacio entre ellas para ganar ancho real */
+    .col, [class*="col-"] {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    /* 4. Tarjetas: Reducir el "relleno" interno en móviles */
+    /* A veces las tarjetas tienen mucho aire adentro. Esto lo compacta un poco */
+    .card-body {
+        padding: 1rem !important; /* 16px es suficiente en móvil */
+    }
+
+    /* Si tienes títulos display muy grandes, los ajustamos */
+    h1, .display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
+        font-size: 1.8rem !important; /* Tamaño controlado para que no rompa el ancho */
+        word-wrap: break-word; /* Evita que palabras largas salgan de la pantalla */
+    }
+}

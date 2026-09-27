@@ -1,0 +1,346 @@
+﻿@model IEnumerable<RedAJP.Models.MisIglesiasPanelViewModel>
+@{
+    ViewData["Title"] = "Mis Páginas WEB";
+    Layout = "~/Views/Shared/Principal.cshtml";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        activarMenu('submenu-paginasweb');
+    });
+</script>
+<style>
+    /* 1. Estado Base del Botón */
+    .btn-design-magic {
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); /* Color inicial */
+        border: none !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s ease;
+    }
+
+        /* 2. Capa Oculta para la Transición de Color (Crossfade) */
+        .btn-design-magic::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%); /* Tu color de hover */
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.5s ease; /* Fundido suave */
+        }
+
+        /* 3. El Efecto de Destello de Luz */
+        .btn-design-magic::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -110%;
+            width: 30%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(30deg);
+            transition: left 0.7s ease-in-out;
+        }
+
+        /* 4. Estado :Hover Unificado */
+        .btn-design-magic:hover {
+            transform: translateY(-3px) scale(1.03); /* Un toque más de escala para profundidad */
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45);
+        }
+
+            .btn-design-magic:hover::before {
+                opacity: 1; /* Revela el degradado secundario suavemente */
+            }
+
+            .btn-design-magic:hover::after {
+                left: 130%; /* Lanza el destello de luz de lado a lado */
+            }
+</style>
+<div class="fade-in py-4 px-2">
+    <div class="container">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold text-uppercase mb-0" style="color: var(--header-footer);">
+                    <i class="fa-solid fa-globe me-2"></i> Mis Páginas WEB
+                </h4>
+                <p class="text-muted small mb-0 mt-1">Administra la presencia digital de tus congregaciones asignadas.</p>
+            </div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fa-solid fa-laptop-house text-muted mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
+                <h5 class="text-muted">No tienes páginas asignadas</h5>
+                <p class="text-secondary small">Si crees que esto es un error, solicita acceso al administrador general.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var item in Model)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden" style="transition: transform 0.2s;">
+
+                            <div class="card-header border-0 py-3 text-white" style="background: linear-gradient(135deg, var(--header-footer) 0%, #005f73 100%);">
+                                <h6 class="mb-0 fw-bold text-truncate"><i class="fa-solid fa-church me-2"></i> @item.Nombre</h6>
+                                <small class="opacity-75"><i class="fa-solid fa-location-dot me-1"></i> @item.Municipio</small>
+                            </div>
+
+                            <div class="card-body bg-white position-relative">
+                                <div class="mb-3 d-flex align-items-center justify-content-between bg-light p-2 rounded-3 border">
+                                    <div>
+                                        <span class="small fw-bold text-muted text-uppercase ls-1 d-block" style="font-size: 0.65rem;">Página Pública</span>
+                                        <span id="lbl_@item.sIdIglesia" class="fw-bold @(item.EstaActiva ? "text-success" : "text-danger")" style="font-size: 0.8rem;">
+                                            @(item.EstaActiva ? "EN LÍNEA" : "FUERA DE LÍNEA")
+                                        </span>
+                                    </div>
+                                    <div class="form-check form-switch fs-4">
+                                        <input class="form-check-input cursor-pointer" type="checkbox" role="switch"
+                                               id="sw_@item.IdIglesia"
+                                               @(item.EstaActiva ? "checked" : "")
+                                               onchange="cambiarEstatusWeb('@item.sIdIglesia', this)">
+                                    </div>
+                                </div>
+
+                                @if (item.TieneBorradorPendiente)
+                                {
+                                    <div class="alert alert-warning py-2 px-3 mb-0 rounded-3 shadow-sm border-0 d-flex align-items-center">
+                                        <i class="fa-solid fa-pencil text-warning me-2 fs-5"></i>
+                                        <div style="font-size: 0.8rem; line-height: 1.2;">
+                                            <strong>Tienes cambios sin publicar.</strong><br />
+                                            <span class="text-muted">Revisa y publica para actualizarlos.</span>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted" style="font-size: 0.8rem;">
+                                        <i class="fa-regular fa-clock me-1"></i> Última pub: @(item.UltimaActualizacion?.ToString("dd/MMM/yyyy") ?? "Nunca")
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="card-footer bg-white border-0 p-3 pt-0">
+                                <div class="d-grid gap-2">
+                                    <a href="@Url.Action("Editar", "IglesiasWeb", new { sId = item.sIdIglesia })"
+                                       class="btn btn-outline-primary btn-builder fw-bold rounded-pill py-2">
+                                        <i class="fa-solid fa-pen-to-square"></i> Administrar Contenido
+                                    </a>
+
+                                    @if (item.EsModular)
+                                    {
+                                        <a href="@Url.Action("Constructor", "IglesiasWeb", new { sId = item.sIdIglesia })"
+                                           class="btn btn-builder btn-design-magic fw-bold rounded-pill py-2 shadow-sm">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Personalizar Diseño
+                                        </a>
+                                    }
+
+                                    @if (item.TieneBorradorDatos || item.TieneBorradorDiseno)
+                                    {
+                                        <div class="row g-2 mt-1">
+
+                                            @if (item.TieneBorradorDatos)
+                                            {
+                                                <div class="@(item.TieneBorradorDiseno ? "col-6" : "col-12")">
+                                                    <button type="button" class="btn btn-outline-danger w-100 rounded-pill py-1 fw-bold" style="font-size: 0.8rem;"
+                                                            data-bs-toggle="modal" data-bs-target="#modalDescartarDatos" data-id="@item.sIdIglesia">
+                                                        <i class="fa-solid fa-trash-can"></i> Datos Editados
+                                                    </button>
+                                                </div>
+                                            }
+
+                                            @if (item.TieneBorradorDiseno)
+                                            {
+                                                <div class="@(item.TieneBorradorDatos ? "col-6" : "col-12")">
+                                                    <button type="button" class="btn btn-outline-danger w-100 rounded-pill py-1 fw-bold" style="font-size: 0.8rem;"
+                                                            data-bs-toggle="modal" data-bs-target="#modalDescartarDiseno" data-id="@item.sIdIglesia">
+                                                        <i class="fa-solid fa-eraser"></i> Diseño Editado
+                                                    </button>
+                                                </div>
+                                            }
+
+                                            <div class="col-12">
+                                                <a href="/web/preview/@item.sIdIglesia" target="_blank"
+                                                   class="btn btn-dark btn-builder w-100 rounded-pill py-2 fw-bold" style="font-size: 0.85rem;">
+                                                    <i class="fa-solid fa-magnifying-glass"></i> Vista Previa
+                                                </a>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <form action="@Url.Action("Publicar", "IglesiasWeb")" method="post" class="m-0 p-0 form-publicar">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="sId" value="@item.sIdIglesia" />
+                                                    <button type="button" class="btn btn-success btn-builder btn-publish-glow w-100 rounded-pill py-2 fw-bold btn-abrir-modal" style="font-size: 0.85rem;">
+                                                        <i class="fa-solid fa-cloud-arrow-up"></i> Publicar Cambios
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="text-center mt-3 border-top pt-3">
+                                        <a href="/web/@item.Slug" target="_blank" class="btn btn-link link-public text-decoration-none text-primary fw-bold p-0">
+                                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Ver página pública
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+<div class="modal fade" id="modalConfirmarPublicar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Confirmar Publicación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="fs-5 mb-0">¿Estás seguro que deseas publicar estos cambios en vivo?</p>
+                <small class="text-muted">Esta acción actualizará la versión pública de la iglesia inmediatamente.</small>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light border rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarSubmit" class="btn btn-success rounded-pill px-4 fw-bold">Sí, Publicar Ahora</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalDescartarDatos" tabindex="-1" aria-labelledby="modalDescartarDatosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalDescartarDatosLabel"><i class="fa-solid fa-triangle-exclamation me-2"></i> Descartar Datos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fa-solid fa-trash-can text-danger fa-3x mb-3"></i>
+                <p class="fs-5 mb-0">¿Estás seguro que deseas descartar los cambios en el <strong>CONTENIDO</strong> (textos, avisos, eventos, etc)?</p>
+                <p class="text-muted small mt-2">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary rounded-pill fw-bold px-4" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formDescartarDatos" action="@Url.Action("DescartarDatos", "IglesiasWeb")" method="post" class="m-0 p-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sId" id="inputDescartarDatosId" value="" />
+                    <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4">Sí, descartar datos</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDescartarDiseno" tabindex="-1" aria-labelledby="modalDescartarDisenoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalDescartarDisenoLabel"><i class="fa-solid fa-triangle-exclamation me-2"></i> Descartar Diseño</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fa-solid fa-eraser text-danger fa-3x mb-3"></i>
+                <p class="fs-5 mb-0">¿Estás seguro que deseas descartar los cambios en el <strong>DISEÑO MODULAR</strong>?</p>
+                <p class="text-muted small mt-2">Se restaurará la apariencia a su última versión publicada.</p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary rounded-pill fw-bold px-4" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formDescartarDiseno" action="@Url.Action("DescartarDiseno", "IglesiasWeb")" method="post" class="m-0 p-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sId" id="inputDescartarDisenoId" value="" />
+                    <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4">Sí, descartar diseño</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = new bootstrap.Modal(document.getElementById('modalConfirmarPublicar'));
+            let formToSubmit = null;
+            document.querySelectorAll('.btn-abrir-modal').forEach(button => {
+                button.addEventListener('click', function () {
+                    formToSubmit = this.closest('.form-publicar');
+                    modal.show();
+                });
+            });
+            document.getElementById('btnConfirmarSubmit').addEventListener('click', function () {
+                if (formToSubmit) {
+                    formToSubmit.submit();
+                }
+            });
+
+            // Para Descartar Datos
+            var modalDatos = document.getElementById('modalDescartarDatos');
+            if (modalDatos) {
+                modalDatos.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget; // Botón que activó el modal
+                    var id = button.getAttribute('data-id'); // Extraer la información
+                    var inputId = modalDatos.querySelector('#inputDescartarDatosId');
+                    inputId.value = id; // Pasar el ID al input oculto del formulario
+                });
+            }
+
+            // Para Descartar Diseño
+            var modalDiseno = document.getElementById('modalDescartarDiseno');
+            if (modalDiseno) {
+                modalDiseno.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var id = button.getAttribute('data-id');
+                    var inputId = modalDiseno.querySelector('#inputDescartarDisenoId');
+                    inputId.value = id;
+                });
+            }
+        });
+
+        function cambiarEstatusWeb(sId, checkbox) {
+            const activa = checkbox.checked;
+            const label = document.getElementById('lbl_' + sId);
+
+            // Bloqueamos el switch momentáneamente
+            checkbox.disabled = true;
+
+            $.ajax({
+                url: '@Url.Action("ToggleEstadoWeb", "IglesiasWeb")',
+                type: 'POST',
+                data: {
+                    sId: sId,
+                    activa: activa,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Actualizamos el texto y color
+                        label.innerText = activa ? "EN LÍNEA" : "FUERA DE LÍNEA";
+                        label.className = "fw-bold " + (activa ? "text-success" : "text-danger");
+                    } else {
+                        alert("Error: " + response.message);
+                        checkbox.checked = !activa; // Revertimos el switch
+                    }
+                },
+                error: function() {
+                    alert("Error de conexión al servidor.");
+                    checkbox.checked = !activa; // Revertimos el switch
+                },
+                complete: function() {
+                    checkbox.disabled = false;
+                }
+            });
+        }
+    </script>
+}

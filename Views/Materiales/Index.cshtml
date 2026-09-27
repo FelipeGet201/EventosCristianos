@@ -1,0 +1,296 @@
+﻿@using RedAJP.Globales
+@model List<RedAJP.Controllers.MaterialesController.MaterialViewModel>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Material Evangelístico";
+
+    bool p_Crear = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Crear);
+    bool p_Editar = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Editar);
+    bool p_Borrar = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Borrar);
+}
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-material');
+        }
+    });
+</script>
+
+<style>
+    .masonry-container {
+        column-count: 2;
+        column-gap: 0.8rem;
+        padding: 0 0.5rem;
+    }
+
+    @@media (min-width: 768px) {
+        .masonry-container {
+            column-count: 3;
+            column-gap: 1.5rem;
+            padding: 0 1rem;
+        }
+    }
+
+    @@media (min-width: 1200px) {
+        .masonry-container {
+            column-count: 4;
+        }
+    }
+
+    .item-material {
+        break-inside: avoid;
+        margin-bottom: 0.8rem;
+        position: relative;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease;
+        cursor: pointer; /* Indica que es clickable */
+    }
+
+    @@media (hover: hover) {
+        .item-material:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+            z-index: 2;
+        }
+    }
+
+    .img-pinterest {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 12px;
+    }
+
+    .doc-placeholder {
+        width: 100%;
+        padding-top: 100%;
+        position: relative;
+        border-radius: 12px;
+        background-color: #f8f9fa;
+    }
+
+    .doc-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+
+    .info-overlay {
+        padding: 0.8rem;
+    }
+
+    .titulo-material {
+        font-size: 0.9rem;
+        font-weight: 700;
+        line-height: 1.3;
+        color: var(--header-footer);
+        margin-bottom: 0.3rem;
+    }
+
+    .desc-material {
+        font-size: 0.75rem;
+        color: #6c757d;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+    /* --- PRECARGA DE IMÁGENES --- */
+    .img-placeholder {
+        position: relative;
+        min-height: 250px; /* Altura mínima mientras carga */
+        background-color: #f3f4f6; /* Gris suave */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px 12px 0 0;
+        overflow: hidden;
+        transition: background-color 0.3s;
+    }
+
+        /* El icono de fondo (FontAwesome) */
+        .img-placeholder::before {
+            content: '\f03e'; /* Código de fa-image */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 3rem;
+            color: #d1d5db; /* Gris del icono */
+            position: absolute;
+            z-index: 1;
+        }
+
+    /* La imagen real (inicialmente invisible) */
+    .img-pinterest {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 12px 12px 0 0;
+        opacity: 0; /* Invisible al inicio */
+        transform: scale(0.95); /* Un poco pequeña */
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        position: relative;
+        z-index: 2; /* Encima del icono */
+    }
+
+    /* Clase que se agrega con JS cuando carga */
+    .img-loaded {
+        opacity: 1 !important;
+        transform: scale(1) !important;
+        background-color: white; /* Tapa el fondo gris */
+    }
+
+    /* Ocultar el icono de fondo cuando ya cargó (opcional, la imagen lo tapa) */
+    .loaded-parent::before {
+        display: none;
+    }
+</style>
+
+<div class="py-4 fade-in">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold" style="color: var(--header-footer); font-size: 1.8rem;">Material Evangelístico</h2>
+        <p class="text-muted small mb-2">Recursos para extender el reino.</p>
+        <div style="width: 40px; height: 3px; background-color: var(--acento-dorado); margin: 0 auto;"></div>
+    </div>
+
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-6 col-11">
+            <div class="d-flex gap-2">
+                <div class="input-group input-group-sm shadow-sm">
+                    <input type="text" id="buscadorMaterial" class="form-control rounded-pill-start border-end-0 ps-3"
+                           placeholder="Buscar..." onkeyup="filtrarMateriales()">
+                    <button class="btn btn-primary rounded-pill-end px-3" style="background-color: var(--header-footer); border:none;">
+                        <i class="fa-solid fa-search"></i>
+                    </button>
+                </div>
+
+                @if (p_Crear)
+                {
+                    <a href="@Url.Action("Editor")" class="btn btn-warning btn-sm rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                       style="width: 38px; height: 38px;" title="Subir Nuevo">
+                        <i class="fa-solid fa-plus text-dark"></i>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="text-center py-5 bg-light rounded-4 border border-dashed mx-3">
+            <i class="fa-solid fa-book-bible fa-3x text-muted opacity-50 mb-3"></i>
+            <h5 class="fw-bold text-muted">La biblioteca está vacía</h5>
+        </div>
+    }
+    else
+    {
+        <div class="masonry-container" id="gridMateriales">
+            @foreach (var item in Model)
+            {
+                <div class="item-material" onclick="window.location='@Url.Action("Descargar", new { id = item.Id })'">
+
+                    @if (p_Editar || p_Borrar)
+                    {
+                        <div class="position-absolute top-0 end-0 m-1 dropdown" style="z-index: 10;" onclick="event.stopPropagation();">
+                            <button class="btn btn-sm btn-light bg-white bg-opacity-75 rounded-circle shadow-sm px-2 py-1" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-ellipsis-vertical text-dark small"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow small">
+                                @if (p_Editar)
+                                {
+                                    <li><a class="dropdown-item" href="@Url.Action("Editor", new { id = item.Id })"><i class="fa-solid fa-pen text-primary me-2"></i> Editar</a></li>
+                                }
+                                @if (p_Borrar)
+                                {
+                                    <li>
+                                        <form action="@Url.Action("Eliminar")" method="post" onsubmit="return confirm('¿Eliminar permanentemente?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="dropdown-item text-danger"><i class="fa-solid fa-trash me-2"></i> Eliminar</button>
+                                        </form>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @if (item.EsImagen)
+                    {
+                        <div class="img-placeholder" id="placeholder-@item.Id">
+                            <img src="@Url.Action("Imagen", new { id = item.Id })?v=@item.Fecha.Ticks"
+                                 class="img-pinterest"
+                                 alt="@item.Titulo"
+                                 loading="lazy"
+                                 onload="this.classList.add('img-loaded'); document.getElementById('placeholder-@item.Id').classList.add('loaded-parent');"
+                                 onerror="this.style.display='none';">
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="doc-placeholder">
+                            <div class="doc-content">
+                                <i class="fa-solid @item.IconoClase fa-3x @item.ColorClase mb-2 drop-shadow"></i>
+                                <span class="badge bg-light text-dark border shadow-sm">DOCUMENTO</span>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="info-overlay">
+                        <h6 class="fw-bold titulo-material mb-1 text-dark">@item.Titulo</h6>
+
+                        @if (!string.IsNullOrEmpty(item.Descripcion))
+                        {
+                            <p class="desc-material text-muted mb-3 lh-sm">@item.Descripcion</p>
+                        }
+
+                        <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-2">
+                            <span class="text-primary small fw-bold">
+                                <i class="fa-solid fa-cloud-arrow-down me-1"></i> Descargar
+                            </span>
+
+                            @if (item.Descargas > 0)
+                            {
+                                <span class="badge bg-light text-muted border rounded-pill fw-normal" style="font-size: 0.65rem;">
+                                    <i class="fa-solid fa-fire me-1 text-warning"></i> @item.Descargas
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-herramientas', 'submenu-material');
+    });
+
+    function filtrarMateriales() {
+        var input = document.getElementById('buscadorMaterial');
+        var filtro = input.value.toLowerCase();
+        var items = document.getElementsByClassName('item-material');
+
+        for (var i = 0; i < items.length; i++) {
+            var titulo = items[i].querySelector('.titulo-material').innerText.toLowerCase();
+            var descElem = items[i].querySelector('.desc-material');
+            var desc = descElem ? descElem.innerText.toLowerCase() : "";
+
+            if (titulo.includes(filtro) || desc.includes(filtro)) {
+                items[i].style.display = "inline-block";
+            } else {
+                items[i].style.display = "none";
+            }
+        }
+    }
+</script>

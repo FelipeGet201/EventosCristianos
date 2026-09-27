@@ -1,0 +1,196 @@
+﻿@using RedAJP.Globales
+@model List<RedAJP.Models.CategoriaViewModel>
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Categorías de Productos";
+    bool p_Crear = User.TienePermiso(Parametros.Modulos.TiendaConfig, Parametros.Permisos.Crear);
+    bool p_Editar = User.TienePermiso(Parametros.Modulos.TiendaConfig, Parametros.Permisos.Editar);
+    bool p_Borrar = User.TienePermiso(Parametros.Modulos.TiendaConfig, Parametros.Permisos.Borrar);
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-categorias');
+        }
+    });
+</script>
+
+<div class="fade-in py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold" style="color: var(--header-footer);">
+                <i class="fa-solid fa-tags me-2 text-warning"></i>Tipos de Productos
+            </h2>
+            <p class="text-muted mb-0 small">Define el catálogo base y sus tallas por defecto</p>
+        </div>
+        @if (p_Crear)
+        {
+            <button class="btn btn-nautico rounded-pill px-4 shadow-sm" onclick="abrirModal(0, '', '', 'fa-box-open', true, 'S, M, L, XL')">
+                <i class="fa-solid fa-plus me-2"></i> Nueva Categoría
+            </button>
+        }
+    </div>
+
+    @* YA NO SE MUESTRAN ALERTAS INLINE AQUÍ. EL CONTROLLER USA MostrarMensaje() Y EL LAYOUT ABRE EL MODAL AUTOMÁTICAMENTE. *@
+
+    <div class="row g-3">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm card-hover" style="border-radius: 15px; border-left: 5px solid @(item.Activo ? "var(--acento-dorado)" : "#95a5a6");">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="bg-light rounded-circle p-3 me-3 text-center" style="width: 60px; height: 60px;">
+                            <i class="fa-solid @item.Icono fa-xl" style="color: var(--header-footer);"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold mb-0 text-dark">@item.Nombre</h5>
+                            <p class="text-muted small mb-1 text-truncate" style="max-width: 180px;">@item.Descripcion</p>
+                            <div class="small text-muted">
+                                <i class="fa-solid fa-ruler-combined me-1"></i>
+                                <span class="fst-italic">@item.Medidas_Default</span>
+                            </div>
+                        </div>
+                        <div class="text-end ps-2">
+                            <div class="small text-muted mb-2"><i class="fa-solid fa-cubes"></i> @item.TotalProductos</div>
+
+                            @if (p_Editar)
+                            {
+                                <button class="btn btn-sm btn-light text-primary rounded-circle border me-1"
+                                        onclick="abrirModal(@item.Id_Categoria, '@item.Nombre', '@item.Descripcion', '@item.Icono', @item.Activo.ToString().ToLower(), '@item.Medidas_Default')">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            }
+                            @if (p_Borrar && item.TotalProductos == 0)
+                            {
+                                <button type="button" class="btn btn-sm btn-light text-danger rounded-circle border"
+                                        onclick="prepararEliminar(@item.Id_Categoria, '@item.Nombre')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditor" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-dark" id="modalTitle">Categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("GuardarCategoria", "TiendaConfig")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <input type="hidden" id="Id_Categoria" name="Id_Categoria" />
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Nombre</label>
+                        <input type="text" class="form-control" id="Nombre" name="Nombre" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Descripción</label>
+                        <input type="text" class="form-control" id="Descripcion" name="Descripcion" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Medidas por Defecto (Obligatorio)</label>
+                        <input type="text" class="form-control" id="Medidas_Default" name="Medidas_Default" required placeholder="Ej: S, M, L, XL" />
+                        <div class="form-text small">Estas medidas se aplicarán automáticamente a los productos.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Ícono</label>
+                        <select class="form-select" id="Icono" name="Icono">
+                            <option value="fa-box-open">Caja (Default)</option>
+                            <option value="fa-shirt">Ropa / Playera</option>
+                            <option value="fa-hat-cowboy">Gorra / Sombrero</option>
+                            <option value="fa-mug-hot">Taza / Termo</option>
+                            <option value="fa-pen-fancy">Papelería</option>
+                            <option value="fa-bag-shopping">Accesorios</option>
+                            <option value="fa-tags">Etiqueta</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="Activo" name="Activo" value="true">
+                        <input type="hidden" name="Activo" value="false" />
+                        <label class="form-check-label" for="Activo">Visible en Tienda</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="submit" class="btn btn-nautico rounded-pill px-4">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-danger text-white border-0" style="border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title fw-bold">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("EliminarCategoria", "TiendaConfig")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 text-center">
+                    <input type="hidden" id="Id_Eliminar" name="id" />
+                    <i class="fa-solid fa-triangle-exclamation text-danger fa-3x mb-3"></i>
+                    <p class="fs-5 text-dark mb-1">¿Estás seguro de que deseas borrar esta categoría?</p>
+                    <p class="text-muted fw-bold fs-6" id="nombreEliminar"></p>
+                </div>
+                <div class="modal-footer border-0 d-flex justify-content-center pt-0 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4 shadow-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm">Sí, Borrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModal(id, nombre, desc, icono, activo, medidas) {
+        document.getElementById('Id_Categoria').value = id;
+        document.getElementById('Nombre').value = nombre;
+        document.getElementById('Descripcion').value = desc;
+        document.getElementById('Icono').value = icono || 'fa-box-open';
+        document.getElementById('Medidas_Default').value = medidas || 'N/A';
+        
+        var chk = document.getElementById('Activo');
+        chk.checked = activo;
+        document.getElementById('modalTitle').innerText = (id === 0) ? "Nueva Categoría" : "Editar Categoría";
+        
+        new bootstrap.Modal(document.getElementById('modalEditor')).show();
+    }
+
+    function prepararEliminar(id, nombre) {
+        document.getElementById('Id_Eliminar').value = id;
+        document.getElementById('nombreEliminar').innerText = nombre;
+        
+        new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+    }
+</script>
+
+<style>
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul);
+            color: white;
+        }
+
+    .card-hover:hover {
+        transform: translateY(-3px);
+        transition: transform 0.2s ease-in-out;
+    }
+</style>

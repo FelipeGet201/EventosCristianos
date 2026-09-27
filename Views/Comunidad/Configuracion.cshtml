@@ -1,0 +1,55 @@
+﻿@{
+    Layout = "Principal";
+    ViewData["Title"] = "Configuración de Comunidad";
+    var grupos = ViewBag.Grupos as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+    string idActual = ViewBag.IdGrupoActual as string;
+}
+
+<div class="container-fluid py-4 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom p-4 d-flex align-items-center">
+                    <a href="@Url.Action("Index")" class="btn btn-light rounded-circle shadow-sm me-3" style="width: 40px; height: 40px;"><i class="fa-solid fa-arrow-left"></i></a>
+                    <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-gear text-primary me-2"></i> Configuración</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="@Url.Action("GuardarConfiguracion")" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="alert alert-info border-0 rounded-3 small">
+                            <i class="fa-solid fa-circle-info me-2"></i> Selecciona el grupo de usuarios que actuará como la <strong>Directiva AJP</strong>. Ellos recibirán los mensajes privados, revisarán las publicaciones y contestarán a nombre de la directiva.
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted">Grupo de la Directiva</label>
+                            <select name="Id_Grupo_Directiva" class="form-select form-select-lg rounded-3 bg-light">
+                                <option value="">-- Ninguno (Desactivado) --</option>
+                                @if (grupos != null)
+                                {
+                                    foreach (var g in grupos)
+                                    {
+                                        if (idActual == g.Value)
+                                        {
+                                            <option value="@g.Value" selected>@g.Text</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@g.Value">@g.Text</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm fw-bold">
+                                Guardar Configuración
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,86 @@
+﻿@model RedAJP.Models.GestionTableroViewModel
+@{
+    Layout = "_LayoutRifasOficiales";
+    ViewData["Title"] = "Resultados del Sorteo";
+    bool estaFinalizada = Model.InfoRifa.Estado == "Finalizada";
+}
+
+<style>
+    .winner-card {
+        background: #ffffff;
+        border: 3px solid #fbbf24;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px -10px rgba(251, 191, 36, 0.3);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .winner-header {
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        color: white;
+        padding: 15px 20px;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+
+    .winning-number {
+        font-size: 4.5rem;
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        text-shadow: 3px 3px 0px #fef3c7;
+        margin-top: -10px;
+    }
+
+    .winning-name {
+        font-size: 1.8rem;
+        color: #334155;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .pending-card {
+        background-color: #ffffff;
+        border: 2px dashed #94a3b8;
+        border-radius: 24px;
+        padding: 40px 20px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<div class="container-fluid mt-2 mb-5">
+    <div class="row justify-content-center fade-in">
+        <div class="col-lg-8 mx-auto text-center">
+
+            @if (estaFinalizada)
+            {
+                <script> window.onload = function() { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#fbbf24', '#f59e0b', '#0d6efd', '#ffffff'] }); } </script>
+                <div class="winner-card mt-3 mb-5">
+                    <div class="winner-header"><i class="fa-solid fa-trophy me-2"></i> Dinámica Finalizada</div>
+                    <div class="p-4 p-md-5">
+                        <div class="mb-3 text-warning"><i class="fa-solid fa-crown" style="font-size: 4.5rem;"></i></div>
+                        <p class="text-muted fw-bold mb-1 text-uppercase" style="letter-spacing: 2px; font-size: 0.9rem;">Boleto Ganador</p>
+                        <div class="winning-number mb-2">#@ViewBag.NumeroGanador</div>
+                        <div class="winning-name mb-4">@ViewBag.NombreGanador</div>
+                        <div class="text-muted fw-bold">Vendido por: @ViewBag.VendedorGanador</div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="pending-card mt-4 mb-5">
+                    <div class="mb-4"><i class="fa-regular fa-clock fa-5x text-primary opacity-50"></i></div>
+                    <h2 class="fw-bold text-dark">Sorteo Pendiente</h2>
+                    <p class="text-muted fs-5 mb-1">La dinámica se llevará a cabo el día:</p>
+                    <div class="d-inline-block bg-primary bg-opacity-10 text-primary fw-bold rounded-pill px-4 py-2 mt-2" style="font-size: 1.3rem;">
+                        <i class="fa-regular fa-calendar-check me-2"></i> @Model.InfoRifa.FechaSorteo.ToString("dd MMMM yyyy, HH:mm") hrs
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

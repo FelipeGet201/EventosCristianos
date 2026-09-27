@@ -1,0 +1,64 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<style>
+    .galeria-cuadrada-item {
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        position: relative;
+        background-color: var(--theme-surface);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+        .galeria-cuadrada-item img {
+            transition: transform 0.4s ease;
+        }
+
+        .galeria-cuadrada-item:hover img {
+            transform: scale(1.08);
+        }
+</style>
+
+<div class="container py-5 fade-in-up">
+    <div class="text-center mb-5">
+        <h2 style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-primary);">
+            Nuestra Comunidad en Imágenes
+        </h2>
+    </div>
+
+    @if (Model.Galeria != null && Model.Galeria.Any())
+    {
+        <div class="row g-4">
+            @foreach (var img in Model.Galeria)
+            {
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="galeria-cuadrada-item h-100">
+                        <div class="ratio ratio-1x1">
+                            @if (!string.IsNullOrWhiteSpace(img.UrlImagen))
+                            {
+                                <img src="@img.UrlImagen" alt="@(img.Titulo ?? "Imagen")" class="w-100 h-100 object-fit-cover" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center text-muted" style="background: var(--theme-bg); font-family: var(--theme-font-body);">Sin imagen</div>
+                            }
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(img.Titulo))
+                        {
+                            <div class="p-2 text-center" style="background: var(--theme-surface);">
+                                <h6 class="m-0 small fw-bold" style="font-family: var(--theme-font-body); color: var(--theme-text-main);">@img.Titulo</h6>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center p-5" style="border: 2px dashed rgba(128, 128, 128, 0.3); border-radius: 16px;">
+            <i class="fa-regular fa-images fs-1 mb-3" style="color: var(--theme-text-muted);"></i>
+            <p style="color: var(--theme-text-muted); font-family: var(--theme-font-body); margin: 0;">Galería de imágenes vacía.</p>
+        </div>
+    }
+</div>

@@ -1,0 +1,258 @@
+﻿@model RedAJP.Models.PedidoDetalleViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Gestionar Entrega";
+}
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-entregas');
+        }
+    });
+</script>
+
+<div class="container py-5 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fa-solid fa-truck-ramp-box me-2"></i>Entregar Pedido #@Model.IdPedido</h2>
+            <p class="text-muted small mb-0">Revisa los artículos antes de entregar.</p>
+        </div>
+        <a href="@Url.Action("EntregasAdmin")" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left me-2"></i> Volver a Lista
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0"><i class="fa-solid fa-address-card me-2"></i> Datos del Cliente</h5>
+                </div>
+                <div class="p-4 bg-light">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-white border rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 50px; height: 50px;">
+                            <i class="fa-solid fa-user text-primary fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-dark">@Model.NombreCliente</h6>
+                            <small class="text-muted">@Model.EmailCliente</small>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="small text-muted fw-bold text-uppercase">Teléfono</label>
+                            @if (!string.IsNullOrEmpty(Model.Telefono) && Model.Telefono != "No registrado")
+                            {
+                                <div class="d-flex align-items-center">
+                                    <i class="fa-solid fa-phone me-2 text-success"></i>
+                                    <a href="tel:@Model.Telefono" class="text-dark text-decoration-none fw-bold">@Model.Telefono</a>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-muted"><i class="fa-solid fa-phone-slash me-2"></i> No registrado</div>
+                            }
+                        </div>
+                        <div class="col-md-12">
+                            <label class="small text-muted fw-bold text-uppercase">Comentarios del Cliente</label>
+                            @if (!string.IsNullOrEmpty(Model.Comentarios) && Model.Comentarios != "Ninguno")
+                            {
+                                <div class="alert alert-warning border-0 p-2 d-flex gap-2 rounded-3 mb-0 mt-1">
+                                    <i class="fa-solid fa-comment-dots mt-1"></i>
+                                    <span class="fst-italic small">"@Model.Comentarios"</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-muted fst-italic small">Sin comentarios adicionales.</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clipboard-list me-2 text-primary"></i> Contenido</h5>
+                </div>
+
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        @foreach (var item in Model.Productos)
+                        {
+                            <li class="list-group-item d-flex align-items-center py-3 px-4">
+                                <div class="rounded-2 border bg-white overflow-hidden me-3 flex-shrink-0 position-relative" style="width: 60px; height: 60px;">
+                                    @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                                    {
+                                        <img src="@item.ImagenUrl" class="w-100 h-100 object-fit-cover">
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-muted"><i class="fa-solid fa-image"></i></div>
+                                    }
+                                </div>
+
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 fw-bold text-dark">@item.Nombre</h6>
+
+                                    @if (!string.IsNullOrEmpty(item.Especificaciones))
+                                    {
+                                        <small class="text-muted d-block"><i class="fa-solid fa-tag me-1"></i> @item.Especificaciones</small>
+                                    }
+
+                                    @if (item.EsPersonalizado)
+                                    {
+                                        <span class="badge bg-warning text-dark mt-1 border border-warning" style="font-size: 0.65rem;">
+                                            <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Personalizado
+                                        </span>
+                                    }
+                                </div>
+
+                                <div class="text-end ms-3">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill fs-6 px-3 py-2">
+                                        x @item.Cantidad
+                                    </span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+
+                    <div class="p-3 bg-light border-top">
+                        @if (Model.MontoDescuento > 0)
+                        {
+                            <div class="d-flex justify-content-end align-items-center mb-1 text-muted small">
+                                <span class="me-2">Subtotal:</span>
+                                <span>$@((Model.Total + Model.MontoDescuento).ToString("N2"))</span>
+                            </div>
+                            <div class="d-flex justify-content-end align-items-center mb-2 text-success small fw-bold">
+                                <span class="me-2"><i class="fa-solid fa-tag me-1"></i> Cupón (@Model.CodigoCupon):</span>
+                                <span>-$@Model.MontoDescuento.ToString("N2")</span>
+                            </div>
+                            <hr class="my-2 ms-auto opacity-25" style="width: 150px;">
+                        }
+
+                        <div class="d-flex justify-content-end align-items-center fw-bold text-dark">
+                            <span class="text-muted me-2">Total del Pedido:</span>
+                            <span class="fs-5 text-primary">$@Model.Total.ToString("N2")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 position-relative overflow-hidden bg-white">
+                <div class="position-absolute top-0 start-0 h-100 bg-primary" style="width: 4px;"></div>
+                <div class="card-body d-flex flex-wrap justify-content-between align-items-center p-4 ps-5">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1"><i class="fa-regular fa-comments text-primary me-2"></i> Mensajes del Cliente</h5>
+                        <p class="text-muted small mb-0">Atiende preguntas y ponte de acuerdo con el cliente.</p>
+                    </div>
+
+                    <div class="position-relative mt-3 mt-md-0">
+                        <a href="@Url.Action("MensajesPedidoAdmin", "Tienda", new { id = Model.IdPedido })" class="btn btn-outline-primary rounded-pill px-4 shadow-sm fw-bold">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Abrir Chat
+                        </a>
+                        @if (Model.MensajesSinLeer > 0)
+                        {
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light border-2 shadow-sm pulse">
+                                @Model.MensajesSinLeer
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 100px; z-index: 10;">
+                <div class="card-body p-4">
+                    @if (Model.IdEstatus == 30)
+                    {
+                        <div class="card bg-light border-0 mb-4 rounded-4">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold text-muted mb-0"><i class="fa-regular fa-calendar-days me-2"></i>Fecha Estimada</h6>
+
+                                    @if (Model.FechaEstimada.Year == 1900)
+                                    {
+                                        <span class="badge bg-warning text-dark blink-soft"><i class="fa-solid fa-triangle-exclamation me-1"></i> Sin Asignar</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success bg-opacity-25 text-success"><i class="fa-solid fa-check me-1"></i> Asignada</span>
+                                    }
+                                </div>
+
+                                @if (Model.FechaEstimada.Year == 1900)
+                                {
+                                    <div class="alert alert-warning border-0 py-2 px-3 small rounded-3 mb-3 d-flex align-items-center">
+                                        <i class="fa-solid fa-info-circle me-2 fs-5"></i>
+                                        <div class="lh-sm">El cliente ve este pedido como "Pendiente". <strong>Asigna una fecha</strong> para informarle.</div>
+                                    </div>
+                                }
+
+                                <form action="@Url.Action("ActualizarFechaEstimada", "Tienda")" method="post" class="d-flex gap-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idPedido" value="@Model.IdPedido" />
+                                    <input type="date" name="fechaEstimada" class="form-control form-control-sm fw-bold border-secondary" value="@(Model.FechaEstimada.Year == 1900 ? DateTime.Now.ToString("yyyy-MM-dd") : Model.FechaEstimada.ToString("yyyy-MM-dd"))" required>
+                                    <button type="submit" class="btn btn-dark btn-sm rounded-pill px-3">Guardar</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 opacity-10">
+                        <div class="text-center mb-4">
+                            <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                <i class="fa-solid fa-hand-holding-box fa-2x"></i>
+                            </div>
+                            <h4 class="fw-bold">Validar Entrega</h4>
+                            <p class="text-muted small">Pide al cliente su código secreto de entrega.</p>
+                        </div>
+
+                        <form action="@Url.Action("ConfirmarEntrega", "Tienda")" method="post" autocomplete="off">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="idPedido" value="@Model.IdPedido" />
+                            <div class="form-floating mb-4">
+                                <input type="text" name="codigoInput" class="form-control text-center fs-4 fw-bold text-uppercase border-2 border-primary bg-light" id="codigoInput" placeholder="CÓDIGO" required style="letter-spacing: 4px; border-style: dashed;">
+                                <label for="codigoInput" class="text-center w-100">Ingresar Código</label>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill shadow-sm py-3 fw-bold hover-scale">
+                                <i class="fa-solid fa-check-circle me-2"></i> CONFIRMAR ENTREGA
+                            </button>
+                        </form>
+                    }
+                    else if (Model.IdEstatus == 50)
+                    {
+                        <div class="py-5 text-center">
+                            <i class="fa-solid fa-clipboard-check text-success fa-5x mb-3 opacity-50"></i>
+                            <h3 class="fw-bold text-dark">Entregado</h3>
+                            <p class="text-muted">Este pedido ya fue entregado correctamente.</p>
+                            <a href="@Url.Action("EntregasAdmin")" class="btn btn-outline-dark rounded-pill mt-3">Volver a Pendientes</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+
+    @@keyframes blink {
+        50% {
+            opacity: 0.6;
+        }
+    }
+
+    .blink-soft {
+        animation: blink 2s infinite;
+    }
+</style>

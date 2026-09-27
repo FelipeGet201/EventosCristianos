@@ -1,0 +1,574 @@
+﻿
+html, body {
+    height: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    font-family: 'Inter', sans-serif;
+    background-color: #002b36 !important;
+}
+/* Evitar que el lienzo crezca hacia arriba y oculte el header */
+.app-canvas-container {
+    align-items: flex-start !important;
+}
+.app-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1; /* Cambia 9999 por 1 */
+    background-color: #002b36;
+}
+/* El elemento clonado que arrastras */
+.sortable-fallback {
+    opacity: 0.9 !important;
+    z-index: 999999 !important; /* Por encima del .app-wrapper que tiene 9999 */
+    cursor: grabbing !important;
+    pointer-events: none !important;
+    /* LA CURA AL PROBLEMA: Evitar que pelee con Sortable */
+    transition: none !important;
+    margin: 0 !important;
+}
+
+/* El hueco que deja */
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #f0f9ff;
+    border: 2px dashed #0284c7;
+}
+.mobile-block-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #002b36;
+    z-index: 10000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    color: white;
+}
+
+.app-toolbar {
+    height: 65px;
+    background: #002b36;
+    border-bottom: 2px solid #005f73;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    z-index: 1050;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    flex-shrink: 0;
+    color: white;
+}
+
+    .app-toolbar .btn-outline-secondary {
+        border-color: rgba(255,255,255,0.3);
+        color: white;
+    }
+
+        .app-toolbar .btn-outline-secondary:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+    .app-toolbar h5 {
+        color: white !important;
+    }
+
+    .app-toolbar .text-primary {
+        color: #ee9b00 !important;
+    }
+
+.app-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 65px);
+}
+
+.app-sidebar {
+    width: 340px;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    z-index: 1040;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.2rem;
+}
+
+.nav-tabs-builder {
+    border: none;
+    margin-bottom: 1rem;
+    gap: 5px;
+}
+
+    .nav-tabs-builder .nav-link {
+        color: #64748b;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        background: transparent;
+    }
+
+        .nav-tabs-builder .nav-link:hover {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .nav-tabs-builder .nav-link.active {
+            color: #ffffff;
+            background-color: #005f73;
+        }
+
+.module-drag-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 0.8rem;
+    cursor: grab;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+    .module-drag-item:hover {
+        border-color: #005f73;
+        background: #f4f6f8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .module-drag-item span {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .module-drag-item:active {
+        cursor: grabbing;
+        opacity: 0.8;
+    }
+
+.theme-control-group {
+    margin-bottom: 1.2rem;
+    background: #ffffff;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+    .theme-control-group label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+.color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .color-picker-wrapper input[type="color"] {
+        width: 45px;
+        height: 45px;
+        padding: 0;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+        .color-picker-wrapper input[type="color"]:hover {
+            border-color: #005f73;
+        }
+
+.app-canvas-container {
+    flex: 1;
+    background-color: #f1f5f9;
+    overflow-y: auto;
+    padding: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+}
+
+#page-frame {
+    width: 100%;
+    max-width: 1250px;
+    background: var(--theme-bg, #ffffff);
+    min-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,43,54,0.15);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+}
+
+    #page-frame.mobile-view {
+        max-width: 400px;
+        min-height: 812px;
+        border: 14px solid #002b36;
+        border-radius: 40px;
+        padding-top: 15px;
+        box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+        margin-bottom: 50px;
+    }
+
+/* AISLAMIENTO DEL MÓDULO PARA EVITAR SUPERPOSICIÓN DE CONTROLES Y SEPARADORES */
+.rendered-module {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.module-wrapper-inner {
+    position: relative;
+    min-height: 80px;
+    border-radius: var(--radius-lg, 16px);
+    transition: all 0.2s;
+}
+
+.module-overlay {
+    position: absolute;
+    inset: 0;
+    border: 3px solid transparent;
+    pointer-events: none;
+    transition: border-color 0.2s;
+    z-index: 1045;
+    border-radius: inherit;
+}
+
+.module-wrapper-inner:hover .module-overlay {
+    border-color: #005f73;
+}
+
+.module-action-bar {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #005f73;
+    border-radius: 50px;
+    padding: 5px 10px;
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 1050;
+}
+
+.module-wrapper-inner:hover .module-action-bar {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.module-action-bar button {
+    background: transparent;
+    border: none;
+    color: white;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+    .module-action-bar button:hover {
+        background: rgba(255,255,255,0.3);
+        transform: scale(1.05);
+    }
+
+.btn-move-mod {
+    cursor: grab !important;
+}
+
+.btn-delete-mod:hover {
+    background: #ef4444 !important;
+}
+
+/* DISEÑO DEL CARTÍLAGO (Separador Orgánico) */
+.module-separator {
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    opacity: 0.15;
+    transition: opacity 0.3s;
+    pointer-events: none; /* El navegador ignorará cualquier clic o arrastre sobre este espacio */
+    user-select: none; /* Evita que se seleccione por accidente */
+    z-index: 0; /* Lo mantiene al fondo por seguridad */
+}
+
+.rendered-module:hover .module-separator {
+    opacity: 0.6;
+}
+/* Línea vertical central */
+.module-separator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: #94a3b8;
+    transform: translateX(-50%);
+}
+/* Nodo central tipo cartílago */
+.module-separator::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border: 3px solid #64748b;
+    border-radius: 50%;
+    position: relative;
+    z-index: 2;
+}
+/* El último módulo no tiene cartílago hacia abajo */
+.rendered-module:last-child .module-separator {
+    display: none;
+}
+
+.canvas-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+    color: #94a3b8;
+    text-align: center;
+    padding: 3rem;
+    margin-top: 5rem;
+}
+
+.module-loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 150px;
+    background: rgba(0,0,0,0.02);
+    color: #005f73;
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+#page-frame a {
+    pointer-events: none;
+}
+
+#page-frame img {
+    max-width: 100%;
+    height: auto;
+}
+
+.modal {
+    z-index: 10055 !important;
+}
+
+/* =========================================================
+   NEUTRALIZADOR DE ELEMENTOS STICKY/FIXED EN EL CONSTRUCTOR
+   ========================================================= */
+
+/* 1. Evita que los menús sticky/fixed floten y tapen contenido */
+#page-frame .sticky-top,
+#page-frame .fixed-top,
+#page-frame header,
+#page-frame .navbar,
+#page-frame [style*="position: sticky"],
+#page-frame [style*="position: fixed"] {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    z-index: 10 !important;
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* 2. Truco Ninja de CSS: Obliga a los elementos 'fixed' a respetar los límites del lienzo */
+#page-frame {
+    transform: translateZ(0);
+}
+
+   /* =========================================================
+   SIMULADOR DE RESPONSIVIDAD PARA LA VISTA MÓVIL (CORREGIDO)
+   ========================================================= */
+
+
+
+#page-frame.mobile-view [class*="col-"],
+#page-frame.mobile-view .col {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+}
+
+/* 2. EXCEPCIÓN: Proteger el Header y Navbar para que no se desarmen */
+#page-frame.mobile-view header .row,
+#page-frame.mobile-view .navbar .row {
+    flex-direction: row !important;
+}
+
+#page-frame.mobile-view header [class*="col-"],
+#page-frame.mobile-view header .col,
+#page-frame.mobile-view .navbar [class*="col-"],
+#page-frame.mobile-view .navbar .col {
+    width: auto !important;
+    max-width: none !important;
+    flex: 1 1 auto !important; 
+}
+
+/* 3. Ocultar elementos de escritorio correctamente */
+#page-frame.mobile-view .d-none.d-md-block,
+#page-frame.mobile-view .d-none.d-lg-block,
+#page-frame.mobile-view .d-none.d-md-flex,
+#page-frame.mobile-view .d-none.d-lg-flex {
+    display: none !important;
+}
+
+/* 4. Mostrar elementos móviles RESPETANDO Flexbox (Esto arregla tu Header) */
+#page-frame.mobile-view .d-md-none.d-flex,
+#page-frame.mobile-view .d-lg-none.d-flex {
+    display: flex !important;
+}
+
+#page-frame.mobile-view .d-md-none:not(.d-flex),
+#page-frame.mobile-view .d-lg-none:not(.d-flex) {
+    display: block !important;
+}
+
+/* 5. Comportamiento especial para el menú nativo de Bootstrap (Navbar) */
+#page-frame.mobile-view .navbar-collapse:not(.show) {
+    display: none !important; /* Oculta los enlaces extendidos de PC */
+}
+
+#page-frame.mobile-view .navbar-toggler {
+    display: block !important; /* Muestra el botón de hamburguesa */
+}
+
+    /* 5. Forzar al Menú Transparente a recuperar su espacio físico en móvil */
+    #page-frame.mobile-view .rendered-module .nav-transparente {
+        position: relative !important; /* Quita el absolute */
+        background: var(--theme-bg) !important;/* Le damos un fondo sólido porque ya no estará sobre la imagen */
+        padding: 1rem 0 !important;
+    }
+
+    /* 6. Anular transformaciones extrañas del Drag&Drop solo en el contenedor móvil */
+    #page-frame.mobile-view .rendered-module {
+        position: relative !important;
+        transform: none !important;
+        margin-top: 0 !important;
+        display: block !important;
+        width: 100% !important;
+    }
+
+    /* 7. Eliminar márgenes y paddings globales que intentamos antes */
+    #page-frame.mobile-view {
+        padding-top: 0 !important;
+    }
+        /* 8. Evitar que la imagen del Hero se encoja y deje el texto volando abajo */
+        #page-frame.mobile-view .rendered-module .position-relative img,
+        #page-frame.mobile-view .rendered-module .carousel-item img,
+        #page-frame.mobile-view .rendered-module img.w-100 {
+            min-height: 450px !important; /* Fuerza una altura mínima para que el texto quepa */
+            object-fit: cover !important; /* Recorta los lados sobrantes sin deformar la foto */
+            height: 100% !important;
+        }
+/* Forzar que el modal de bienvenida esté por encima del app-wrapper (9999) */
+#sysWelcomeModal {
+    z-index: 10060 !important;
+}
+
+        /* =========================================================
+   AJUSTE DE TEXTOS PARA EL SIMULADOR MÓVIL
+   ========================================================= */
+
+        #page-frame.mobile-view h1,
+        #page-frame.mobile-view .hero-centrado-title {
+            font-size: 2.2rem !important; /* El título "Getsemaní" */
+            line-height: 1.2 !important;
+        }
+
+        #page-frame.mobile-view h2 {
+            font-size: 1.8rem !important;
+        }
+
+        #page-frame.mobile-view p,
+        #page-frame.mobile-view .hero-centrado-subtitle {
+            font-size: 1rem !important; /* Los subtítulos y párrafos */
+            padding: 0 10px !important;
+        }
+
+        #page-frame.mobile-view .navbar-brand {
+            font-size: 1.4rem !important; /* El nombre de la iglesia en el menú */
+        }
+
+        /* Ajustar botones que puedan quedar muy grandes */
+        #page-frame.mobile-view .btn,
+        #page-frame.mobile-view .hero-btn-primary,
+        #page-frame.mobile-view .hero-btn-outline {
+            padding: 10px 20px !important;
+            font-size: 0.9rem !important;
+            width: 100%; /* Opcional: hace que los botones ocupen el ancho en móvil */
+            max-width: 250px;
+        }

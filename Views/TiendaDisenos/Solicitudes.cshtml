@@ -1,0 +1,211 @@
+﻿@model List<RedAJP.Models.GestionSolicitudItem>
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Gestión de Diseños";
+    string filtro = ViewBag.FiltroActual as string;
+}
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-solicitudes');
+        }
+    });
+</script>
+
+<div class="fade-in py-4">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-palette me-2 text-warning"></i> Solicitudes de Diseño
+            </h2>
+            <p class="text-muted mb-0 small">Modera los diseños personalizados antes de que sean comprados.</p>
+        </div>
+
+        <div class="btn-group shadow-sm">
+            <a href="@Url.Action("Solicitudes", new { filtro = "pendientes" })"
+               class="btn @(filtro == "pendientes" ? "btn-primary" : "btn-outline-primary") fw-bold px-4">
+                <i class="fa-regular fa-clock me-2"></i> Pendientes
+            </a>
+            <a href="@Url.Action("Solicitudes", new { filtro = "historial" })"
+               class="btn @(filtro == "historial" ? "btn-secondary" : "btn-outline-secondary") fw-bold px-4">
+                <i class="fa-solid fa-clock-rotate-left me-2"></i> Historial
+            </a>
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="text-center py-5 bg-light rounded-4 border border-dashed">
+            <i class="fa-solid fa-folder-open fa-4x text-muted opacity-25 mb-3"></i>
+            <h5 class="text-muted fw-bold">No hay solicitudes en esta bandeja.</h5>
+            <p class="text-muted small">Cambia el filtro o espera a que los usuarios envíen nuevos diseños.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
+                        <div class="row g-0 h-100">
+
+                            <div class="col-md-5 bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center p-3 position-relative">
+                                @if (!string.IsNullOrEmpty(item.Imagen_Previo_Url))
+                                {
+                                    <img src="@item.Imagen_Previo_Url" class="img-fluid rounded shadow-sm" style="max-height: 200px; object-fit: contain;">
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-image fa-3x text-muted opacity-50"></i>
+                                }
+
+                                @if (!string.IsNullOrEmpty(item.Imagen_Original_Url))
+                                {
+                                    <a href="@item.Imagen_Original_Url" target="_blank"
+                                       class="btn btn-sm btn-light position-absolute bottom-0 start-0 m-3 shadow-sm border fw-bold"
+                                       title="Ver Imagen Original para Impresión">
+                                        <i class="fa-solid fa-download me-1"></i> Original
+                                    </a>
+                                }
+                            </div>
+
+                            <div class="col-md-7">
+                                <div class="card-body h-100 d-flex flex-column p-3">
+
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="text-truncate pe-2">
+                                            <h6 class="fw-bold mb-0 text-truncate" title="@item.Usuario">@item.Usuario</h6>
+                                            <small class="text-muted d-block text-truncate">@item.Producto</small>
+                                        </div>
+                                        @if (item.Estatus == 1)
+                                        {
+                                            <span class="badge bg-warning text-dark border border-warning shadow-sm">Pendiente</span>
+                                        }
+                                        @if (item.Estatus == 2)
+                                        {
+                                            <span class="badge bg-success shadow-sm">Aprobado</span>
+                                        }
+                                        @if (item.Estatus == 3)
+                                        {
+                                            <span class="badge bg-danger shadow-sm">Rechazado</span>
+                                        }
+                                        @if (item.Estatus == 4)
+                                        {
+                                            <span class="badge bg-info text-dark shadow-sm">Comprado</span>
+                                        }
+                                    </div>
+
+                                    <p class="card-text small text-muted mb-3 border-bottom pb-2">
+                                        <i class="fa-regular fa-calendar me-1"></i> @item.Fecha.ToString("dd/MMM/yyyy HH:mm")
+                                    </p>
+
+                                    @if (item.Estatus == 3 && !string.IsNullOrEmpty(item.Comentarios_Admin))
+                                    {
+                                        <div class="alert alert-danger p-2 small mb-0 lh-sm bg-danger bg-opacity-10 border-0">
+                                            <strong>Motivo rechazo:</strong> @item.Comentarios_Admin
+                                        </div>
+                                    }
+
+                                    @if (item.Estatus == 1)
+                                    {
+                                        <div class="mt-auto d-flex gap-2">
+                                            <button type="button" class="btn btn-success btn-sm flex-grow-1 fw-bold rounded-pill"
+                                                    onclick="abrirModalAprobacion(@item.Id_Solicitud)">
+                                                <i class="fa-solid fa-check me-1"></i> Aprobar
+                                            </button>
+
+                                            <button type="button" class="btn btn-outline-danger btn-sm flex-grow-1 fw-bold rounded-pill"
+                                                    onclick="abrirModalRechazo(@item.Id_Solicitud)">
+                                                <i class="fa-solid fa-xmark me-1"></i> Rechazar
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="modalRechazo" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form method="post" action="@Url.Action("Rechazar", "TiendaDisenos")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="inputRechazoId" />
+
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger" id="modalLabel">
+                        <i class="fa-solid fa-circle-exclamation me-2"></i> Rechazar Diseño
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p class="text-muted small">
+                        Por favor indica la razón por la cual este diseño no puede ser procesado (ej. baja resolución, contenido inapropiado, fuera de área, etc).
+                        <br><strong>El usuario verá este mensaje.</strong>
+                    </p>
+                    <textarea name="motivo" class="form-control bg-light" rows="4" required placeholder="Escribe el motivo aquí..."></textarea>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4">Confirmar Rechazo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalAprobacion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form method="post" action="@Url.Action("Aprobar", "TiendaDisenos")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="inputAprobarId" />
+
+                <div class="modal-header border-0 pb-0 justify-content-center mt-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                        <i class="fa-solid fa-circle-check fa-3x text-success"></i>
+                    </div>
+                </div>
+
+                <div class="modal-body text-center p-4">
+                    <h5 class="fw-bold text-dark">¿Confirmar Aprobación?</h5>
+                    <p class="text-muted small">
+                        Este diseño será validado y el usuario podrá proceder con la compra de su producto personalizado inmediatamente.
+                    </p>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success rounded-pill fw-bold px-4 shadow-sm">
+                        <i class="fa-solid fa-check me-2"></i>Sí, Aprobar Diseño
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    // Función para el modal de Rechazo
+    function abrirModalRechazo(idSolicitud) {
+        document.getElementById('inputRechazoId').value = idSolicitud;
+        var modal = new bootstrap.Modal(document.getElementById('modalRechazo'));
+        modal.show();
+    }
+
+    // Función para el modal de Aprobación
+    function abrirModalAprobacion(idSolicitud) {
+        document.getElementById('inputAprobarId').value = idSolicitud;
+        var modal = new bootstrap.Modal(document.getElementById('modalAprobacion'));
+        modal.show();
+    }
+</script>

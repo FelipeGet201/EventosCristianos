@@ -1,0 +1,184 @@
+﻿@model RedAJP.Models.PedidoDetalleViewModel
+@{
+    Layout = "Principal";
+    bool esAdmin = ViewBag.EsAdmin ?? false;
+    ViewData["Title"] = esAdmin ? $"Chat: {Model.NombreCliente}" : "Chat: Tienda AJP";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            if (@(esAdmin.ToString().ToLower())) {
+                activarMenu('menu-gestion');
+                activarMenu('submenu-entregasadmin');
+            } else {
+                activarMenu('menu-usuario');
+                activarMenu('submenu-miscompras');
+            }
+        }
+        scrollToBottom();
+    });
+
+    function scrollToBottom() {
+        var chatBox = document.getElementById("chatContainer");
+        if (chatBox) { chatBox.scrollTop = chatBox.scrollHeight; }
+    }
+</script>
+
+<div class="container py-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div class="d-flex align-items-center">
+            @if (esAdmin)
+            {
+                <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-user fs-4"></i>
+                </div>
+                <div class="lh-sm">
+                    <h4 class="fw-bold text-dark mb-0">@Model.NombreCliente</h4>
+                    <small class="text-muted fw-bold">Comprador &bull; Orden #@Model.IdPedido</small>
+                </div>
+            }
+            else
+            {
+                <div class="bg-primary bg-opacity-10 text-primary border border-primary rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-store fs-4"></i>
+                </div>
+                <div class="lh-sm">
+                    <h4 class="fw-bold text-dark mb-0">Tienda AJP</h4>
+                    <small class="text-muted fw-bold">Atención de Pedidos &bull; #@Model.IdPedido</small>
+                </div>
+            }
+        </div>
+
+        <a href="@(esAdmin? Url.Action("DetalleEntregaAdmin", "Tienda", new { id = Model.IdPedido }) : Url.Action("DetalleCompra", "Tienda", new { id = Model.IdPedido }))"
+           class="btn btn-outline-secondary rounded-pill px-4 shadow-sm hover-scale">
+            <i class="fa-solid fa-arrow-left me-1"></i> <span class="d-none d-sm-inline">Volver</span>
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden d-flex flex-column bg-white" style="height: 70vh; min-height: 500px;">
+
+        @if (Model.Productos != null && Model.Productos.Any())
+        {
+            <div class="bg-light border-bottom p-3 z-1 shadow-sm">
+                <h6 class="fw-bold text-muted mb-2" style="font-size: 0.75rem;"><i class="fa-solid fa-box-open me-1"></i> Artículos comprados:</h6>
+
+                <div class="d-flex overflow-auto gap-2 custom-scrollbar pb-1">
+                    @foreach (var item in Model.Productos)
+                    {
+                        <div class="bg-white border rounded-3 p-2 d-flex align-items-center flex-shrink-0 shadow-sm" style="width: 250px;">
+                            <div class="bg-light border rounded overflow-hidden d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px; flex-shrink: 0;">
+                                @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                                {
+                                    <img src="@item.ImagenUrl" class="w-100 h-100 object-fit-cover">
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-image text-muted opacity-50"></i>
+                                }
+                            </div>
+                            <div class="overflow-hidden lh-sm">
+                                <p class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.85rem;" title="@item.Nombre">@item.Nombre</p>
+                                <small class="text-primary fw-bold" style="font-size: 0.75rem;">@item.Cantidad x $@item.Precio.ToString("N2")</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div id="chatContainer" class="card-body bg-white overflow-auto p-3 p-md-4 custom-scrollbar flex-grow-1" style="display: flex; flex-direction: column; gap: 15px;">
+            @if (Model.Mensajes == null || !Model.Mensajes.Any())
+            {
+                <div class="text-center text-muted m-auto opacity-50">
+                    <i class="fa-regular fa-comments fa-4x mb-3"></i>
+                    <p class="small mb-0">Sin mensajes en esta orden.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var msj in Model.Mensajes)
+                {
+                    <div class="d-flex w-100 @(msj.Es_Propio ? "justify-content-end" : "justify-content-start")">
+                        <div style="max-width: 80%;">
+                            <small class="d-block mb-1 px-2 fw-bold text-muted" style="font-size: 0.65rem; @(msj.Es_Propio ? "text-end" : "")">
+                                @(msj.Es_Propio ? "Tú" : (esAdmin ? Model.NombreCliente : "Tienda AJP"))
+                            </small>
+                            <div class="p-3 shadow-sm position-relative text-break @(msj.Es_Propio ? (esAdmin ? "bg-dark text-white chat-bubble-right" : "bg-primary text-white chat-bubble-right") : "bg-light border text-dark chat-bubble-left")">
+                                @msj.Mensaje
+                                <div class="text-end mt-1 opacity-75" style="font-size: 0.6rem;">
+                                    @msj.Fecha.ToString("dd/MMM HH:mm")
+                                    @if (msj.Es_Propio)
+                                    {
+                                        <i class="fa-solid fa-check-double ms-1"></i>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="bg-white border-top p-3 shadow-sm z-1">
+            @if (Model.IdEstatus >= 50)
+            {
+                <div class="text-center text-muted small py-2 bg-light rounded-pill border">
+                    <i class="fa-solid fa-lock me-1"></i> El pedido fue entregado. Este chat se ha cerrado.
+                </div>
+            }
+            else
+            {
+                <form action="@Url.Action("EnviarMensajePedido", "Tienda")" method="post" autocomplete="off" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idPedido" value="@Model.IdPedido" />
+                    <input type="hidden" name="esAdmin" value="@(esAdmin.ToString().ToLower())" />
+
+                    <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border">
+                        <input type="text" name="mensaje" class="form-control border-0 px-4 fs-6 bg-light" placeholder="Escribe tu mensaje..." required maxlength="500">
+                        <button type="submit" class="btn @(esAdmin ? "btn-dark" : "btn-primary") px-4 px-md-5 fw-bold text-white transition-all hover-scale">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-bubble-right {
+        border-radius: 20px 20px 4px 20px;
+    }
+
+    .chat-bubble-left {
+        border-radius: 20px 20px 20px 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.15);
+        border-radius: 10px;
+    }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.3);
+        }
+
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+        .hover-scale:hover {
+            transform: scale(1.05);
+        }
+</style>

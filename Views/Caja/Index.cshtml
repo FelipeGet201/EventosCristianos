@@ -1,0 +1,1623 @@
+﻿@using RedAJP.Globales
+@model List<RedAJP.Models.MovimientoCaja>
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Tesorería y Finanzas";
+
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+    List<int> anios = ViewBag.AniosDisponibles ?? new List<int> { DateTime.Now.Year };
+    // --- PERMISOS ---
+    bool p_Crear = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Crear);
+    bool p_Editar = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Editar);
+    bool p_Borrar = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Borrar);
+    bool p_Admin = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Admin);
+
+    int mesSel = ViewBag.MesSeleccionado;
+    string nombreMes = mesSel == 0 ? "Todo el Año" : System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(mesSel).ToUpper();
+    string etiquetaPeriodo = (mesSel == 0) ?
+    $"(Año {ViewBag.AnioSeleccionado})" : $"{nombreMes} {ViewBag.AnioSeleccionado}";
+
+    decimal totalWebMes = (decimal)ViewBag.EventosMes + (decimal)ViewBag.RifasMes + (decimal)ViewBag.TiendaMes;
+    decimal dineroEntranteMes = (decimal)ViewBag.IngresosManualesMes + totalWebMes;
+    decimal dineroSalienteMes = (decimal)ViewBag.EgresosManualesMes;
+    decimal resultadoMes = dineroEntranteMes - dineroSalienteMes;
+
+    int idUsuarioActual = 0;
+    int.TryParse(User.FindFirst("IdUsuario")?.Value, out idUsuarioActual);
+    // Casts para el Tab de Saldos Individuales
+    decimal miSaldoPersonal = ViewBag.MiSaldo != null ?
+    Convert.ToDecimal(ViewBag.MiSaldo) : 0m;
+    var saldosUsuarios = ViewBag.SaldosUsuarios as IEnumerable<dynamic> ?? new List<dynamic>();
+    var traspasosMePiden = ViewBag.TraspasosMePiden as IEnumerable<dynamic> ??
+    new List<dynamic>();
+    var traspasosPedi = ViewBag.TraspasosPedi as IEnumerable<dynamic> ?? new List<dynamic>();
+    var usuariosCombo = ViewBag.UsuariosCombo as IEnumerable<dynamic> ?? new List<dynamic>();
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-caja');
+        }
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid fade-in py-4">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold" style="color: var(--header-footer);">
+                <i class="fa-solid fa-scale-balanced me-2 text-warning"></i>Tesorería General
+            </h2>
+            <p class="text-muted mb-0">Visión completa de tu dinero: Banco y Caja Chica.</p>
+        
+        </div>
+
+        <div class="d-flex gap-2 mt-3 mt-md-0 flex-wrap align-items-center">
+            @if (p_Admin)
+            {
+                @if (ViewBag.TotalPendienteSincronizar > 0)
+                {
+                    <div class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2 rounded-pill d-flex align-items-center me-1 shadow-sm animate-pulse" data-bs-toggle="tooltip" title="Hay dinero retenido en Stripe esperando ser conciliado en el sistema.">
+                        <i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>
+                        <span class="fw-bold">Stripe por Validar: @(((decimal)ViewBag.TotalPendienteSincronizar).ToString("C", cultura))</span>
+                    </div>
+                    
+                    <button type="button" class="btn btn-warning shadow-sm d-flex align-items-center fw-bold text-dark rounded-pill px-3" onclick="sincronizarStripe()" id="btnSyncStripe">
+                        <i class="fa-brands fa-stripe fa-lg me-2"></i> Sincronizar Stripe
+                    </button>
+                }
+                else
+                {
+                    <div class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2 rounded-pill d-flex align-items-center me-1 shadow-sm">
+                        <i class="fa-solid fa-circle-check me-2 text-success"></i>
+                        <span class="fw-bold">Stripe al Día</span>
+                    </div>
+                    
+                }
+            }
+
+            <a href="@Url.Action("DescargarReporteExcel", "Caja", new { mes = mesSel, anio = ViewBag.AnioSeleccionado })"
+                   class="btn btn-success text-white shadow-sm d-flex align-items-center rounded-pill px-3" title="Descargar Excel">
+                <i class="fa-solid fa-file-excel me-2"></i> Exportar
+            </a>
+            <a href="@Url.Action("Index", "Proyectos")" class="btn btn-primary shadow-sm d-flex align-items-center fw-bold">
+                <i class="fa-solid fa-folder-open me-2"></i> Causas y Proyectos
+                <span class="badge bg-white text-primary ms-2 rounded-pill shadow-sm" style="font-size: 0.85rem;">
+                    @(((decimal)ViewBag.TotalProyectos).ToString("C", cultura))
+                </span>
+            </a>
+           
+            <form method="get" class="d-flex gap-2 shadow-sm p-1 rounded bg-white">
+                <select name="mes" class="form-select border-0 bg-light fw-bold text-muted" onchange="this.form.submit()">
+                    <option value="0" selected="@(mesSel == 0)">-- AÑO COMPLETO --</option>
+                    @for (int i = 1;
+                                                            i <= 12; i++)
+                    {
+                        <option value="@i" selected="@(mesSel == i)">
+                            @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i).ToUpper()
+                     
+                        </option>
+                    }
+                </select>
+                <select name="anio" class="form-select border-0 bg-light fw-bold text-primary" onchange="this.form.submit()">
+                    @foreach (var anio in anios)
+              
+                    {
+                        <option value="@anio" selected="@(ViewBag.AnioSeleccionado == anio)">@anio</option>
+                    }
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <ul class="nav
+        nav-pills mb-4 bg-white p-2 rounded-pill shadow-sm d-inline-flex" id="cajaTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4 fw-bold" id="general-tab" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab">
+                <i class="fa-solid fa-chart-line me-2"></i> Resumen
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          
+            <button class="nav-link rounded-pill px-4 fw-bold" id="saldos-tab" data-bs-toggle="tab" data-bs-target="#tab-saldos" type="button" role="tab">
+                <i class="fa-solid fa-users me-2"></i> Individual
+                @if (traspasosMePiden.Any())
+                {
+                    <span class="badge bg-danger ms-2 rounded-circle">@traspasosMePiden.Count()</span>
+            
+                }
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="cajaTabsContent">
+
+        <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
+
+            <div class="row g-4 mb-5">
+                <div class="col-lg-4">
+                    
+                    <div class="card border-0 shadow-lg text-white h-100 overflow-hidden"
+                         style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                        border-radius: 15px;">
+                        <div class="card-body p-4 position-relative">
+                            <h6 class="text-white-50 text-uppercase fw-bold ls-1">Dinero Total (Global)</h6>
+                            <h1 class="display-5 fw-bold mb-0">@(((decimal)ViewBag.CapitalTotal).ToString("C", cultura))</h1>
+      
+                            <small class="text-white-50"><i class="fa-solid fa-info-circle me-1"></i> Suma real de Banco + Caja Chica hoy.</small>
+                            <i class="fa-solid fa-vault position-absolute bottom-0 end-0 mb-3 me-3 text-white opacity-10 fa-4x"></i>
+                        </div>
+    
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100" style="border-left: 5px solid #3498db;
+                        border-radius: 15px;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-uppercase text-muted fw-bold mb-0">En Banco (Saldo Real)</h6>
+  
+                                <i class="fa-solid fa-university text-primary fs-4"></i>
+                            </div>
+
+                            @{
+          
+                                decimal totalBanco = ViewBag.SaldoBancoTotal != null ? Convert.ToDecimal(ViewBag.SaldoBancoTotal) : 0m;
+                                decimal sEventos = ViewBag.SaldoBancoEventos != null ? Convert.ToDecimal(ViewBag.SaldoBancoEventos) : 0m;
+                            
+                                decimal sRifas = ViewBag.SaldoBancoRifas != null ? Convert.ToDecimal(ViewBag.SaldoBancoRifas) : 0m;
+                                decimal sTienda = ViewBag.SaldoBancoTienda != null ? Convert.ToDecimal(ViewBag.SaldoBancoTienda) : 0m;
+                                decimal totalAportado = sEventos + sRifas + sTienda;
+                                decimal pEventos = 0, pRifas = 0, pTienda = 0;
+                                if (totalAportado > 0)
+                                {
+                                    pEventos = (sEventos / totalAportado) * 100m;
+                                    pRifas = (sRifas / totalAportado) * 100m;
+                                    pTienda = (sTienda / totalAportado) * 100m;
+                                }
+
+                                var formatoCss = System.Globalization.CultureInfo.InvariantCulture;
+                                string wEventos = pEventos.ToString("0.##", formatoCss) + "%";
+                                string wRifas = pRifas.ToString("0.##", formatoCss) + "%";
+                                string wTienda = pTienda.ToString("0.##", formatoCss) + "%";
+                            }
+
+                            <h2 class="fw-bold text-dark mb-2">@totalBanco.ToString("C", cultura)</h2>
+
+                            <div class="progress d-flex" style="height: 12px; border-radius: 6px; background-color: #e9ecef; overflow: hidden;">
+                       
+                                @if (totalAportado > 0)
+                                {
+                                    <div class="progress-bar" role="progressbar" style="width: @wEventos; background-color: #3498db;"
+                                         title="Eventos (Ingresos Web)" data-bs-toggle="tooltip"></div>
+                                    <div class="progress-bar" role="progressbar" style="width: @wRifas; background-color: #9b59b6;"
+                                         title="Rifas (Ingresos Web)" data-bs-toggle="tooltip"></div>
+                                    <div class="progress-bar" role="progressbar" style="width: @wTienda; background-color: #e67e22;"
+                                         title="Tienda (Ingresos Web)" data-bs-toggle="tooltip"></div>
+                                }
+                                else
+                                {
+ 
+                                    <div class="progress-bar w-100 bg-secondary opacity-25" role="progressbar"></div>
+                                }
+                            
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-2 small text-muted" style="font-size: 0.75rem;">
+                                <div class="d-flex align-items-center" title="Eventos">
+                              
+                                    <span style="width: 8px; height: 8px; background-color: #3498db; border-radius: 50%; margin-right: 4px;"></span>
+                                    <span>Eventos</span>
+                                </div>
+                
+                                <div class="d-flex align-items-center" title="Rifas">
+                                    <span style="width: 8px; height: 8px; background-color: #9b59b6;
+                                    border-radius: 50%; margin-right: 4px;"></span>
+                                    <span>Rifas</span>
+                                </div>
+                             
+                                <div class="d-flex align-items-center" title="Tienda">
+                                    <span style="width: 8px;
+                                    height: 8px; background-color: #e67e22; border-radius: 50%; margin-right: 4px;"></span>
+                                    <span>Tienda</span>
+                                </div>
+                         
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                   
+                    <div class="card border-0 shadow-sm h-100" style="border-left: 5px solid #2ecc71;
+                        border-radius: 15px;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-uppercase text-muted fw-bold mb-0">Caja Chica (Físico)</h6>
+   
+                                <i class="fa-solid fa-wallet text-success fs-4"></i>
+                            </div>
+                            <h2 class="fw-bold text-success mb-0">@(((decimal)ViewBag.SaldoCajaFisica).ToString("C", cultura))</h2>
+       
+                            <p class="text-muted small mb-0">Disponible en todos los cajones actualmente.</p>
+                        </div>
+                    </div>
+                </div>
+           
+            </div>
+
+            <div class="d-flex align-items-center mb-4">
+                <hr class="flex-grow-1 border-secondary opacity-25">
+                <span class="px-3 text-muted fw-bold text-uppercase small bg-white rounded-pill border shadow-sm py-1">
+                    Resumen de Actividad: @etiquetaPeriodo
+                
+                </span>
+                <hr class="flex-grow-1 border-secondary opacity-25">
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-4">
+            
+                        <div class="card-body">
+                            <h6 class="text-muted text-uppercase small fw-bold">Total Ingresos (@etiquetaPeriodo)</h6>
+                            <h3 class="fw-bold text-success">@dineroEntranteMes.ToString("C", cultura)</h3>
+                      
+                            <div class="mt-2 small">
+                                <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                    <span><i class="fa-solid fa-money-bill me-1"></i>Caja Chica:</span>
+               
+                                    <strong>@(((decimal)ViewBag.IngresosManualesMes).ToString("C0", cultura))</strong>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted">
+           
+                                    <span><i class="fa-solid fa-globe me-1"></i>Web:</span>
+                                    <strong>@totalWebMes.ToString("C0", cultura)</strong>
+                                </div>
+   
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+               
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-4">
+                        <div class="card-body">
+                            <h6 class="text-muted text-uppercase small fw-bold">Total Gastos (@etiquetaPeriodo)</h6>
+              
+                            <h3 class="fw-bold text-danger">@dineroSalienteMes.ToString("C", cultura)</h3>
+
+                            <div class="mt-2 small">
+                                <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                
+                                    <span class="text-muted"><i class="fa-solid fa-money-bill me-1"></i>Caja Chica:</span>
+                                    <strong>@(((decimal)ViewBag.EgresosCajaMes).ToString("C0", cultura))</strong>
+                                </div>
+
+      
+                                <div class="d-flex justify-content-between text-muted">
+                                    <span><i class="fa-solid fa-university me-1"></i>Banco:</span>
+                                
+                                    <strong>@(((decimal)ViewBag.EgresosBancoMes).ToString("C0", cultura))</strong>
+                                </div>
+                            </div>
+                        </div>
+           
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-4" style="background-color: @(resultadoMes >= 0 ?
+                                                                                                                                                                                                                      "#f8fcfd" : "#fff5f5");">
+                        <div class="card-body">
+                            <h6 class="text-muted text-uppercase small fw-bold">Resultado Neto</h6>
+                            <h3 class="fw-bold @(resultadoMes >= 0 ? "text-primary" : "text-danger")">
+    
+                                @(resultadoMes >= 0 ? "+" : "")@resultadoMes.ToString("C", cultura)
+                            </h3>
+                            <small class="text-muted">Utilidad operativa del periodo seleccionado.</small>
+    
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-lg-8
+                    mb-3 mb-lg-0">
+                    <div class="card border-0 shadow-sm h-100 p-3 rounded-4">
+                        <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-chart-column me-2 text-primary"></i>Fuentes de Ingreso (@etiquetaPeriodo)</h6>
+                        <div style="height: 250px;
+                            width: 100%;">
+                            <canvas id="graficaFuentes"></canvas>
+                        </div>
+                    </div>
+                </div>
+          
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm h-100 p-3 rounded-4">
+                        <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-pie-chart me-2 text-danger"></i>Ingresos vs Gastos</h6>
+                        <div style="height: 250px;
+                            display: flex; justify-content: center;">
+                            <canvas id="graficaGastos"></canvas>
+                        </div>
+                    </div>
+                </div>
+        
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold m-0 text-dark"><i class="fa-solid fa-list me-2"></i>Bitácora de Movimientos</h6>
+     
+                        <small class="text-muted">Registro manual de entradas y salidas.</small>
+                    </div>
+                    @if (p_Crear)
+                    {
+              
+                        <button class="btn btn-primary rounded-pill btn-sm px-3 shadow-sm" onclick="abrirModalNuevo()">
+                            <i class="fa-solid fa-plus me-2"></i> Registrar Movimiento
+                        </button>
+                    }
+      
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 500px;
+                        overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small text-uppercase sticky-top">
+                                <tr>
+      
+                                    <th class="ps-4">Fecha</th>
+                                    <th>Concepto</th>
+                                 
+                                    <th class="text-center">Aplica En</th>
+                                    <th class="text-center">Folio</th>
+                                    <th class="text-center">Ref.</th>
+                                    <th class="text-end">Monto</th>
+                     
+                                    <th class="text-end pe-4">Acciones</th>
+                                </tr>
+                            </thead>
+                       
+                            <tbody>
+                                @if (Model.Count == 0)
+                                {
+                            
+                                    <tr><td colspan="7" class="text-center py-5 text-muted">Sin movimientos manuales en este periodo.</td></tr>
+                                }
+                                @foreach (var item in Model)
+               
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-muted">@item.Fecha.ToString("dd MMM")</td>
+   
+                                        <td style="cursor: pointer;" onclick="abrirModalDetalle(@item.Id_Movimiento, '@item.Concepto', @item.Monto, '@item.Tipo', @(item.Movimiento_En_Banco.ToString().ToLower()), @(item.Id_Archivo ?? 0), @(item.Id_Evento ?? 0), '@(item.NombreEvento ?? "")')" title="Clic para ver detalles">
+                                            <span class="d-block fw-bold text-dark">@item.Concepto</span>
+                                            <small class="text-muted"><i class="fa-solid fa-user-circle me-1"></i>@item.NombreUsuario</small>
+                                            
+                                            @if (!string.IsNullOrEmpty(item.NombreEvento))
+                                            {
+                                                <span class="d-block badge bg-primary bg-opacity-10 text-primary border border-primary mt-1" style="width: fit-content;">
+                                                    <i class="fa-solid fa-calendar-star me-1"></i>@item.NombreEvento
+                                                </span>
+                                            }
+                                        </td>
+                            
+                                        <td class="text-center">
+                                            @if (item.Movimiento_En_Banco)
+                                          
+                                            {
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">
+                                            
+                                                    <i class="fa-solid fa-university me-1"></i>Banco
+                                                </span>
+                                         
+                                            }
+                                            else
+                                            {
+         
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                                                    <i class="fa-solid fa-money-bill
+                                                    me-1"></i>Caja Chica
+                                                </span>
+                                            }
+       
+                                        </td>
+                                        <td class="text-center text-muted small fw-bold">
+                                            @(string.IsNullOrWhiteSpace(item.FolioBancario) ? "-" : item.FolioBancario)
+                                        </td>
+                                        <td class="text-center">
+                          
+                                            @if (item.Id_Archivo != null)
+                                            {
+                                   
+                                                <button type="button" onclick="abrirVisorComprobante(@item.Id_Archivo)"
+                                                        class="btn btn-sm btn-light text-primary rounded-circle shadow-sm" title="Ver Comprobante">
+                      
+                                                    <i class="fa-solid fa-paperclip"></i>
+                                                </button>
+                    
+                                            }
+                                        </td>
+                                    
+                                        <td class="text-end">
+                                            @if (item.Tipo == "Ingreso")
+                                            {
+    
+                                                <span class="text-success fw-bold">+ @item.Monto.ToString("N2")</span>
+                                            }
+         
+                                            else
+                                            {
+                     
+                                                <span class="text-danger fw-bold">- @item.Monto.ToString("N2")</span>
+                                            }
+                          
+                                        </td>
+                                        @{
+                                            bool esMio = item.Id_Usuario == idUsuarioActual;
+                                            bool puedeEditarEste = (p_Editar && esMio);
+                                            bool puedeBorrarEste = (p_Borrar && esMio);
+                                            var dias = (DateTime.Now - item.Fecha).TotalDays;
+                                            
+                                            // Bloquear edición y borrado si es un registro automatizado (Traspasos o Donaciones)
+                                            string conceptoUpper = item.Concepto.ToUpper();
+                                            bool esProtegido = conceptoUpper.Contains("TRASPASO") ||
+                                                               conceptoUpper.Contains("DONACI") ||
+                                                               conceptoUpper.Contains("APORTACI");
+
+                                            if (esProtegido)
+                                            {
+                                                puedeBorrarEste = false;
+                                                puedeEditarEste = false;
+                                            }
+
+                                            // Ocultar el botón solo si YA PASARON más de 7 días
+                                            if (dias > 7)
+                                            {
+                                                puedeBorrarEste = false;
+                                            }
+
+                                            bool bAccionesDisp = puedeEditarEste || puedeBorrarEste;
+                                        }
+                                        <td class="text-end pe-4">
+                                            @if (bAccionesDisp)
+            
+                                            {
+                                                <div class="dropdown" style="position: static;">
+                 
+                                                    <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
+                                                        <i class="fa-solid
+                                                        fa-ellipsis-vertical"></i>
+                                                    </button>
+                                                
+                                                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                                                        @if (puedeEditarEste)
+                                   
+                                                        {
+                                                            <li>
+                   
+                                                                <button class="dropdown-item" onclick="abrirModalEditar(@item.Id_Movimiento, '@item.Concepto', @item.Monto, '@item.Tipo', '@item.Fecha.ToString("yyyy-MM-dd")', @(item.Id_Archivo ?? 0), @(item.Movimiento_En_Banco.ToString().ToLower()), '@(item.FolioBancario ?? "")', @(item.Id_Evento ?? 0))">
+                                                                    <i class="fa-solid fa-pen text-warning me-2"></i> Editar
+                                                                </button>
+                                                            </li>
+  
+                                                        }
+                                              
+                                                        @if (puedeBorrarEste)
+                                                        {
+                                 
+                                                            <li>
+                                                                <button class="dropdown-item text-danger" onclick="abrirModalBorrar(@item.Id_Movimiento)">
+      
+                                                                    <i class="fa-solid fa-trash me-2"></i> Eliminar
+                                  
+                                                                </button>
+                                                            </li>
+          
+                                                        }
+                                                    </ul>
+  
+                                                </div>
+                                            }
+          
+                                        </td>
+                                    </tr>
+                                }
+  
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+  
+        </div>
+
+        <div class="tab-pane fade" id="tab-saldos" role="tabpanel">
+
+            <div class="d-flex align-items-center bg-white p-3 rounded-4 shadow-sm border-start border-4 border-success mb-4">
+                <div class="me-3"><i class="fa-solid fa-wallet fa-3x text-success"></i></div>
+                <div>
+                    <h6 class="text-muted text-uppercase
+                        fw-bold mb-0">
+                        Mi Saldo Personal (Caja Chica)
+                    </h6>
+                    <h3 class="fw-bold text-success mb-0">@miSaldoPersonal.ToString("C", cultura)</h3>
+                    <small class="text-muted">Dinero físico que tienes en tu poder tras ingresos, gastos y traspasos.</small>
+                </div>
+            </div>
+
+           
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                          
+                            <h5 class="fw-bold text-dark m-0"><i class="fa-solid fa-users text-primary me-2"></i>Distribución de Efectivo</h5>
+                            @if (p_Crear)
+                            {
+                                
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm" onclick="abrirModalSolicitarTraspaso()">
+                                    <i class="fa-solid fa-hand-holding-dollar me-1"></i> Pedir Fondos
+                                </button>
+                    
+                            }
+                        </div>
+
+                        @{
+                            decimal totalDistribuido = saldosUsuarios.Any() ?
+                            saldosUsuarios.Sum(u => (decimal)u.Saldo) : 0m;
+                        }
+
+                        <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 py-3">
+                            @if (saldosUsuarios.Any())
+                            {
+       
+                                <div style="height: 250px; width: 250px; flex-shrink: 0;">
+                                    <canvas id="graficaSaldosUsuarios"></canvas>
+                                
+                                </div>
+
+                                <div class="text-center text-md-start bg-light p-4 rounded-4 shadow-sm border border-primary border-opacity-10 w-100" style="max-width: 280px;">
+                                    <span class="d-block text-muted fw-bold text-uppercase mb-2" style="font-size: 0.8rem; letter-spacing: 1px;">
+           
+                                        <i class="fa-solid fa-vault me-1"></i> Total Físico
+                                    </span>
+                              
+                                    <h2 class="fw-bold text-primary m-0 mb-1">@totalDistribuido.ToString("C", cultura)</h2>
+                                    <div class="progress" style="height: 4px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>
+     
+                                    </div>
+                                    <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">Suma del efectivo de todos los encargados.</small>
+                      
+                                </div>
+                            }
+                            else
+                            {
+      
+                                <div class="h-100 w-100 d-flex flex-column justify-content-center align-items-center text-muted py-5">
+                                    <i class="fa-solid fa-wallet fa-3x mb-3 opacity-25"></i>
+                         
+                                    <p>Sin saldos disponibles.</p>
+                                </div>
+                            }
+                        </div>
+   
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
+                        
+                        <div class="card-header bg-danger bg-opacity-10 border-0 py-3">
+                            <h6 class="fw-bold m-0 text-danger"><i class="fa-solid fa-bell me-2"></i>Me Solicitan Dinero (Por Entregar)</h6>
+                        </div>
+                        <div class="card-body p-0">
+       
+                            <ul class="list-group list-group-flush">
+                                @if (!traspasosMePiden.Any())
+                                {
+            
+                                    <li class="list-group-item text-center text-muted py-4">No tienes solicitudes pendientes de entregar.</li>
+                                }
+                                @foreach (var ped
+                                                                                                in traspasosMePiden)
+                                {
+                                    <li class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                          
+                                        <div>
+                                            <span class="d-block fw-bold text-dark">@ped.Nombre te solicita <span class="text-success fs-5">@ped.Monto.ToString("C", cultura)</span></span>
+                                 
+                                            <small class="text-muted"><i class="fa-regular fa-calendar me-1"></i> @ped.Fecha.ToString("dd/MM/yyyy HH:mm") - <em>"@ped.Concepto"</em></small>
+                                        </div>
+                                        @if
+                                                                                                                        (p_Crear)
+                                        {
+                                            <div class="d-flex gap-2">
+              
+                                                <button type="button" onclick="abrirModalRespuestaTraspaso(@ped.Id, 'Rechazar', '@ped.Nombre', '@ped.Monto.ToString("C", cultura)')"
+                                                        class="btn btn-light text-danger rounded-circle
+                                                    shadow-sm" title="Rechazar y anular">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                           
+                                                </button>
+                                                <button type="button" onclick="abrirModalRespuestaTraspaso(@ped.Id, 'Aceptar', '@ped.Nombre', '@ped.Monto.ToString("C", cultura)')"
+                                                        class="btn btn-success rounded-circle shadow-sm" title="Ya le entregué el dinero">
+                                                    <i class="fa-solid fa-check"></i>
+                       
+                                                </button>
+                                            </div>
+                               
+                                        }
+                                    </li>
+                                }
+                       
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="card-header
+                            bg-primary bg-opacity-10 border-0 py-3">
+                            <h6 class="fw-bold m-0 text-primary"><i class="fa-regular fa-paper-plane me-2"></i>Mis Solicitudes Enviadas (En Espera)</h6>
+                        </div>
+                        <div class="card-body p-0">
+         
+                            <ul class="list-group list-group-flush">
+                                @if (!traspasosPedi.Any())
+                                {
+              
+                                    <li class="list-group-item text-center text-muted py-4">No has pedido dinero recientemente.</li>
+                                }
+                                @foreach (var miPed in traspasosPedi)
+  
+                                {
+                                    <li class="list-group-item p-3">
+                                
+                                        <span class="d-block fw-bold text-dark">Le pediste <span class="text-primary">@miPed.Monto.ToString("C", cultura)</span> a @miPed.Nombre</span>
+                                        <small class="text-muted">
+                                            <i class="fa-solid fa-hourglass-half text-warning me-1"></i> Esperando que acepte y entregue el dinero.
+                                            ("@miPed.Concepto")
+                                        </small>
+                                    </li>
+                                }
+                            </ul>
+    
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card border-0 shadow-sm mt-4 rounded-4 overflow-hidden">
+              
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h6 class="fw-bold m-0 text-dark"><i class="fa-solid fa-clock-rotate-left text-secondary me-2"></i>Mi Historial de Efectivo</h6>
+
+                    <div class="d-flex gap-2">
+                        <select id="filtroAnioHistorial" class="form-select form-select-sm border-0 bg-light fw-bold text-muted" onchange="filtrarHistorialJS()">
+     
+                            <option value="ALL">Todos los Años</option>
+                            @foreach (var anio in anios)
+                            {
+              
+                                <option value="@anio">@anio</option>
+                            }
+                        </select>
+                        <select id="filtroMesHistorial" class="form-select form-select-sm border-0
+                            bg-light fw-bold text-muted" onchange="filtrarHistorialJS()">
+                            <option value="ALL">Todos los Meses</option>
+                            @for (int i = 1; i <= 12; i++)
+                            {
+                                <option value="@i">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i).ToUpper()</option>
+                            }
+        
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+     
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small text-uppercase sticky-top">
+                                <tr>
+            
+                                    <th class="ps-4">Fecha</th>
+                                    <th>Concepto</th>
+                                    <th class="text-center">Tipo Reg.</th>
+ 
+                                    <th class="text-end pe-4">Monto</th>
+                                </tr>
+                            </thead>
+   
+                            <tbody id="bodyHistorialPersonal">
+                                @{
+                                    var miHist = ViewBag.MiHistorial as IEnumerable<dynamic>
+                                    ?? new List<dynamic>();
+                                }
+                                @if (!miHist.Any())
+                                {
+                                
+                                    <tr id="rowSinDatosHist"><td colspan="4" class="text-center py-4 text-muted">No tienes movimientos físicos registrados.</td></tr>
+                                }
+                                @foreach (var item in miHist)
+                   
+                                {
+                                    <tr class="fila-historial" data-anio="@item.Fecha.Year" data-mes="@item.Fecha.Month">
+                                        <td class="ps-4 text-muted small">@item.Fecha.ToString("dd MMM yyyy HH:mm")</td>
+  
+                                        <td class="fw-bold text-dark">@item.Concepto</td>
+                                        <td class="text-center">
+                   
+                                            @if (item.TipoRegistro == "Movimiento")
+                                            {
+                            
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary"><i class="fa-solid fa-list me-1"></i>Manual</span>
+                                            }
+                           
+                                            else
+                                            {
+                                       
+                                                <span class="badge bg-info bg-opacity-10 text-info border border-info"><i class="fa-solid fa-handshake me-1"></i>Traspaso</span>
+                                            }
+                                      
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            @if (item.Tipo == "Ingreso")
+         
+                                            {
+                                                <span class="text-success fw-bold">+ @item.Monto.ToString("N2")</span>
+              
+                                            }
+                                            else
+                          
+                                            {
+                                                <span class="text-danger fw-bold">- @item.Monto.ToString("N2")</span>
+                               
+                                            }
+                                        </td>
+                                    </tr>
+           
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+       
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="modalCaja" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-muted" id="modalTitulo">Movimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("Guardar", "Caja")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <input type="hidden" id="Id_Movimiento" name="Id_Movimiento" value="0">
+
+                    <div class="mb-3 text-center">
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="Tipo" id="optIngreso" value="Ingreso" checked onchange="evaluarTipoMovimiento()">
+                            <label class="btn btn-outline-success" for="optIngreso">Ingreso</label>
+                            <input type="radio" class="btn-check" name="Tipo" id="optEgreso" value="Egreso" onchange="evaluarTipoMovimiento()">
+                            <label class="btn btn-outline-danger" for="optEgreso">Gasto</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Aplica En</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="Movimiento_En_Banco" id="metodoEfectivo" value="false" checked onchange="evaluarTipoMovimiento()">
+                            <label class="btn btn-outline-secondary" for="metodoEfectivo"><i class="fa-solid fa-money-bill me-2"></i>Caja Chica</label>
+
+                            <input type="radio" class="btn-check" name="Movimiento_En_Banco" id="metodoBanco" value="true" onchange="evaluarTipoMovimiento()">
+                            <label class="btn btn-outline-primary" for="metodoBanco"><i class="fa-solid fa-university me-2"></i>Banco</label>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="FolioBancario" name="FolioBancario" placeholder="Folio">
+                        <label>Folio Bancario / Rastreo (Opcional)</label>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control" id="Fecha" name="Fecha" required>
+                                <label>Fecha</label>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-floating mb-3">
+                                <input type="number" step="0.01" class="form-control" id="Monto" name="Monto" required>
+                                <label>Monto ($)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="Concepto" name="Concepto" placeholder="Desc" required>
+                        <label>Descripción</label>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded border d-none" id="divContenedorEvento">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="chkVincularEvento" onchange="toggleComboEvento()">
+                            <label class="form-check-label small fw-bold text-primary" for="chkVincularEvento">
+                                <i class="fa-solid fa-link me-1"></i> Vincular a un Evento
+                            </label>
+                        </div>
+                        
+                        <div class="form-floating d-none mt-2" id="divComboEvento">
+                            <select class="form-select border-primary" id="Id_Evento" name="Id_Evento">
+                                <option value="">Seleccione el evento...</option>
+                                @if (ViewBag.EventosCaja != null)
+                                {
+                                    foreach (var ev in ViewBag.EventosCaja)
+                                    {
+                                        <option value="@ev.Id">@ev.Titulo</option>
+                                    }
+                                }
+                            </select>
+                            <label>Evento Asociado</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded border border-dashed">
+                        <label class="form-label small text-muted fw-bold">Comprobante (Opcional)</label>
+                        <input class="form-control form-control-sm" type="file" id="ArchivoComprobante" name="ArchivoComprobante" accept="image/*,.pdf">
+                        <div id="avisoArchivoExistente" class="d-none mt-2 text-success small">
+                            <i class="fa-solid fa-check-circle"></i> Ya hay un archivo cargado.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalDetalleMovimiento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-muted"><i class="fa-solid fa-eye me-2"></i>Detalle de Movimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("ActualizarEventoGasto", "Caja")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="detIdMovimiento" name="idMovimientoDetalle" value="0" />
+                
+                <div class="modal-body p-4">
+                    <h4 id="detConcepto" class="fw-bold text-dark mb-1"></h4>
+                    <h3 id="detMonto" class="fw-bold mb-3"></h3>
+                    
+                    <div class="d-flex gap-2 mb-4" id="detInsignias">
+                    </div>
+
+                    <div id="detArchivoSection" class="mb-4 d-none">
+                        <button type="button" id="btnVerArchivoDetalle" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-paperclip me-1"></i> Ver Comprobante Adjunto
+                        </button>
+                    </div>
+
+                    <hr class="border-secondary opacity-25">
+
+                    <div id="detSeccionEvento" class="mt-3">
+                        <label class="form-label small text-muted fw-bold"><i class="fa-solid fa-link me-1"></i>Evento Asociado</label>
+                        
+                        @if (p_Editar)
+                        {
+                            <div id="detWrapperEdicionEvento">
+                                <select class="form-select border-primary" id="detIdEvento" name="idEventoDetalle">
+                                    <option value="">-- Sin evento asociado --</option>
+                                    @if (ViewBag.EventosCaja != null)
+                                    {
+                                        foreach (var ev in ViewBag.EventosCaja)
+                                        {
+                                            <option value="@ev.Id">@ev.Titulo</option>
+                                        }
+                                    }
+                                </select>
+                                <small class="text-muted d-block mt-1">Puedes modificar esta asignación si el gasto proviene de una cuenta bancaria.</small>
+                            </div>
+                            <div id="detMensajeBloqueoEvento" class="alert alert-warning py-2 small d-none mb-0">
+                                <i class="fa-solid fa-lock me-1"></i> Las asignaciones a eventos son exclusivas para gastos bancarios.
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="text" id="detEventoReadOnly" class="form-control bg-light" readonly />
+                        }
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                    @if (p_Editar)
+                    {
+                        <button type="submit" id="btnGuardarDetalle" class="btn btn-primary rounded-pill px-4 shadow-sm">Guardar Asignación</button>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@if (p_Borrar)
+{
+    <div class="modal fade" id="modalBorrar" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                
+                <div class="modal-header bg-danger text-white border-0" style="border-radius: 20px 20px 0 0;">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Eliminar Movimiento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="@Url.Action("Eliminar", "Caja")">
+      
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="IdEliminarModal" name="idEliminar" value="0" />
+                    <div class="modal-body p-4 text-center">
+                        <p class="mb-0 text-muted">¿Estás seguro de que deseas eliminar este movimiento?</p>
+     
+                        <small class="text-danger fw-bold d-block mt-2">Esta acción no se puede deshacer.</small>
+                    </div>
+                    <div class="modal-footer border-0 pt-0 justify-content-center">
+                        <button type="button" class="btn btn-light
+                            rounded-pill px-4" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm">Sí, eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="modalVisorComprobante" tabindex="-1" aria-hidden="true">
+  
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg bg-dark">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-white"><i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i>Evidencia Adjunta</h5>
+                <div class="ms-auto">
+                    <a id="btnDescargarComprobante" href="#" class="btn btn-sm btn-outline-light rounded-pill me-2"
+                           title="Descargar archivo original">
+                        <i class="fa-solid fa-download me-1"></i> Descargar
+                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+         
+            </div>
+            <div class="modal-body text-center position-relative p-3" style="min-height: 400px;
+                display: flex; align-items: center; justify-content: center;">
+                <div id="loaderComprobante" class="text-white">
+                    <div class="spinner-border text-primary mb-2" role="status"></div>
+                    <div class="small">Cargando archivo...</div>
+                </div>
+               
+                <img id="imgComprobanteCaja" src="" class="d-none img-fluid rounded shadow" style="max-height: 75vh;
+                object-fit: contain;">
+                <iframe id="pdfComprobanteCaja" class="d-none w-100 rounded bg-white" style="height: 75vh;
+                border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalResultadoStripe" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-4">
+                <div id="stripeIconoContenedor" class="rounded-circle d-flex align-items-center justify-content-center shadow-sm mx-auto mb-3" style="width: 60px; height: 60px;">
+                    <i id="stripeIconoClase" class="fa-solid fa-2x text-white"></i>
+                </div>
+                <h5 class="fw-bold mb-2" id="stripeTituloRespuesta">Sincronización</h5>
+                <p class="text-muted small mb-0" id="stripeMensajeRespuesta"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-center mb-2">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" onclick="location.reload()">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+@if (p_Crear)
+{
+    <div class="modal fade" id="modalSolicitarTraspaso" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header bg-primary text-white border-0" style="border-radius: 20px 20px 0 0;">
+            
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-hand-holding-dollar me-2"></i>Solicitar Dinero</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="@Url.Action("SolicitarTraspaso", "Caja")">
+                    @Html.AntiForgeryToken()
+       
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-3">
+                            Solicita fondos a otro encargado con saldo.
+                            El dinero se sumará a tu total cuando él acepte entregarte el efectivo.
+                        </p>
+
+                        <div class="form-floating mb-3">
+                            <select class="form-select fw-bold" id="IdUsuarioDestino" name="IdUsuarioDestino" required onchange="actualizarMontoMaximo()">
+                            
+                                <option value="" data-max="0">Selecciona al encargado...</option>
+                                @foreach (var u in usuariosCombo)
+                                {
+                        
+                                    <option value="@u.Id" data-max="@u.Saldo.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                                        @u.Nombre (Máx: @u.Saldo.ToString("C", cultura))
+                                    </option>
+       
+                                }
+                            </select>
+                            <label>¿A quién le pides dinero?</label>
+               
+                        </div>
+
+                        <div class="form-check form-switch mb-3 ps-5 bg-light p-2 rounded border border-primary border-opacity-25">
+                            <input class="form-check-input ms-0 me-2" type="checkbox" id="chkTodo" name="SolicitarTodo" value="true" onchange="actualizarMontoMaximo()">
+                     
+                            <label class="form-check-label small fw-bold text-primary" for="chkTodo">Solicitar Todos los Fondos</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="number" step="0.01" class="form-control fw-bold text-success fs-5"
+                                   id="MontoTraspaso" name="MontoTraspaso" required placeholder="0.00">
+                            <label>Monto a solicitar ($)</label>
+                        </div>
+
+                        <div class="form-floating mb-1">
+                
+                            <input type="text" class="form-control" id="ConceptoTraspaso" name="ConceptoTraspaso" required placeholder="Para qué...">
+                            <label>
+                                ¿Para qué lo necesitas?
+                                (Concepto)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+   
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">Enviar Solicitud</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalRespuestaTraspaso" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 pb-0 justify-content-center mt-3">
+                    <div id="iconoRespuesta" class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 60px;
+                        height: 60px;">
+                        <i id="iconoRespuestaClase" class="fa-solid fa-question fa-2x text-white"></i>
+                    </div>
+                </div>
+                <form method="post" action="@Url.Action("ResponderTraspaso", "Caja")">
+               
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="modalIdTraspaso" name="idTraspaso" value="" />
+                    <input type="hidden" id="modalAccionRespuesta" name="respuesta" value="" />
+
+                    <div class="modal-body text-center p-4">
+                      
+                        <h5 class="fw-bold mb-2" id="tituloRespuesta">Confirmación</h5>
+                        <p class="text-muted mb-0" id="mensajeRespuesta"></p>
+                        <h3 class="fw-bold mt-3 mb-0" id="montoRespuesta"></h3>
+                    </div>
+
+                    
+                    <div class="modal-footer border-0 pt-0 justify-content-center mb-2">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" id="btnConfirmarRespuesta" class="btn rounded-pill px-4 shadow-sm text-white">Confirmar</button>
+                    </div>
+              
+                </form>
+            </div>
+        </div>
+    </div>
+}
+<script>
+    var modalVisor;
+    // Inicializar Tooltips
+    document.addEventListener("DOMContentLoaded", function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // ==========================================
+    // CONFIGURACIÓN DE GRÁFICAS
+    // ==========================================
+
+    // 1. FUENTES DE INGRESO (Barras)
+    
+    const ctxBar = document.getElementById('graficaFuentes').getContext('2d');
+    new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+    labels: ['Eventos', 'Rifas', 'Tienda', 'Manuales (Caja/Banco)'],
+    datasets: [{
+                   
+    label: 'Ingresos',
+    data: [@ViewBag.EventosMes, @ViewBag.RifasMes, @ViewBag.TiendaMes, @ViewBag.IngresosManualesMes],
+    backgroundColor: ['#3498db', '#9b59b6', '#e67e22', '#2ecc71'],
+    borderRadius: 5
+    }]
+    },
+ 
+    options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4] } }, x: {
+    grid: { display: false } } }
+    }
+    });
+    // 2. GASTOS VS INGRESOS (Dona)
+    const ctxPie = document.getElementById('graficaGastos').getContext('2d');
+    const ing = @ViewBag.IngresosManualesMes + @totalWebMes;
+    const egr = @ViewBag.EgresosManualesMes;
+    let dataPie = [ing, egr];
+    let colorPie = ['#3498db', '#e74c3c'];
+    if(ing <= 0 && egr <= 0) { dataPie=[1]; colorPie=['#ecf0f1'];
+    }
+
+    new Chart(ctxPie, {
+    type: 'doughnut',
+    data: {
+    labels: ['Total Entradas', 'Total Salidas'],
+    datasets: [{ data: dataPie, backgroundColor: colorPie, borderWidth: 0, hoverOffset: 4 }]
+    },
+      
+    options: {
+    responsive: true, maintainAspectRatio: false, cutout: '75%',
+    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }
+    }
+    });
+    // 3. NUEVA GRÁFICA: SALDOS POR USUARIO (Dona con centro vacío)
+    @if (saldosUsuarios.Any())
+    {
+        <text>
+            const ctxSaldos = document.getElementById('graficaSaldosUsuarios').getContext('2d');
+            const userLabels = [ @Html.Raw(string.Join(",", saldosUsuarios.Select(u => $"'{u.Nombre}'"))) ];
+            const userData = [ @string.Join(",", saldosUsuarios.Select(u => u.Saldo.ToString().Replace(",", "."))) ];
+            const coloresSaldos = ['#2ecc71', '#3498db', '#9b59b6', '#f1c40f', '#e67e22', '#1abc9c', '#34495e'];
+            new Chart(ctxSaldos, {
+            type: 'pie',
+            data: {
+            labels: userLabels,
+            datasets: [{
+                    
+            data: userData,
+            backgroundColor: coloresSaldos,
+            borderWidth: 2,
+            borderColor: '#fff'
+                
+            }]
+            },
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins:
+            {
+            legend: {
+            position: 'bottom',
+            labels: {
+              
+            usePointStyle: true,
+            padding: 20
+            }
+                   
+            },
+            tooltip: {
+            callbacks: {
+            label: function(c) {
+    
+            return ' ' + c.label + ': $' + c.raw.toLocaleString('en-US', {minimumFractionDigits: 2});
+            }
+            }
+            }
+            }
+            }
+          
+            });
+        </text>
+    }
+
+    modalVisor = new bootstrap.Modal(document.getElementById('modalVisorComprobante'));
+    });
+
+    // ==========================================
+    // LOGICA DEL CHECKBOX: SOLICITAR TODO
+    // ==========================================
+    function actualizarMontoMaximo() {
+    var select = document.getElementById('IdUsuarioDestino');
+    var chk = document.getElementById('chkTodo');
+    var txtMonto = document.getElementById('MontoTraspaso');
+    var txtConcepto = document.getElementById('ConceptoTraspaso');
+
+    var maxVal = 0;
+    if (select.selectedIndex >= 0) {
+    maxVal = select.options[select.selectedIndex].getAttribute('data-max');
+    }
+
+    if (chk.checked && select.value !== "") {
+    txtMonto.value = maxVal;
+    txtMonto.readOnly = true;
+    txtConcepto.value = "Traspaso Total de Fondos";
+    } else {
+    if(chk.checked && select.value === "") { txtMonto.value = "";
+    }
+    txtMonto.readOnly = false;
+    if(txtConcepto.value === "Traspaso Total de Fondos") {
+    txtConcepto.value = "";
+    }
+    }
+    }
+
+    // Funciones del Modal General
+    // Funciones del Modal General
+    const hoy = new Date().toISOString().split('T')[0];
+
+    function abrirModalNuevo() {
+        document.getElementById('modalTitulo').innerText = "Registrar Movimiento";
+        document.getElementById('Id_Movimiento').value = 0;
+        document.getElementById('Concepto').value = "";
+        document.getElementById('Monto').value = "";
+        document.getElementById('Fecha').value = hoy;
+        document.getElementById('optIngreso').checked = true;
+        document.getElementById('metodoEfectivo').checked = true;
+        document.getElementById('ArchivoComprobante').value = "";
+        document.getElementById('FolioBancario').value = "";
+        document.getElementById('avisoArchivoExistente').classList.add('d-none');
+    
+        // Reset Vincular Evento
+        document.getElementById('Id_Evento').value = "";
+        document.getElementById('chkVincularEvento').checked = false;
+        evaluarTipoMovimiento();
+
+        new bootstrap.Modal(document.getElementById('modalCaja')).show();
+    }
+
+    function abrirModalEditar(id, concepto, monto, tipo, fecha, idArchivo, esBanco, folio, idEvento) {
+        document.getElementById('modalTitulo').innerText = "Editar Movimiento";
+        document.getElementById('Id_Movimiento').value = id;
+        document.getElementById('Concepto').value = concepto;
+        document.getElementById('Monto').value = monto.toString().replace(',', '.');
+        document.getElementById('Fecha').value = fecha;
+        document.getElementById('FolioBancario').value = folio;
+
+        if (tipo === 'Ingreso') document.getElementById('optIngreso').checked = true;
+        else document.getElementById('optEgreso').checked = true;
+
+        if (esBanco === true) document.getElementById('metodoBanco').checked = true;
+        else document.getElementById('metodoEfectivo').checked = true;
+
+        document.getElementById('ArchivoComprobante').value = "";
+        if (idArchivo > 0) document.getElementById('avisoArchivoExistente').classList.remove('d-none');
+        else document.getElementById('avisoArchivoExistente').classList.add('d-none');
+
+        // Lógica de Evento al Editar
+        evaluarTipoMovimiento();
+        if(idEvento && idEvento > 0){
+        document.getElementById('chkVincularEvento').checked = true;
+        document.getElementById('Id_Evento').value = idEvento;
+        toggleComboEvento();
+        } else {
+        document.getElementById('chkVincularEvento').checked = false;
+        document.getElementById('Id_Evento').value = "";
+        toggleComboEvento();
+        }
+
+        new bootstrap.Modal(document.getElementById('modalCaja')).show();
+    }
+    function evaluarTipoMovimiento() {
+        var esGasto = document.getElementById('optEgreso').checked;
+        var esBanco = document.getElementById('metodoBanco').checked; // NUEVA LÍNEA
+        var divContenedor = document.getElementById('divContenedorEvento');
+    
+        if (esGasto && esBanco) {
+        divContenedor.classList.remove('d-none');
+        } else {
+        divContenedor.classList.add('d-none');
+        document.getElementById('chkVincularEvento').checked = false;
+        toggleComboEvento();
+        }
+    }
+
+    function toggleComboEvento() {
+        var checkActivo = document.getElementById('chkVincularEvento').checked;
+        var divCombo = document.getElementById('divComboEvento');
+        var selectEvento = document.getElementById('Id_Evento');
+    
+        if (checkActivo) {
+        divCombo.classList.remove('d-none');
+        selectEvento.required = true;
+        } else {
+        divCombo.classList.add('d-none');
+        selectEvento.required = false;
+        selectEvento.value = "";
+        }
+    }
+    function abrirModalBorrar(idMovimiento) {
+    document.getElementById('IdEliminarModal').value = idMovimiento;
+    new bootstrap.Modal(document.getElementById('modalBorrar')).show();
+    }
+
+    // Modal de Traspasos
+    function abrirModalSolicitarTraspaso() {
+    document.getElementById('MontoTraspaso').value = "";
+    document.getElementById('MontoTraspaso').readOnly = false;
+    document.getElementById('ConceptoTraspaso').value = "";
+    document.getElementById('IdUsuarioDestino').value = "";
+    document.getElementById('chkTodo').checked = false;
+    actualizarMontoMaximo();
+    new bootstrap.Modal(document.getElementById('modalSolicitarTraspaso')).show();
+    }
+
+    // Visor de Archivos
+    function abrirVisorComprobante(idArchivo) {
+    var urlBase = '@Url.Action("VerComprobante", "Caja")';
+    var urlPreview = urlBase + '?id=' + idArchivo;
+    var urlDescarga = urlBase + '?id=' + idArchivo + '&descargar=true';
+    var img = document.getElementById('imgComprobanteCaja');
+    var pdf = document.getElementById('pdfComprobanteCaja');
+    var loader = document.getElementById('loaderComprobante');
+    var btnDescargar = document.getElementById('btnDescargarComprobante');
+
+    img.classList.add('d-none');
+    pdf.classList.add('d-none');
+    loader.style.display = 'block';
+    img.src = "";
+    pdf.src = "";
+    btnDescargar.href = urlDescarga;
+
+    img.src = urlPreview;
+    img.onload = function() { loader.style.display = 'none'; img.classList.remove('d-none'); };
+    img.onerror = function() {
+    img.classList.add('d-none');
+    pdf.src = urlPreview;
+    pdf.classList.remove('d-none');
+    loader.style.display = 'none';
+    };
+    modalVisor.show();
+    }
+    // Lógica para filtrar el Historial de Caja Personal por JS
+    function filtrarHistorialJS() {
+    var anioSeleccionado = document.getElementById('filtroAnioHistorial').value;
+    var mesSeleccionado = document.getElementById('filtroMesHistorial').value;
+    var filas = document.querySelectorAll('.fila-historial');
+    var contVisibles = 0;
+    filas.forEach(function(fila) {
+    var anioFila = fila.getAttribute('data-anio');
+    var mesFila = fila.getAttribute('data-mes');
+
+    var coincideAnio = (anioSeleccionado === "ALL" || anioSeleccionado === anioFila);
+    var coincideMes = (mesSeleccionado === "ALL" || mesSeleccionado === mesFila);
+
+    if (coincideAnio && coincideMes) {
+           
+    fila.style.display = '';
+    contVisibles++;
+    } else {
+    fila.style.display = 'none';
+    }
+    });
+    // Manejo del mensaje "Sin datos" si el filtro oculta todo
+    var rowSinDatos = document.getElementById('rowSinDatosHist');
+    if (contVisibles === 0 && filas.length > 0) {
+    if(!rowSinDatos) {
+    var tbody = document.getElementById('bodyHistorialPersonal');
+    tbody.insertAdjacentHTML('beforeend', '<tr id="rowSinDatosHist"><td colspan="4" class="text-center py-4 text-muted">No hay movimientos en este periodo.</td></tr>');
+    } else {
+    rowSinDatos.style.display = '';
+    }
+    } else if (rowSinDatos) {
+    rowSinDatos.style.display = 'none';
+    }
+    }
+
+    // Lógica para el Modal de Confirmación de Traspasos
+    function abrirModalRespuestaTraspaso(id, accion, nombre, monto) {
+    document.getElementById('modalIdTraspaso').value = id;
+    document.getElementById('modalAccionRespuesta').value = accion;
+    document.getElementById('montoRespuesta').innerText = monto;
+
+    var icono = document.getElementById('iconoRespuesta');
+    var iconoClase = document.getElementById('iconoRespuestaClase');
+    var btn = document.getElementById('btnConfirmarRespuesta');
+    var titulo = document.getElementById('tituloRespuesta');
+    var mensaje = document.getElementById('mensajeRespuesta');
+
+    if (accion === 'Aceptar') {
+    icono.className = 'bg-success rounded-circle d-flex align-items-center justify-content-center shadow-sm';
+    iconoClase.className = 'fa-solid fa-check fa-2x text-white';
+    btn.className = 'btn btn-success rounded-pill px-4 shadow-sm text-white';
+    titulo.innerText = 'Entregar Fondos';
+    mensaje.innerHTML = '¿Confirmas que ya entregaste el efectivo físicamente a <strong>' + nombre + '</strong>?';
+    btn.innerText = 'Sí, ya lo entregué';
+    } else {
+    icono.className = 'bg-danger rounded-circle d-flex align-items-center justify-content-center shadow-sm';
+    iconoClase.className = 'fa-solid fa-xmark fa-2x text-white';
+    btn.className = 'btn btn-danger rounded-pill px-4 shadow-sm text-white';
+    titulo.innerText = 'Rechazar Solicitud';
+    mensaje.innerHTML = '¿Estás seguro de rechazar y anular la solicitud de <strong>' + nombre + '</strong>?';
+    btn.innerText = 'Sí, rechazar';
+    }
+
+    new bootstrap.Modal(document.getElementById('modalRespuestaTraspaso')).show();
+    }
+    function abrirModalDetalle(id, concepto, monto, tipo, esBanco, idArchivo, idEvento, nombreEvento) {
+        document.getElementById('detIdMovimiento').value = id;
+        document.getElementById('detConcepto').innerText = concepto;
+    
+        // Configurar Monto
+        var montoFormateado = monto.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+        var elMonto = document.getElementById('detMonto');
+        elMonto.innerText = (tipo === 'Ingreso' ? '+ ' : '- ') + montoFormateado;
+        elMonto.className = tipo === 'Ingreso' ? 'fw-bold mb-3 text-success' : 'fw-bold mb-3 text-danger';
+
+        // Insignias
+        var insignias = '';
+        if (esBanco) insignias += '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="fa-solid fa-university me-1"></i>Banco</span>';
+        else insignias += '<span class="badge bg-success bg-opacity-10 text-success border border-success"><i class="fa-solid fa-money-bill me-1"></i>Caja Chica</span>';
+    
+        if (tipo === 'Ingreso') insignias += '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">Ingreso</span>';
+        else insignias += '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Gasto</span>';
+    
+        document.getElementById('detInsignias').innerHTML = insignias;
+
+        // Archivo Adjunto
+        var secArchivo = document.getElementById('detArchivoSection');
+        if (idArchivo > 0) {
+        secArchivo.classList.remove('d-none');
+        document.getElementById('btnVerArchivoDetalle').onclick = function() {
+        abrirVisorComprobante(idArchivo);
+        };
+        } else {
+        secArchivo.classList.add('d-none');
+        }
+
+        // Lógica del Select de Eventos
+        var wrapperEdicion = document.getElementById('detWrapperEdicionEvento');
+        var msjBloqueo = document.getElementById('detMensajeBloqueoEvento');
+        var btnGuardar = document.getElementById('btnGuardarDetalle');
+        var selectEvento = document.getElementById('detIdEvento');
+        var inputReadOnly = document.getElementById('detEventoReadOnly');
+
+        var permiteEvento = (tipo === 'Egreso' && esBanco === true);
+
+        if (wrapperEdicion) { // El usuario tiene permisos generales de edición
+        if (permiteEvento) {
+        wrapperEdicion.classList.remove('d-none');
+        msjBloqueo.classList.add('d-none');
+        btnGuardar.classList.remove('d-none');
+        selectEvento.value = idEvento > 0 ? idEvento : "";
+        } else {
+        wrapperEdicion.classList.add('d-none');
+        msjBloqueo.classList.remove('d-none');
+        btnGuardar.classList.add('d-none'); // Escondemos guardar porque no hay nada que editar
+        }
+        } else if (inputReadOnly) { // Usuario de solo lectura
+        inputReadOnly.value = nombreEvento || "Sin asignar";
+        }
+
+        new bootstrap.Modal(document.getElementById('modalDetalleMovimiento')).show();
+    }
+    
+    function sincronizarStripe() {
+        let btn = document.getElementById('btnSyncStripe');
+        let btnHtmlOriginal = btn.innerHTML;
+    
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Procesando Cuentas...';
+
+        fetch('@Url.Action("SincronizarFlujosStripe", "Caja")', {
+        method: 'POST',
+        headers: {
+        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+        }
+        })
+        .then(response => response.json())
+        .then(data => {
+        // Inicializamos los elementos del modal dinámico de Bootstrap
+        let iconoContenedor = document.getElementById('stripeIconoContenedor');
+        let iconoClase = document.getElementById('stripeIconoClase');
+        let titulo = document.getElementById('stripeTituloRespuesta');
+        let mensaje = document.getElementById('stripeMensajeRespuesta');
+        
+        if (data.exito) {
+        iconoContenedor.className = 'bg-success rounded-circle d-flex align-items-center justify-content-center shadow-sm mx-auto mb-3';
+        iconoClase.className = 'fa-solid fa-circle-check fa-2x text-white';
+        titulo.innerText = '¡Proceso Exitoso!';
+        titulo.className = 'fw-bold mb-2 text-success';
+        mensaje.innerHTML = data.mensaje;
+        } else {
+        iconoContenedor.className = 'bg-danger rounded-circle d-flex align-items-center justify-content-center shadow-sm mx-auto mb-3';
+        iconoClase.className = 'fa-solid fa-circle-xmark fa-2x text-white';
+        titulo.innerText = 'Sincronización Interrumpida';
+        titulo.className = 'fw-bold mb-2 text-danger';
+        mensaje.innerHTML = data.mensaje;
+            
+        // Si falló, reactivamos el botón original en el fondo
+        btn.disabled = false;
+        btn.innerHTML = btnHtmlOriginal;
+        }
+        
+        // Detonamos el modal nativo en lugar del alert plano
+        new bootstrap.Modal(document.getElementById('modalResultadoStripe')).show();
+        })
+        .catch(error => {
+        let iconoContenedor = document.getElementById('stripeIconoContenedor');
+        let iconoClase = document.getElementById('stripeIconoClase');
+        let titulo = document.getElementById('stripeTituloRespuesta');
+        let mensaje = document.getElementById('stripeMensajeRespuesta');
+        
+        iconoContenedor.className = 'bg-danger rounded-circle d-flex align-items-center justify-content-center shadow-sm mx-auto mb-3';
+        iconoClase.className = 'fa-solid fa-wifi-slash fa-2x text-white';
+        titulo.innerText = 'Error de Red';
+        mensaje.innerHTML = 'No se pudo establecer comunicación estable con el servidor de la organización.';
+        
+        new bootstrap.Modal(document.getElementById('modalResultadoStripe')).show();
+        });
+    }
+</script>
+
+<style>
+    .border-dashed {
+    border-style: dashed !important;
+    }
+
+    .fade-in {
+    animation: fadeIn 0.4s ease-out;
+    }
+
+    @@keyframes fadeIn {
+    from {
+    opacity: 0;
+    transform: translateY(10px);
+    }
+
+    to {
+    opacity: 1;
+    transform: translateY(0);
+    }
+    }
+
+    .ls-1 {
+    letter-spacing: 1px;
+    }
+
+    .nav-pills .nav-link.active {
+    background-color: var(--bs-primary);
+    color: white;
+    }
+
+    .nav-pills .nav-link {
+    color: #6c757d;
+    cursor: pointer;
+    }
+</style>

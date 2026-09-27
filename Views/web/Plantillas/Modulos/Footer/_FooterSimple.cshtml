@@ -1,0 +1,29 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<footer style="background-color: var(--theme-primary); color: var(--theme-bg); padding: 4rem 0 2rem;">
+    <div class="container text-center">
+        <h3 class="mb-4" style="font-family: var(--theme-font-title); font-weight: 800; font-size: 2rem; color: inherit;">
+            @(string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "Iglesia" : Model.NombreIglesia)
+        </h3>
+
+        <div class="d-flex justify-content-center gap-4 mb-5 pb-4 border-bottom" style="border-color: rgba(128, 128, 128, 0.2) !important;">
+            @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl))
+            {
+                <a href="@Model.FacebookUrl" target="_blank" style="color: inherit;" class="fs-4 opacity-75"><i class="fa-brands fa-facebook"></i></a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.InstagramUrl))
+            {
+                <a href="@Model.InstagramUrl" target="_blank" style="color: inherit;" class="fs-4 opacity-75"><i class="fa-brands fa-instagram"></i></a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+            {
+                <a href="@Model.YoutubeUrl" target="_blank" style="color: inherit;" class="fs-4 opacity-75"><i class="fa-brands fa-youtube"></i></a>
+            }
+        </div>
+
+        <div style="font-family: var(--theme-font-body); font-size: 0.85rem; opacity: 0.7;">
+            <p class="mb-1">© @DateTime.Now.Year @Model.NombreIglesia. Todos los derechos reservados.</p>
+            <p class="mb-0">Plataforma Alianza Juvenil</p>
+        </div>
+    </div>
+</footer>

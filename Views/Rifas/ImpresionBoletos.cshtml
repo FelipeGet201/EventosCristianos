@@ -1,0 +1,223 @@
+@model RedAJP.Models.ImpresionBoletosViewModel
+@using RedAJP.Globales
+@{
+    Layout = "_LayoutRifasOficiales";
+    ViewBag.Title = "Impresión de Boletos — " + Model.InfoRifa.Titulo;
+}
+
+<style>
+    .imp-header-info {
+        background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: #fff;
+        margin-bottom: 1.5rem;
+    }
+
+    .imp-stat-box {
+        background: rgba(255,255,255,0.08);
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        text-align: center;
+        min-width: 100px;
+    }
+
+        .imp-stat-box .num {
+            font-size: 1.8rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .imp-stat-box .lbl {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: rgba(255,255,255,0.65);
+            margin-top: 2px;
+        }
+
+    .btn-imprimir {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        color: #fff;
+        border: none;
+        border-radius: 50rem;
+        padding: 0.65rem 1.75rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(78,115,223,0.4);
+    }
+
+        .btn-imprimir:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(78,115,223,0.5);
+            color: #fff;
+        }
+
+    .boletos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .boleto-card {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        transition: box-shadow 0.15s;
+    }
+
+        .boleto-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+    .boleto-num {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #4e73df;
+        line-height: 1;
+    }
+
+    .boleto-nombre {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-top: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .boleto-tel { font-size: 0.72rem; color: #718096; }
+
+    .boleto-rifa-label {
+        font-size: 0.68rem;
+        color: #a0aec0;
+        border-top: 1px solid #e2e8f0;
+        margin-top: 6px;
+        padding-top: 4px;
+    }
+
+    @@media print {
+        nav, header, footer, .app-nav-wrapper, .app-header,
+        .imp-print-hide, .alert, .no-print { display: none !important; }
+
+        body, html { background: #fff !important; margin: 0; padding: 0; }
+
+        .container, .app-oficial-wrapper, [class*="p-"] {
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
+        .imp-print-show { display: block !important; }
+
+        .imp-print-title {
+            font-size: 12pt;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 10pt;
+            border-bottom: 1.5pt solid #000;
+            padding-bottom: 5pt;
+        }
+
+        .boletos-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7pt;
+        }
+
+        .boleto-card {
+            border: 1pt solid #000 !important;
+            border-radius: 5pt !important;
+            padding: 7pt !important;
+            box-shadow: none !important;
+            page-break-inside: avoid;
+        }
+
+        .boleto-num  { font-size: 16pt !important; color: #000 !important; }
+
+        .boleto-nombre {
+            font-size: 7.5pt !important;
+            color: #000 !important;
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+        }
+
+        .boleto-tel         { font-size: 7pt !important; color: #444 !important; }
+        .boleto-rifa-label  { font-size: 6pt  !important; color: #666 !important; }
+    }
+</style>
+
+<!-- Cabecera visible en pantalla -->
+<div class="imp-header-info imp-print-hide">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <h5 class="fw-bold mb-1 text-white"><i class="fa-solid fa-print me-2"></i>Impresión de Boletos para Tómbola</h5>
+            <p class="mb-0 text-white-50 small">Solo se incluyen boletos con pago confirmado.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <div class="imp-stat-box">
+                <div class="num">@Model.Boletos.Count</div>
+                <div class="lbl">Boletos a imprimir</div>
+            </div>
+            <div class="imp-stat-box">
+                <div class="num">@Model.InfoRifa.FechaSorteo.ToString("dd/MM/yy")</div>
+                <div class="lbl">Fecha sorteo</div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-3 d-flex gap-2 flex-wrap">
+        @if (Model.Boletos.Any())
+        {
+            <button class="btn-imprimir" onclick="window.print()">
+                <i class="fa-solid fa-print me-2"></i> Imprimir @Model.Boletos.Count boletos
+            </button>
+        }
+        else
+        {
+            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill align-self-center fw-semibold">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i> No hay boletos pagados aún
+            </span>
+        }
+    </div>
+</div>
+
+<!-- Título visible solo en impresión -->
+<div class="imp-print-show" style="display:none;">
+    <div class="imp-print-title">
+        @Model.InfoRifa.Titulo &nbsp;·&nbsp; Boletos Tómbola
+        &nbsp;|&nbsp; Sorteo: @Model.InfoRifa.FechaSorteo.ToString("dd/MM/yyyy")
+        &nbsp;|&nbsp; Total: @Model.Boletos.Count boletos
+    </div>
+</div>
+
+@if (!Model.Boletos.Any())
+{
+    <div class="text-center py-5 imp-print-hide">
+        <i class="fa-solid fa-ticket-alt fa-3x text-muted mb-3 d-block"></i>
+        <h6 class="text-muted">No hay boletos con pago confirmado en esta rifa.</h6>
+        <p class="text-muted small mb-0">Los boletos aparecerán aquí cuando el pago esté verificado en Stripe.</p>
+    </div>
+}
+else
+{
+    <div class="boletos-grid">
+        @foreach (var b in Model.Boletos)
+        {
+            <div class="boleto-card">
+                <div class="boleto-num">#@b.Numero.ToString("D4")</div>
+                <div class="boleto-nombre" title="@b.NombreTitular">@b.NombreTitular</div>
+                @if (!string.IsNullOrWhiteSpace(b.Telefono))
+                {
+                    <div class="boleto-tel">@b.Telefono</div>
+                }
+                <div class="boleto-rifa-label">@Model.InfoRifa.Titulo</div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,260 @@
+﻿/* =========================================================
+   mascota.css - VERSIÓN DEFINITIVA (ESTÁTICA HASTA INTERACTUAR)
+   ========================================================= */
+
+/* Oculta la mascota por defecto para control por JS */
+.mascota-oculta-inicial {
+    display: none !important;
+}
+
+#mascota-flotante {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    width: 90px;
+    height: 90px;
+    z-index: 11000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+    #mascota-flotante:hover {
+        transform: scale(1.05) translateY(-3px);
+    }
+
+/* --- Burbuja de Diálogo --- */
+.mensaje-mascota {
+    position: absolute;
+    top: -50px;
+    right: 0px;
+    background: rgba(0, 43, 54, 0.95);
+    backdrop-filter: blur(4px);
+    color: #00d2ff;
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 210, 255, 0.3);
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 0;
+    transform: translateY(15px) scale(0.9);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+    .mensaje-mascota::after {
+        content: "";
+        position: absolute;
+        bottom: -7px;
+        right: 40px;
+        border-width: 7px 7px 0;
+        border-style: solid;
+        border-color: rgba(0, 43, 54, 0.95) transparent transparent transparent;
+    }
+
+#mascota-flotante:hover .mensaje-mascota {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* --- Botón Cerrar --- */
+.boton-cerrar-mascota {
+    position: absolute;
+    top: -10px;
+    right: -15px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #00d2ff;
+    color: #002b36;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    z-index: 25;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5) rotate(-45deg);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+#mascota-flotante:hover .boton-cerrar-mascota {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1) rotate(0deg);
+}
+
+/* --- CUERPO: Corazón Font Awesome (Totalmente quieto en reposo) --- */
+.corazon-icon-boya {
+    position: absolute;
+    z-index: 0;
+    font-size: 85px;
+    background: linear-gradient(135deg, #00d2ff 0%, #007c91 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.4);
+    /* Sombra oscura base + Brillo cian estático */
+    filter: drop-shadow(0 4px 6px rgba(0, 30, 43, 0.5)) drop-shadow(0 0 10px rgba(0, 210, 255, 0.6));
+    user-select: none;
+    pointer-events: none;
+    /* SE ELIMINÓ LA ANIMACIÓN CONSTANTE PARA QUE NO SE MUEVA SOLO */
+}
+
+/* --- BRAZOS: Ocultos por defecto, rebote al Hover --- */
+.mano-corazon {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #00d2ff 0%, #007c91 100%);
+    border-radius: 50%;
+    top: 38px;
+    z-index: -1;
+    opacity: 0;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4));
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.mano-izq {
+    left: 30px;
+    transform: scale(0.5);
+}
+
+.mano-der {
+    right: 30px;
+    transform: scale(0.5);
+}
+
+#mascota-flotante:hover .mano-corazon {
+    opacity: 1;
+}
+
+#mascota-flotante:hover .mano-izq {
+    transform: translateX(-35px) scale(1);
+}
+
+#mascota-flotante:hover .mano-der {
+    transform: translateX(35px) scale(1);
+}
+
+/* --- ROSTRO: Top 25px --- */
+.rostro-corazon {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    top: 25px;
+    left: 0px;
+    width: 100%;
+}
+
+.contenedor-ojos {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 5px;
+}
+
+.ojo-mascota {
+    width: 18px;
+    height: 22px;
+    background: #ffffff;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.pupila-mascota {
+    width: 9px;
+    height: 9px;
+    background: #001e2b;
+    border-radius: 50%;
+    position: absolute;
+    top: 6px;
+    left: 4.5px;
+}
+
+.boca-mascota {
+    width: 14px;
+    height: 7px;
+    border-bottom: 3px solid #001e2b;
+    border-radius: 0 0 14px 14px;
+    opacity: 0.8;
+    transform: scale(0.9);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#mascota-flotante:hover .boca-mascota {
+    opacity: 1;
+    transform: scale(1.3);
+    border-bottom-width: 4px;
+}
+
+/* =========================================================
+   ESTADO ARRASTRANDO (EFECTO PÉNDULO Y GRAVEDAD)
+   ========================================================= */
+
+#mascota-flotante.arrastrando {
+    cursor: grabbing !important;
+    transform-origin: 50% 10px !important;
+    animation: balanceo-colgando 1.0s infinite alternate ease-in-out !important;
+}
+
+@keyframes balanceo-colgando {
+    0% {
+        transform: scale(1.05) rotate(-7deg);
+    }
+
+    100% {
+        transform: scale(1.05) rotate(7deg);
+    }
+}
+
+/* 1. OJOS AL FRENTE (Evita que quede bizco en Hover y al Arrastrar) */
+#mascota-flotante:hover .pupila-mascota,
+#mascota-flotante.arrastrando .pupila-mascota {
+    left: 4.5px !important;
+    top: 6.5px !important;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+/* 3. MANTIENE LA SONRISA GRANDE AL ARRASTRAR */
+#mascota-flotante.arrastrando .boca-mascota {
+    transform: scale(1.3) !important;
+    border-bottom-width: 4px !important;
+}
+
+/* Ocultar elementos secundarios al agarrarlo */
+#mascota-flotante.arrastrando .mensaje-mascota,
+#mascota-flotante.arrastrando .boton-cerrar-mascota {
+    opacity: 0 !important;
+}
+
+/* Moviles y Accesibilidad */
+@media (max-width: 991px) {
+    #mascota-flotante {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pupila-mascota, #mascota-flotante, .mano-corazon, .boca-mascota, .mensaje-mascota, .boton-cerrar-mascota, .corazon-icon-boya {
+        transition: none !important;
+        transform: none !important;
+        animation: none !important;
+    }
+}

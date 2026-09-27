@@ -1,0 +1,429 @@
+@model RedAJP.Models.DashboardEventoViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Panel de Control";
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+    bool bPermisoRegistroGratuito = ViewBag.bPermisoRegistroGratuito;
+    bool bPermisoCobroEfectivo = ViewBag.bPermisoCobroEfectivo;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-eventos');
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid py-4 fade-in">
+
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+        <h2 class="display-6 fw-bold text-dark mb-0">@Model.Titulo</h2>
+
+        <span class="badge bg-light text-secondary border rounded-pill px-3 py-2">
+            <i class="fa-solid fa-hashtag me-1 opacity-50"></i>@Model.IdEvento
+        </span>
+    </div>
+
+    <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 mb-4 pb-3 border-bottom">
+
+        <div class="btn-group shadow-sm rounded-pill bg-white align-self-start">
+            <a href="@Url.Action("Index", "Eventos")" class="btn btn-white border-end px-3 py-2 text-secondary fw-bold" title="Ir al Calendario">
+                <i class="fa-solid fa-arrow-left"></i> <span class="ms-2">Eventos</span>
+            </a>
+            <a href="@Url.Action("Detalle", "Eventos", new { sid = Model.IdEventoEncriptado })" class="btn btn-white px-3 py-2 text-dark fw-bold" title="Ver como Usuario">
+                <i class="fa-solid fa-eye text-primary"></i> <span class="ms-2">Vista</span>
+            </a>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 justify-content-start justify-content-xl-end">
+            
+            <!-- 1. GESTIÓN E INSCRIPCIONES -->
+            <div class="dropdown flex-grow-1 flex-sm-grow-0">
+                <button class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm px-4 py-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa-solid fa-users-gear me-2"></i>Gestión e Inscripciones
+                </button>
+                <ul class="dropdown-menu bg-white border-0 shadow rounded-4">
+                    <li><a class="dropdown-item py-2 fw-bold text-dark" href="@Url.Action("Inscritos", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-users me-2 text-primary"></i>Lista de Inscritos</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("CargaExterna", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-file-import me-2 text-primary"></i>Registrar Inscripciones Externas</a></li>
+                    <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("RegistrosExternos", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-list-check me-2 text-info"></i>Ver Registros Externos</a></li>
+                    @if (bPermisoRegistroGratuito)
+                    {
+                        <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("InvitadosCortesia", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-gift text-warning me-2"></i>Invitados de Cortesía</a></li>
+                    }
+                </ul>
+            </div>
+
+            <!-- 2. FINANZAS Y REPORTES -->
+            <div class="dropdown flex-grow-1 flex-sm-grow-0">
+                <button class="btn btn-success w-100 rounded-pill fw-bold shadow-sm px-4 py-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa-solid fa-file-invoice-dollar me-2"></i>Finanzas y Reportes
+                </button>
+                <ul class="dropdown-menu bg-white border-0 shadow rounded-4">
+                    @if (bPermisoCobroEfectivo)
+                    {
+                        <li><a class="dropdown-item py-2 fw-bold text-dark" href="@Url.Action("CobroEfectivo", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-hand-holding-dollar me-2 text-warning"></i>Cobrar Efectivo</a></li>
+                    }
+                    <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("RitmoInscripciones", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-chart-line me-2 text-info"></i>Ritmo de Pagos</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("DescargarReporteEvento", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-file-excel me-2 text-success"></i>Reporte Excel Global</a></li>
+                    <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("DescargarComprobantesZip", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-file-zipper me-2 text-warning"></i>Descargar Comprobantes ZIP</a></li>
+                </ul>
+            </div>
+
+            <!-- 3. LOGÍSTICA Y RECEPCIÓN -->
+            <div class="dropdown flex-grow-1 flex-sm-grow-0">
+                <button class="btn btn-info text-white w-100 rounded-pill fw-bold shadow-sm px-4 py-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa-solid fa-clipboard-check me-2"></i>Logística y Recepción
+                </button>
+                <ul class="dropdown-menu bg-white border-0 shadow rounded-4">
+                    <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("EscanerQR", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-qrcode me-2 text-info"></i>Escáner QR (Asistencia)</a></li>
+                    <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("VerExtras", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-boxes-stacked me-2 text-primary"></i>Control de Extras Vendidos</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item py-2 text-dark" href="@Url.Action("DistribucionAlojamientos", "Eventos", new { sid = Model.IdEventoEncriptado })"><i class="fa-solid fa-hotel me-2 text-danger"></i>Distribución de Alojamientos</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden text-white" style="background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);">
+                <div class="card-body position-relative z-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h6 class="text-uppercase text-white-50 small fw-bold mb-1">Ingresos Reales</h6>
+                        <h2 class="display-6 fw-bold mb-3">@Model.DineroRecaudado.ToString("C0", cultura)</h2>
+                    </div>
+
+                    <div class="d-flex flex-column gap-1 small mt-auto">
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25 pb-1">
+                            <span class="text-white-50"><i class="fa-brands fa-stripe fa-lg me-1 text-info"></i> Tarjeta</span>
+                            <span class="fw-bold text-white">@(((decimal)ViewBag.DineroTarjeta).ToString("C0", cultura))</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25 pb-1">
+                            <span class="text-white-50"><i class="fa-solid fa-money-bill-transfer me-1 text-success"></i> Transferencia</span>
+                            <span class="fw-bold text-white">@(((decimal)ViewBag.DineroTransferencia).ToString("C0", cultura))</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center pt-1">
+                            <span class="text-white-50"><i class="fa-solid fa-clock-rotate-left me-1 text-warning"></i> Por Cobrar</span>
+                            <span class="fw-bold text-warning">@Model.DineroPendiente.ToString("C0", cultura)</span>
+                        </div>
+                    </div>
+
+                    <i class="fa-solid fa-sack-dollar position-absolute top-0 end-0 mt-3 me-3 opacity-10 fa-4x z-n1"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 rounded-4" style="border-left: 5px solid #3498db;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Inscritos Totales</h6>
+                    <div class="d-flex align-items-baseline">
+                        <h2 class="fw-bold text-dark mb-0 me-2">@Model.TotalInscritos</h2>
+                        @if (ViewBag.Cupo > 0)
+                        {
+                            <span class="badge bg-primary rounded-pill">@Model.PorcentajeOcupacion% Ocupado</span>
+                        }
+                    </div>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar" style="width: @Model.PorcentajeOcupacion%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 rounded-4" style="border-left: 5px solid #2ecc71;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Tasa de Pago</h6>
+                    @{
+                        double tasa = Model.TotalInscritos > 0 ? Math.Round(((double)Model.TotalPagados / Model.TotalInscritos) * 100) : 0;
+                    }
+                    <h2 class="fw-bold text-success mb-0">@tasa%</h2>
+                    <small class="text-muted">@Model.TotalPagados pagados de @Model.TotalInscritos</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 rounded-4" style="border-left: 5px solid #9b59b6;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Valor Total Evento</h6>
+                    <h2 class="fw-bold text-dark mb-0">@Model.ProyeccionTotal.ToString("C0", cultura)</h2>
+                    @if (Model.TotalDescuentosOtorgados > 0)
+                    {
+                        <div class="mt-2 small text-danger fw-bold">
+                            <i class="fa-solid fa-tag me-1"></i> -@Model.TotalDescuentosOtorgados.ToString("C0", cultura) en Descuentos
+                        </div>
+                    }
+                    else
+                    {
+                        <small class="text-muted">Si todos pagan</small>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="fw-bold m-0"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Ritmo de Inscripciones</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="chartLinea"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="fw-bold m-0"><i class="fa-solid fa-venus-mars me-2 text-info"></i>Distribución</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 200px; display:flex; justify-content:center;">
+                        <canvas id="chartGenero"></canvas>
+                    </div>
+                    <hr />
+                    <div class="small text-muted">
+                        @foreach (var g in Model.Generos)
+                        {
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>@g.Etiqueta</span>
+                                <span class="fw-bold">@g.Valor</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="fw-bold m-0"><i class="fa-solid fa-bed me-2 text-success"></i>Preferencia de Modalidades / Alojamiento</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="chartSubtipos"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (ViewBag.TotalGastos != null && ViewBag.TotalGastos > 0)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #e74c3c;">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h6 class="fw-bold m-0 text-danger"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Gastos Registrados (Caja)</h6>
+                        <h4 class="fw-bold text-danger m-0">-@(((decimal)ViewBag.TotalGastos).ToString("C2", cultura))</h4>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0 text-sm">
+                                <thead class="bg-light sticky-top">
+                                    <tr>
+                                        <th class="ps-4">Fecha</th>
+                                        <th>Concepto</th>
+                                        <th>Registrado Por</th>
+                                        <th class="text-end pe-4">Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var gasto in (IEnumerable<dynamic>)ViewBag.DetalleGastos)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 text-muted small">@gasto.Fecha.ToString("dd MMM yyyy")</td>
+                                            <td class="fw-bold text-dark">@gasto.Concepto</td>
+                                            <td class="text-muted small"><i class="fa-solid fa-user-circle me-1"></i>@gasto.Usuario</td>
+                                            <td class="text-end pe-4 fw-bold text-danger">-@gasto.Monto.ToString("C2", cultura)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer border-0 py-3" style="background-color: #f8fcfd;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-muted text-uppercase small">
+                                <i class="fa-solid fa-scale-balanced me-1"></i> Utilidad Neta (Ingresos - Gastos):
+                            </span>
+                            <h4 class="fw-bold m-0 @((decimal)ViewBag.UtilidadNeta >= 0 ? "text-success" : "text-danger")">
+                                @(((decimal)ViewBag.UtilidadNeta).ToString("C2", cultura))
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold m-0">Últimos 10 Inscritos</h6>
+                    <a href="@Url.Action("DescargarReporteEvento", new { sid = Model.IdEventoEncriptado })" class="btn btn-sm btn-outline-primary rounded-pill">Ver Todos</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">Nombre</th>
+                                <th>Fecha</th>
+                                <th class="text-end pe-3">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.UltimosInscritos)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-bold text-dark">@item.Nombre</td>
+                                    <td class="text-muted small">@item.FechaRegistro.ToString("dd MMM HH:mm")</td>
+                                    <td class="text-end pe-3">
+                                        @if (item.EstadoPago == "Pagado")
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Pagado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Pendiente</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="fw-bold m-0"><i class="fa-solid fa-list-check me-2 text-warning"></i>Respuestas Frecuentes</h6>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 400px;">
+                    @if (Model.PreguntasFrecuentes != null && Model.PreguntasFrecuentes.Any())
+                    {
+                        <div class="accordion accordion-flush" id="acordionPreguntas">
+                            @for (int i = 0; i < Model.PreguntasFrecuentes.Count; i++)
+                            {
+                                var preg = Model.PreguntasFrecuentes[i];
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button @(i > 0 ? "collapsed" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#flush-@i">
+                                            @preg.Pregunta
+                                        </button>
+                                    </h2>
+                                    <div id="flush-@i" class="accordion-collapse collapse @(i == 0 ? "show" : "")" data-bs-parent="#acordionPreguntas">
+                                        <div class="accordion-body bg-light">
+                                            <ul class="list-group list-group-flush rounded">
+                                                @foreach (var resp in preg.Respuestas)
+                                                {
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                                        <span>@resp.Etiqueta</span>
+                                                        <span class="badge bg-primary rounded-pill">@resp.Valor</span>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-5">No hay preguntas configuradas o respuestas suficientes.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    const labelsLinea = @Html.Raw(Json.Serialize(Model.CronologiaRegistros.Select(x => x.Etiqueta)));
+    const dataLinea = @Html.Raw(Json.Serialize(Model.CronologiaRegistros.Select(x => x.Valor)));
+
+    new Chart(document.getElementById('chartLinea'), {
+    type: 'line',
+    data: {
+    labels: labelsLinea,
+    datasets: [{
+    label: 'Nuevos Inscritos',
+    data: dataLinea,
+    borderColor: '#3498db',
+    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+    fill: true,
+    tension: 0.4
+    }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display:false} } }
+    });
+
+    const labelsGen = @Html.Raw(Json.Serialize(Model.Generos.Select(x => x.Etiqueta)));
+    const dataGen = @Html.Raw(Json.Serialize(Model.Generos.Select(x => x.Valor)));
+
+    new Chart(document.getElementById('chartGenero'), {
+    type: 'doughnut',
+    data: {
+    labels: labelsGen,
+    datasets: [{
+    data: dataGen,
+    backgroundColor: ['#3498db', '#e74c3c', '#9b59b6', '#f1c40f'],
+    borderWidth: 0
+    }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: {position:'right'} } }
+    });
+
+    const labelsSub = @Html.Raw(Json.Serialize(Model.SubtiposStats.Select(x => x.Etiqueta)));
+    const dataSub = @Html.Raw(Json.Serialize(Model.SubtiposStats.Select(x => x.Valor)));
+
+    new Chart(document.getElementById('chartSubtipos'), {
+    type: 'bar',
+    data: {
+    labels: labelsSub,
+    datasets: [{
+    label: 'Total Inscritos',
+    data: dataSub,
+    backgroundColor: 'rgba(46, 204, 113, 0.8)',
+    borderColor: '#27ae60',
+    borderWidth: 1,
+    borderRadius: 4
+    }]
+    },
+    options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true } }
+    }
+    });
+    });
+</script>
+
+<style>
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+    }
+</style>

@@ -1,0 +1,591 @@
+﻿@model List<dynamic>
+@{
+    ViewData["Title"] = "Autorización de Iglesias";
+    Layout = "~/Views/Shared/Principal.cshtml";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-vinculacion');
+    });
+</script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container--default .select2-selection--single {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        height: 58px;
+        padding-top: 15px;
+    }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 40px;
+            padding-left: 12px;
+            color: #212529;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 56px;
+        }
+</style>
+
+<div class="fade-in py-4 px-2">
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+            <h4 class="fw-bold text-uppercase ls-1 mb-0 text-center text-md-start" style="color: #00334e;">
+                <i class="fa-solid fa-clipboard-check me-2" style="color: #00838f;"></i> Solicitudes Pendientes
+            </h4>
+
+            <a href="@Url.Action("Index", "Reuniones")" target="_blank" class="btn btn-nautico rounded-pill fw-bold shadow-sm px-4 py-2" style="width: auto; min-width: 200px;">
+                <i class="fa-solid fa-map-location-dot me-2"></i> Directorio de Iglesias
+            </a>
+        </div>
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="alert alert-success shadow-sm rounded-4 text-center p-5">
+                <i class="fa-solid fa-check-double fa-3x text-success mb-3"></i>
+                <h5 class="fw-bold">¡Todo al día!</h5>
+                <p class="text-muted mb-0">No hay solicitudes de vinculación pendientes por revisar.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var sol in Model)
+                {
+                    bool esExistente = sol.IdIglesiaExistente != null;
+                    bool esRelacionada = sol.IdRelacionada != null;
+                    bool esNueva = !esExistente && !esRelacionada;
+
+                    string bordeColor = esNueva ? "border-info" : (esRelacionada ? "border-warning" : "border-primary");
+                    string badgeClase = esNueva ? "bg-info text-dark" : (esRelacionada ? "bg-warning text-dark" : "bg-primary");
+                    string textoBadge = esNueva ? "Registro Nuevo" : (esRelacionada ? "Vinculación a Pendiente" : "Vinculación a Existente");
+
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden border-top @bordeColor border-4">
+
+                            <div class="card-header bg-white border-0 pt-3 pb-0">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge @badgeClase">@textoBadge</span>
+                                    <small class="text-muted">@sol.Fecha.ToString("dd MMM yyyy")</small>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-user me-2 text-muted"></i>@sol.NombreUsuario</h6>
+                                <small class="text-muted">@sol.Email</small>
+                            </div>
+
+                            <div class="card-body bg-light-subtle mt-3">
+                                @if (esExistente)
+                                {
+                                    <p class="small text-muted mb-1">Solicita unirse a:</p>
+                                    <h6 class="fw-bold text-primary mb-1">@sol.NombreExistente</h6>
+                                    <small class="text-muted"><i class="fa-solid fa-location-dot me-1"></i> @sol.MunicipioExistente</small>
+                                }
+                                else if (esRelacionada)
+                                {
+                                    <p class="small text-muted mb-1">Se unió a la solicitud en curso:</p>
+                                    <h6 class="fw-bold text-warning mb-1" style="color: #d35400 !important;">@sol.NombreRelacionada</h6>
+                                    <small class="text-muted"><i class="fa-solid fa-location-dot me-1"></i> @sol.MunicipioRelacionada</small>
+                                }
+                                else
+                                {
+                                    <p class="small text-muted mb-1">Datos propuestos:</p>
+                                    <h6 class="fw-bold text-info mb-1" style="color: #00838f !important;">@sol.NombreNueva</h6>
+                                    <ul class="list-unstyled small text-muted mb-2">
+                                        @if (!string.IsNullOrEmpty(sol.Localidad))
+                                        {
+                                            <li><strong>Loc:</strong> @sol.Localidad</li>
+                                        }
+                                        @if (!string.IsNullOrEmpty(sol.Colonia))
+                                        {
+                                            <li><strong>Col:</strong> @sol.Colonia</li>
+                                        }
+                                        @if (!string.IsNullOrEmpty(sol.Calle))
+                                        {
+                                            <li><strong>Dir:</strong> @sol.Calle @sol.Numero</li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+
+                            <div class="card-footer bg-white border-0 p-3 d-flex flex-column gap-2">
+                                @if (esRelacionada)
+                                {
+                                    <div class="alert bg-warning bg-opacity-10 border border-warning border-opacity-50 text-center rounded-3 p-2 mb-0">
+                                        <i class="fa-solid fa-hourglass-half text-warning mb-1"></i>
+                                        <small class="d-block fw-bold text-dark">Pendiente de Aprobación</small>
+                                        <small class="text-muted" style="font-size: 0.75rem;">Se aprobará automáticamente cuando valides la iglesia principal.</small>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger w-100 rounded-pill fw-bold mt-2" onclick="abrirModalRechazo(@sol.Id)">
+                                        <i class="fa-solid fa-xmark me-1"></i> Rechazar
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-outline-danger w-100 rounded-pill fw-bold" onclick="abrirModalRechazo(@sol.Id)">
+                                        <i class="fa-solid fa-xmark me-1"></i> Rechazar
+                                    </button>
+
+                                    @if (esExistente)
+                                    {
+                                        var datosUsuario = System.Text.Json.JsonSerializer.Serialize(new { Nombre = sol.NombreUsuario, Email = sol.Email });
+                                        <button type="button" class="btn btn-nautico w-100 rounded-pill fw-bold" onclick="abrirModalExistente(@sol.Id, @sol.IdIglesiaExistente, @datosUsuario)">
+                                            <i class="fa-solid fa-check me-1"></i> Validar y Aprobar
+                                        </button>
+                                    }
+                                    else if (esNueva)
+                                    {
+                                        var datosJson = System.Text.Json.JsonSerializer.Serialize(new
+                                        {
+                                            sol.NombreNueva,
+                                            sol.MunicipioId,
+                                            sol.Localidad,
+                                            sol.Colonia,
+                                            sol.Calle,
+                                            sol.Numero,
+                                            sol.Referencia,
+                                            sol.Horarios,
+                                            sol.MapaUrl,
+                                            NombreUsuario = sol.NombreUsuario,
+                                            Email = sol.Email
+                                        });
+
+                                        // Agregamos esta variable para pasar los datos al modal de Existente
+                                        var datosUsuario = System.Text.Json.JsonSerializer.Serialize(new { Nombre = sol.NombreUsuario, Email = sol.Email });
+
+                                        <button type="button" class="btn btn-warning text-dark w-100 rounded-pill fw-bold" onclick="abrirModalExistente(@sol.Id, '', @datosUsuario)">
+                                            <i class="fa-solid fa-link me-1"></i> Ya existe (Vincular)
+                                        </button>
+
+                                        <button type="button" class="btn btn-info text-white w-100 rounded-pill fw-bold" onclick="abrirModalNueva(@sol.Id, @datosJson)">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i> Ver Datos Propuestos
+                                        </button>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="modalRechazo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <form action="@Url.Action("ProcesarSolicitud", "Vinculacion")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idSolicitud" id="rch_idSolicitud" />
+                <input type="hidden" name="accion" value="Rechazar" />
+
+                <div class="modal-header bg-danger text-white border-0">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-ban me-2"></i> Rechazar Solicitud</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted">Por favor, indica el motivo del rechazo.</p>
+                    <div class="form-floating">
+                        <textarea class="form-control rounded-3" name="motivoRechazo" style="height: 100px" placeholder="Motivo..." required></textarea>
+                        <label>Motivo de rechazo <span class="text-danger">*</span></label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4">Confirmar Rechazo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalExistente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <form action="@Url.Action("ProcesarSolicitud", "Vinculacion")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idSolicitud" id="ext_idSolicitud" />
+                <input type="hidden" name="accion" value="AprobarExistente" />
+
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-check-circle me-2"></i> Validar Iglesia Existente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert bg-light border border-primary border-opacity-25 rounded-3 mb-4">
+                        <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-user-check me-2"></i>Datos del Solicitante</h6>
+                        <div class="small text-dark">
+                            <div><strong>Nombre:</strong> <span id="lblExtNombre"></span></div>
+                            <div><strong>Correo:</strong> <span id="lblExtCorreo"></span></div>
+                        </div>
+                    </div>
+
+                    <p class="text-muted">Si el usuario se equivocó, puedes cambiar la iglesia antes de aprobar.</p>
+                    <div class="form-group">
+                        <label class="form-label small fw-bold text-secondary">Iglesia Seleccionada <span class="text-danger">*</span></label>
+                        <select id="selectIglesiaAdmin" name="iglesia_existente_id" class="form-select w-100" required>
+                            <option value="">-- Selecciona Iglesia --</option>
+                            @if (ViewBag.Iglesias != null)
+                            {
+                                foreach (var i in ViewBag.Iglesias)
+                                {
+                                    <option value="@i.Id">@i.Nombre</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-nautico rounded-pill fw-bold px-4">Aprobar Vinculación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNueva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <form id="formAprobarNueva" action="@Url.Action("ProcesarSolicitud", "Vinculacion")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idSolicitud" id="nv_idSolicitud" />
+                <input type="hidden" name="accion" value="AprobarNueva" />
+
+                <div class="modal-header bg-info text-white border-0" style="background-color: #00838f !important;">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Revisar y Crear Iglesia</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+
+                    <div class="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center shadow-sm rounded-3">
+                        <span class="small fw-bold" style="color: #00838f;"><i class="fa-solid fa-circle-info me-1"></i> ¿Dudas de si ya existe?</span>
+                        <a href="@Url.Action("Index", "Reuniones")" target="_blank" class="btn btn-sm btn-light fw-bold rounded-pill text-info border-info">
+                            Consultar Directorio
+                        </a>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                        <span class="small text-muted"><i class="fa-solid fa-user me-1"></i> Solicitado por: <strong id="lblNvNombre"></strong></span>
+                        <span class="small text-muted" style="font-size: 0.8rem;"><i class="fa-solid fa-envelope me-1"></i> <span id="lblNvCorreo"></span></span>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" id="nv_nombre" name="Nombre" class="form-control rounded-3" placeholder="Nombre" required />
+                                <label>Nombre de la Congregación <span class="text-danger">*</span></label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="form-floating">
+                                <select id="nv_municipio" name="MunicipioId" class="form-select w-100 rounded-3" required>
+                                    <option value="">-- Selecciona --</option>
+                                    @if (ViewBag.Municipios != null)
+                                    {
+                                        foreach (var m in ViewBag.Municipios)
+                                        {
+                                            <!option value="@m.Id">@m.Nombre</!option>
+                                        }
+                                    }
+                                </select>
+                                <label>Municipio <span class="text-danger">*</span></label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" id="nv_localidad" name="Localidad" class="form-control rounded-3" placeholder="Loc" required/>
+                                <label>Localidad</label>
+                            </div>
+                        </div>
+                        <div class="col-8">
+                            <div class="form-floating">
+                                <input type="text" id="nv_calle" name="Calle" class="form-control rounded-3" placeholder="Calle" required/>
+                                <label>Calle</label>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-floating">
+                                <input type="text" id="nv_numero" name="Numero" class="form-control rounded-3" placeholder="#"/>
+                                <label>Núm.</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" id="nv_colonia" name="Colonia" class="form-control rounded-3" placeholder="Col"/>
+                                <label>Colonia</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea id="nv_referencia" name="Referencia" class="form-control rounded-3" style="height: 70px" placeholder="Ref"></textarea>
+                                <label>Referencia</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold text-secondary mb-1">Horarios de Reunión</label>
+                            <div class="bg-white p-2 rounded-3 border" style="border-color: #dee2e6;">
+                                <input type="hidden" name="Horarios" id="nv_horarios_hidden" />
+                                <div id="contenedor-horarios-admin" class="d-flex flex-column gap-2"></div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2 rounded-pill fw-bold" onclick="agregarHorarioAdmin()">
+                                    <i class="fa-solid fa-plus me-1"></i> Añadir Horario
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-map-location-dot"></i></span>
+                                <div class="form-floating flex-grow-1">
+                                    <input type="text" id="nv_mapa" name="MapaUrl" class="form-control rounded-end-3" placeholder="Maps" required />
+                                    <label>Link Maps <span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 border rounded-3 bg-white shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="text-primary fw-bold small mb-0 text-uppercase ls-1">
+                                <i class="fa-solid fa-crosshairs me-1"></i>Coordenadas Geográficas
+                            </label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="chkManual">
+                                <label class="form-check-label small fw-bold text-muted" for="chkManual">Modo Manual</label>
+                            </div>
+                        </div>
+
+                        <div id="containerPaste" class="form-floating mb-2">
+                            <input type="text" id="inputPasteCoords" class="form-control border-primary shadow-sm" placeholder="Pegar aquí" />
+                            <label class="text-primary"><i class="fa-regular fa-paste me-1"></i>Pegar coordenadas de Google Maps</label>
+                            <small class="text-muted d-block mt-1 ms-1" style="font-size: 0.75rem;">Haz clic derecho en Maps y pega aquí los números.</small>
+                        </div>
+
+                        <div class="row g-2 mt-1">
+                            <div class="col-6">
+                                <div class="form-floating">
+                                    <input type="text" id="txtLatitud" name="Latitud" class="form-control bg-light rounded-3" placeholder="Lat" readonly />
+                                    <label>Latitud</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-floating">
+                                    <input type="text" id="txtLongitud" name="Longitud" class="form-control bg-light rounded-3" placeholder="Lon" readonly />
+                                    <label>Longitud</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white rounded-pill fw-bold px-4">Guardar y Aprobar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<template id="template-horario">
+    <div class="card p-2 dynamic-row horario-row shadow-sm border-0 bg-white">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select class="form-select form-select-sm horario-dia">
+                    <option value="Domingo">Domingo</option>
+                    <option value="Lunes">Lunes</option>
+                    <option value="Martes">Martes</option>
+                    <option value="Miércoles">Miércoles</option>
+                    <option value="Jueves">Jueves</option>
+                    <option value="Viernes">Viernes</option>
+                    <option value="Sábado">Sábado</option>
+                    <option value="Diario">Diario</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control form-control-sm horario-hora" placeholder="Ej. 10:00 AM" />
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control form-control-sm horario-act" placeholder="Ej. Culto" />
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-sm btn-outline-danger w-100 p-1" onclick="eliminarHorario(this)">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Inicializar Select2 en los modales
+            $('#selectIglesiaAdmin').select2({
+                dropdownParent: $('#modalExistente'),
+                width: '100%'
+            });
+            $('#nv_municipio').select2({
+                dropdownParent: $('#modalNueva'),
+                width: '100%'
+            });
+
+            // ==========================================
+            // LOGICA DEL MAPA (Copiada del Formulario original)
+            // ==========================================
+            const chkManual = document.getElementById('chkManual');
+            const containerPaste = document.getElementById('containerPaste');
+            const pasteInput = document.getElementById('inputPasteCoords');
+            const latInput = document.getElementById('txtLatitud');
+            const lonInput = document.getElementById('txtLongitud');
+
+            chkManual.addEventListener('change', function() {
+                if (this.checked) {
+                    latInput.readOnly = false; lonInput.readOnly = false;
+                    latInput.classList.remove('bg-light'); lonInput.classList.remove('bg-light');
+                    containerPaste.style.opacity = "0.5"; pasteInput.disabled = true; pasteInput.value = "";
+                } else {
+                    latInput.readOnly = true; lonInput.readOnly = true;
+                    latInput.classList.add('bg-light'); lonInput.classList.add('bg-light');
+                    containerPaste.style.opacity = "1"; pasteInput.disabled = false;
+                }
+            });
+
+            pasteInput.addEventListener('input', function(e) {
+                const texto = e.target.value.trim();
+                if (texto === "") { latInput.value = ""; lonInput.value = ""; return; }
+
+                const regexDecimal = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/;
+                const matchDecimal = texto.match(regexDecimal);
+                if (matchDecimal) {
+                    latInput.value = matchDecimal[1]; lonInput.value = matchDecimal[2];
+                    pasteInput.classList.add('is-valid'); return;
+                }
+
+                const regexDMS = /(\d+)°(\d+)'(\d+\.?\d*)"([NSEW])\s+(\d+)°(\d+)'(\d+\.?\d*)"([NSEW])/i;
+                const matchDMS = texto.match(regexDMS);
+                if (matchDMS) {
+                    const convertirADecimal = (grados, minutos, segundos, direccion) => {
+                        let decimal = parseFloat(grados) + parseFloat(minutos)/60 + parseFloat(segundos)/3600;
+                        if (direccion === 'S' || direccion === 'W') decimal = decimal * -1;
+                        return decimal.toFixed(6);
+                    };
+                    latInput.value = convertirADecimal(matchDMS[1], matchDMS[2], matchDMS[3], matchDMS[4].toUpperCase());
+                    lonInput.value = convertirADecimal(matchDMS[5], matchDMS[6], matchDMS[7], matchDMS[8].toUpperCase());
+                    pasteInput.classList.add('is-valid');
+                } else {
+                    pasteInput.classList.remove('is-valid');
+                }
+            });
+        });
+
+        // ==========================================
+        // FUNCIONES PARA ABRIR LOS MODALES
+        // ==========================================
+        function abrirModalRechazo(idSolicitud) {
+            $('#rch_idSolicitud').val(idSolicitud);
+            new bootstrap.Modal(document.getElementById('modalRechazo')).show();
+        }
+
+        function abrirModalExistente(idSolicitud, idIglesia, datosUsuario) {
+            // 1. Asignar IDs al formulario
+            $('#ext_idSolicitud').val(idSolicitud);
+            $('#selectIglesiaAdmin').val(idIglesia).trigger('change');
+
+            // 2. Inyectar los datos del usuario en el HTML del modal
+            $('#lblExtNombre').text(datosUsuario.Nombre);
+            $('#lblExtCorreo').text(datosUsuario.Email);
+
+            // 3. Mostrar el modal
+            new bootstrap.Modal(document.getElementById('modalExistente')).show();
+        }
+
+        // Funciones auxiliares
+        function agregarHorarioAdmin(dia = 'Domingo', hora = '', act = '') {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = document.getElementById('template-horario').innerHTML;
+            const row = tempDiv.firstElementChild;
+
+            row.querySelector('.horario-dia').value = dia;
+            row.querySelector('.horario-hora').value = hora;
+            row.querySelector('.horario-act').value = act;
+
+            document.getElementById('contenedor-horarios-admin').appendChild(row);
+        }
+
+        function eliminarHorario(btn) {
+            $(btn).closest('.horario-row').remove();
+        }
+
+        // Interceptar el envío del formulario para compilar los horarios
+        $('#formAprobarNueva').on('submit', function(e) {
+            let horariosFinal = [];
+            $('#contenedor-horarios-admin .horario-row').each(function() {
+                let d = $(this).find('.horario-dia').val().trim();
+                let h = $(this).find('.horario-hora').val().trim();
+                let a = $(this).find('.horario-act').val().trim();
+
+                if(h !== '' && a !== '') { 
+                    h = h.replace(/\|/g, '-');
+                    a = a.replace(/\|/g, '-');
+                    horariosFinal.push(`${d} | ${h} | ${a}`);
+                }
+            });
+
+            // Si el admin borró todo, no lo dejamos enviar
+            if (horariosFinal.length === 0) {
+                e.preventDefault();
+                alert('Debes incluir al menos un horario válido (hora y actividad).');
+                return false;
+            }
+
+            $('#nv_horarios_hidden').val(horariosFinal.join('\n'));
+        });
+
+        function abrirModalNueva(idSolicitud, datos) {
+            $('#nv_idSolicitud').val(idSolicitud);
+
+            // 1. Inyectar datos sutiles del usuario
+            $('#lblNvNombre').text(datos.NombreUsuario);
+            $('#lblNvCorreo').text(datos.Email);
+
+            // 2. Llenar datos básicos
+            $('#nv_nombre').val(datos.NombreNueva);
+            $('#nv_municipio').val(datos.MunicipioId).trigger('change');
+            $('#nv_localidad').val(datos.Localidad);
+            $('#nv_colonia').val(datos.Colonia);
+            $('#nv_calle').val(datos.Calle);
+            $('#nv_numero').val(datos.Numero);
+            $('#nv_referencia').val(datos.Referencia);
+            $('#nv_mapa').val(datos.MapaUrl);
+
+            // 3. Llenar Horarios Dinámicos
+            $('#contenedor-horarios-admin').empty();
+            if (datos.Horarios) {
+                const lineas = datos.Horarios.split(/\r?\n/);
+                let encontrados = 0;
+                lineas.forEach(linea => {
+                    if (!linea.trim()) return;
+                    const partes = linea.split(' | ');
+                    if (partes.length === 3) {
+                        agregarHorarioAdmin(partes[0].trim(), partes[1].trim(), partes[2].trim());
+                        encontrados++;
+                    } else {
+                        agregarHorarioAdmin('Domingo', '', linea.trim());
+                        encontrados++;
+                    }
+                });
+                if(encontrados === 0) agregarHorarioAdmin();
+            } else {
+                agregarHorarioAdmin();
+            }
+
+            // 4. Limpiar coordenadas anteriores por seguridad
+            $('#txtLatitud').val('');
+            $('#txtLongitud').val('');
+            $('#inputPasteCoords').val('').removeClass('is-valid');
+
+            // 5. Mostrar el modal
+            new bootstrap.Modal(document.getElementById('modalNueva')).show();
+        }
+    </script>
+}

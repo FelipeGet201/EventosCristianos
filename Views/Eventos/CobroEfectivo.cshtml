@@ -1,0 +1,303 @@
+﻿@model IEnumerable<dynamic>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Cobro en Efectivo";
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+    bool bPermisoCobroEfectivo = ViewBag.bPermisoCobroEfectivo ?? false;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-eventos');
+    });
+</script>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 fw-bold text-dark mb-0">Cobro en Efectivo / Taquilla</h2>
+            <p class="text-muted mb-0">Selecciona a los usuarios que pagarán su deuda total en este momento.</p>
+        </div>
+        <a href="@Url.Action("PanelControl", "Eventos", new { sid = ViewBag.IdEventoEncriptado })" class="btn btn-outline-secondary rounded-pill fw-bold px-4">
+            <i class="fa-solid fa-arrow-left me-2"></i>Regresar
+        </a>
+    </div>
+
+    <div class="row mb-4 fade-in">
+        <div class="col-lg-8">
+            <div class="row g-3">
+                <div class="col-md-7">
+                    <div class="input-group shadow-sm rounded-pill bg-white">
+                        <span class="input-group-text bg-transparent border-0 pe-1 text-muted">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="inputBusqueda" class="form-control border-0 rounded-pill shadow-none" placeholder="Buscar por nombre o inscriptor..." onkeyup="ejecutarFiltros()">
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="input-group shadow-sm rounded-pill bg-white">
+                        <span class="input-group-text bg-transparent border-0 pe-1 text-muted">
+                            <i class="fa-solid fa-filter"></i>
+                        </span>
+                        <select id="selectModalidad" class="form-select border-0 rounded-pill shadow-none" onchange="ejecutarFiltros()">
+                            <option value="TODAS">Todas las modalidades</option>
+                            @if(Model.Any())
+                            {
+                                var modalidadesUnicas = Model.Select(m => (string)m.Modalidad).Distinct().OrderBy(m => m);
+                                foreach (var mod in modalidadesUnicas)
+                                {
+                                    <option value="@mod">@mod</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold m-0"><i class="fa-solid fa-users me-2 text-warning"></i>Asistentes con Adeudos</h6>
+                    <div>
+                        <span class="badge bg-primary rounded-pill" id="lblContadorVisible">@Model.Count() encontrados</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <form id="formCobro" method="post" action="@Url.Action("ProcesarCobroEfectivo", "Eventos")">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="sid" value="@ViewBag.IdEventoEncriptado" />
+                        
+                        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0" id="tablaMorosos">
+                                <thead class="bg-light sticky-top">
+                                    <tr>
+                                        <th class="ps-4" style="width: 50px;">
+                                            <input class="form-check-input shadow-sm" type="checkbox" id="checkAll" onchange="toggleAll(this)">
+                                        </th>
+                                        <th>Nombre del Asistente</th>
+                                        <th>Modalidad</th>
+                                        <th>Estado Actual</th>
+                                        <th class="text-end pe-4">Deuda a Liquidar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if(Model.Any())
+                                    {
+                                        foreach (var asis in Model)
+                                        {
+                                            <tr class="fila-asistente" style="transition: background-color 0.3s ease;">
+                                                <td class="ps-4">
+                                                    <input class="form-check-input check-pago shadow-sm" type="checkbox" name="idsAsistentes" value="@asis.IdAsistente" data-monto="@asis.DeudaRestante" onchange="gestionarSeleccion(this)">
+                                                </td>
+                                                <td class="fw-bold text-dark td-nombre">
+                                                    @asis.Nombre
+                                                    <br />
+                                                    <small class="text-muted fw-normal"><i class="fa-solid fa-user-tie me-1"></i>Inscrito por: @asis.NombreInscriptor</small>
+                                                </td>
+                                                <td class="td-modalidad"><span class="badge bg-secondary rounded-pill">@asis.Modalidad</span></td>
+                                                <td>
+                                                    @if (asis.PagosPrevios > 0)
+                                                    {
+                                                        <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Abono Previo</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Lugar No Asegurado</span>
+                                                    }
+                                                </td>
+                                                <td class="text-end pe-4 fw-bold text-danger">@(((decimal)asis.DeudaRestante).ToString("C2", cultura))</td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr id="filaVaciaBd">
+                                            <td colspan="5" class="text-center py-5 text-muted">
+                                                <i class="fa-solid fa-check-circle fa-3x text-success opacity-50 mb-3 d-block"></i>
+                                                No hay asistentes con deudas en este evento.
+                                            </td>
+                                        </tr>
+                                    }
+                                    
+                                    <tr id="filaSinResultados" style="display: none;">
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="fa-solid fa-folder-open fa-3x text-secondary opacity-50 mb-3 d-block"></i>
+                                            No se encontraron asistentes que coincidan con la búsqueda.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card border-0 shadow-sm rounded-4 sticky-lg-top" style="top: 20px; border-left: 5px solid #f1c40f;">
+                <div class="card-body p-4 text-center">
+                    <i class="fa-solid fa-sack-dollar fa-3x text-warning mb-3"></i>
+                    <h5 class="fw-bold text-dark">Total a Recibir en Efectivo</h5>
+                    <h1 class="display-5 fw-bold text-success my-3" id="lblTotalCobro">$0.00</h1>
+                    <p class="text-muted small mb-4">El monto será ingresado automáticamente a la Caja General bajo tu nombre y las cuentas seleccionadas quedarán liquidadas ($0.00).</p>
+                    
+                    <button type="button" id="btnProcesar" class="btn btn-warning w-100 rounded-pill fw-bold shadow-sm py-3 text-dark" disabled onclick="confirmarCobro()">
+                        <i class="fa-solid fa-check-double me-2"></i> Confirmar y Recibir Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const formatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+
+    // --- NUEVO: GESTIÓN INDIVIDUAL (Mover arriba y cambiar color) ---
+    function gestionarSeleccion(checkbox) {
+        let fila = checkbox.closest('tr');
+        if (checkbox.checked) {
+            fila.classList.add('table-warning'); // Destaca la fila visualmente
+        } else {
+            fila.classList.remove('table-warning');
+        }
+        recalcularTotal();
+        ordenarFilas(); // Mueve los seleccionados a la cima
+        ejecutarFiltros(); // Reevalúa por si hay filtros activos
+    }
+
+    // --- NUEVO: FUNCIÓN PARA MOVER SELECCIONADOS A LA CIMA ---
+    function ordenarFilas() {
+        let tbody = document.querySelector('#tablaMorosos tbody');
+        let filas = Array.from(tbody.querySelectorAll('.fila-asistente'));
+        
+        // Ordenamiento: Los checked van arriba (return -1), los unchecked abajo
+        filas.sort((a, b) => {
+            let aChecked = a.querySelector('.check-pago').checked;
+            let bChecked = b.querySelector('.check-pago').checked;
+            if (aChecked && !bChecked) return -1;
+            if (!aChecked && bChecked) return 1;
+            return 0; // Mantener orden original entre los de la misma categoría
+        });
+
+        // Reinsertar las filas en el DOM en el nuevo orden
+        filas.forEach(f => tbody.appendChild(f));
+        
+        // Asegurarse de que los mensajes de "vacío" o "sin resultados" queden hasta el final
+        let filaVaciaBd = document.getElementById('filaVaciaBd');
+        if (filaVaciaBd) tbody.appendChild(filaVaciaBd);
+
+        let filaSinResultados = document.getElementById('filaSinResultados');
+        if (filaSinResultados) tbody.appendChild(filaSinResultados);
+    }
+
+    // --- FUNCIONES DE SUMA Y CHECKBOXES MASIVO ---
+    function toggleAll(source) {
+        let filas = document.querySelectorAll('.fila-asistente');
+        filas.forEach(fila => {
+            // Solo afectar a las filas que el cajero está viendo actualmente en pantalla
+            if(fila.style.display !== 'none') {
+                let cb = fila.querySelector('.check-pago');
+                if(cb) {
+                    cb.checked = source.checked;
+                    if (cb.checked) fila.classList.add('table-warning');
+                    else fila.classList.remove('table-warning');
+                }
+            }
+        });
+        recalcularTotal();
+        ordenarFilas();
+    }
+
+    function recalcularTotal() {
+        let checkboxes = document.querySelectorAll('.check-pago:checked');
+        let total = 0;
+        
+        checkboxes.forEach(cb => {
+            total += parseFloat(cb.getAttribute('data-monto'));
+        });
+
+        document.getElementById('lblTotalCobro').innerText = formatter.format(total);
+        
+        let btn = document.getElementById('btnProcesar');
+        btn.disabled = (total <= 0);
+    }
+
+    // --- FUNCIONES DE BÚSQUEDA Y FILTRO ---
+    function ejecutarFiltros() {
+        let textoBusqueda = document.getElementById('inputBusqueda').value.toLowerCase();
+        let modalidadSeleccionada = document.getElementById('selectModalidad').value;
+        let filas = document.querySelectorAll('.fila-asistente');
+        let contadorVisibles = 0;
+
+        filas.forEach(fila => {
+            let cb = fila.querySelector('.check-pago');
+            let isChecked = cb && cb.checked;
+
+            let nombreCompleto = fila.querySelector('.td-nombre').innerText.toLowerCase();
+            let modalidad = fila.querySelector('.td-modalidad').innerText;
+
+            let cumpleTexto = textoBusqueda === "" || nombreCompleto.includes(textoBusqueda);
+            let cumpleModalidad = modalidadSeleccionada === "TODAS" || modalidad.trim() === modalidadSeleccionada.trim();
+
+            // REGLA CLAVE: Si está seleccionado (isChecked), NUNCA se oculta.
+            if (isChecked || (cumpleTexto && cumpleModalidad)) {
+                fila.style.display = ""; 
+                contadorVisibles++;
+            } else {
+                fila.style.display = "none"; 
+            }
+        });
+
+        document.getElementById('lblContadorVisible').innerText = contadorVisibles + " encontrados";
+
+        let filaVaciaFiltro = document.getElementById('filaSinResultados');
+        let filaVaciaBd = document.getElementById('filaVaciaBd');
+        
+        if(!filaVaciaBd) {
+            if (contadorVisibles === 0) {
+                filaVaciaFiltro.style.display = "";
+            } else {
+                filaVaciaFiltro.style.display = "none";
+            }
+        }
+
+        // Si desfiltramos o buscamos algo nuevo, desmarcamos el checkbox maestro 
+        // por precaución visual, SIN desmarcar las filas individuales.
+        document.getElementById('checkAll').checked = false;
+    }
+
+    // --- SWEETALERT PARA CONFIRMAR ---
+    function confirmarCobro() {
+        let totalStr = document.getElementById('lblTotalCobro').innerText;
+        let seleccionados = document.querySelectorAll('.check-pago:checked').length;
+
+        Swal.fire({
+            title: '¿Confirmar Ingreso a Caja?',
+            html: `Vas a recibir <b>${totalStr}</b> en efectivo por la liquidación de <b>${seleccionados}</b> asistente(s).<br><br>¿Tienes el dinero físico en mano?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, recibir efectivo',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Prevenir doble click
+                document.getElementById('btnProcesar').disabled = true;
+                document.getElementById('btnProcesar').innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Procesando...';
+                document.getElementById('formCobro').submit();
+            }
+        });
+    }
+</script>
+
+<style>
+    .fade-in { animation: fadeIn 0.4s ease-in-out; }
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>

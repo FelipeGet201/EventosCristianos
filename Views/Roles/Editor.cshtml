@@ -1,0 +1,212 @@
+﻿@model RedAJP.Models.EditorRolViewModel
+@using RedAJP.Globales
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = (Model.Id_Rol == 0 ? "Crear" : "Editar") + " Perfil";
+}
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-roles');
+        }
+    });
+</script>
+
+<div class="py-5 fade-in">
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
+            <i class="fa-solid fa-check-circle me-2"></i> @TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form method="post" action="@Url.Action("Guardar", "Roles")">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" id="Id_Rol" name="Id_Rol" value="@Model.Id_Rol" />
+        <input type="hidden" id="Es_Predeterminado" name="Es_Predeterminado" value="@Model.Es_Predeterminado.ToString()" />
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center">
+                <a href="@Url.Action("Index")" class="btn btn-light rounded-circle me-3 border"><i class="fa-solid fa-arrow-left"></i></a>
+                <h3 class="fw-bold mb-0 text-dark">@(Model.Id_Rol == 0 ? "Crear Perfil" : "Editar Perfil")</h3>
+            </div>
+            <button type="submit" class="btn btn-nautico rounded-pill px-4 fw-bold">
+                <i class="fa-solid fa-save me-2"></i> Guardar
+            </button>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
+                    <div class="card-header bg-white border-0 fw-bold py-3">Datos Básicos</div>
+                    <div class="card-body">
+
+                        @if (Model.Es_Predeterminado)
+                        {
+                            <div class="alert alert-warning small border-0 mb-3">
+                                <i class="fa-solid fa-lock me-1"></i> Perfil del sistema (Bloqueado).
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-bold">Nombre</label>
+                            <input type="text" class="form-control"
+                                   id="Nombre" name="Nombre"
+                                   placeholder="Ej. Encargado"
+                                   value="@Model.Nombre" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-bold">Descripción</label>
+                            <textarea class="form-control"
+                                      id="Descripcion" name="Descripcion"
+                                      rows="3" required>@Model.Descripcion</textarea>
+                        </div>
+
+                        <div class="form-check form-switch mt-3">
+                            @if (Model.Es_Predeterminado)
+                            {
+                                <input class="form-check-input checkbox-lg" type="checkbox" checked disabled>
+                                <input type="hidden" name="Activo" value="true" />
+                                <label class="form-check-label text-muted ms-2 mt-1">Perfil Activo (Fijo)</label>
+                            }
+                            else
+                            {
+                                <input class="form-check-input checkbox-lg cursor-pointer" type="checkbox" id="Activo" name="Activo" value="true" @(Model.Activo ? "checked" : "")>
+                                <input type="hidden" name="Activo" value="false" />
+                                <label class="form-check-label ms-2 mt-1 cursor-pointer" for="Activo">Perfil Activo</label>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+                    <div class="card-header bg-white border-0 fw-bold py-3">Elige un Ícono</div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            @foreach (var ico in Parametros.IconosPermitidos)
+                            {
+                                <input type="radio" class="btn-check" name="IconoSeleccionado" id="ico_@ico" value="@ico"
+                                @(Model.IconoSeleccionado == ico ? "checked" : "")>
+                                <label class="btn btn-outline-light text-dark border shadow-sm p-2 cursor-pointer" for="ico_@ico" style="width: 45px; height: 45px;">
+                                    <i class="fa-solid @ico fa-lg"></i>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 15px;">
+                    <div class="card-header bg-white border-0 fw-bold py-3">Matriz de Permisos</div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-center small">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="text-start ps-3 py-2">Módulo</th>
+                                    <th class="py-2">Leer</th>
+                                    <th class="py-2">Crear</th>
+                                    <th class="py-2">Editar</th>
+                                    <th class="py-2">Borrar</th>
+                                    <th class="text-danger py-2">Admin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Permisos.Count; i++)
+                                {
+                                    <tr>
+                                        <input type="hidden" name="Permisos[@i].Id_Modulo" value="@Model.Permisos[i].Id_Modulo" />
+                                        <input type="hidden" name="Permisos[@i].Nombre_Modulo" value="@Model.Permisos[i].Nombre_Modulo" />
+
+                                        <td class="text-start ps-3 fw-bold py-2">@Model.Permisos[i].Nombre_Modulo</td>
+
+                                        <td class="p-0">
+                                            <label class="w-100 h-100 d-flex justify-content-center align-items-center py-1 m-0 cursor-pointer">
+                                                <input class="form-check-input checkbox-lg cursor-pointer m-0" type="checkbox" name="Permisos[@i].P_Leer" value="true" @(Model.Permisos[i].P_Leer ? "checked" : "") />
+                                            </label>
+                                            <input type="hidden" name="Permisos[@i].P_Leer" value="false" />
+                                        </td>
+                                        <td class="p-0">
+                                            <label class="w-100 h-100 d-flex justify-content-center align-items-center py-1 m-0 cursor-pointer">
+                                                <input class="form-check-input checkbox-lg cursor-pointer m-0" type="checkbox" name="Permisos[@i].P_Crear" value="true" @(Model.Permisos[i].P_Crear ? "checked" : "") />
+                                            </label>
+                                            <input type="hidden" name="Permisos[@i].P_Crear" value="false" />
+                                        </td>
+                                        <td class="p-0">
+                                            <label class="w-100 h-100 d-flex justify-content-center align-items-center py-1 m-0 cursor-pointer">
+                                                <input class="form-check-input checkbox-lg cursor-pointer m-0" type="checkbox" name="Permisos[@i].P_Editar" value="true" @(Model.Permisos[i].P_Editar ? "checked" : "") />
+                                            </label>
+                                            <input type="hidden" name="Permisos[@i].P_Editar" value="false" />
+                                        </td>
+                                        <td class="p-0">
+                                            <label class="w-100 h-100 d-flex justify-content-center align-items-center py-1 m-0 cursor-pointer">
+                                                <input class="form-check-input checkbox-lg cursor-pointer m-0" type="checkbox" name="Permisos[@i].P_Borrar" value="true" @(Model.Permisos[i].P_Borrar ? "checked" : "") />
+                                            </label>
+                                            <input type="hidden" name="Permisos[@i].P_Borrar" value="false" />
+                                        </td>
+                                        <td class="p-0">
+                                            <label class="w-100 h-100 d-flex justify-content-center align-items-center py-1 m-0 cursor-pointer">
+                                                <input class="form-check-input border-danger checkbox-lg cursor-pointer m-0" type="checkbox" name="Permisos[@i].P_Admin" value="true" @(Model.Permisos[i].P_Admin ? "checked" : "") />
+                                            </label>
+                                            <input type="hidden" name="Permisos[@i].P_Admin" value="false" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+        transition: 0.3s;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-check:checked + .btn {
+        background-color: var(--acento-dorado) !important;
+        color: #002b36 !important;
+        border-color: var(--acento-dorado) !important;
+        transform: scale(1.1);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Nuevas clases para mejorar la usabilidad */
+    .checkbox-lg {
+        width: 1.4rem;
+        height: 1.4rem;
+    }
+
+    .cursor-pointer {
+        cursor: pointer !important;
+    }
+    
+    /* Efecto hover suave para las celdas de permisos */
+    .table tbody tr td label:hover {
+        background-color: rgba(0,0,0,0.03);
+    }
+</style>

@@ -1,0 +1,152 @@
+﻿@model RedAJP.Models.SubirComprobanteViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Completar Transferencia";
+    // Recuperamos el estatus
+    string estatus = ViewBag.Estatus as string;
+    bool esRechazo = estatus == "rejected";
+}
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+
+            <div class="text-center mb-4">
+                @if (esRechazo)
+                {
+                    <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex p-3 mb-2 shadow-sm">
+                        <i class="fa-solid fa-file-circle-xmark fa-3x"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark">Corregir Transferencia</h3>
+                }
+                else
+                {
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex p-3 mb-2 shadow-sm">
+                        <i class="fa-solid fa-cloud-arrow-up fa-3x"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark">Subir Comprobante</h3>
+                }
+                <p class="text-muted">Folio #@ViewBag.IdTransaccion</p>
+            </div>
+
+            @if (esRechazo)
+            {
+                <div class="alert alert-danger shadow rounded-4 border-0 mb-4 p-4 position-relative overflow-hidden">
+                    <div class="d-flex align-items-start position-relative" style="z-index: 2;">
+                        <i class="fa-solid fa-circle-exclamation fs-3 me-3 mt-1"></i>
+                        <div>
+                            <strong class="d-block mb-1 text-uppercase small ls-1">Motivo del Rechazo:</strong>
+                            <span class="fst-italic fs-5">"@ViewBag.MotivoRechazo"</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-triangle-exclamation position-absolute text-danger opacity-10" style="font-size: 10rem; right: -20px; top: -20px; transform: rotate(15deg);"></i>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-primary shadow-sm rounded-4 border-0 mb-4 p-4 position-relative overflow-hidden">
+                    <div class="d-flex align-items-start position-relative" style="z-index: 2;">
+                        <i class="fa-solid fa-info-circle fs-3 me-3 mt-1"></i>
+                        <div>
+                            <strong class="d-block mb-1 text-uppercase small ls-1">Acción Requerida:</strong>
+                            <span class="fs-6">Ya se generó la orden de pago, pero <strong>falta subir la foto</strong> del comprobante para validarla.</span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-light border-0 py-3 fw-bold text-center text-muted text-uppercase small">
+                    Contenido del Pago
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 250px;">
+                        <table class="table table-sm table-striped mb-0 small">
+                            <tbody>
+                                @foreach (var item in Model.Detalles)
+                                {
+                                    <tr>
+                                        <td class="ps-4 py-2">
+                                            <div class="fw-bold text-dark">@item.Persona</div>
+                                        </td>
+                                        <td class="py-2 text-secondary">@item.Concepto</td>
+                                        <td class="text-end pe-4 fw-bold py-2">$@item.Monto.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top text-end py-3">
+                    <span class="text-muted small me-2">Total a comprobar:</span>
+                    <strong class="fs-5 text-dark">$@Model.TotalPagar.ToString("N2")</strong>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3 text-secondary text-uppercase small">
+                        @(esRechazo ? "Sustituir Archivo" : "Adjuntar Archivo")
+                    </h6>
+
+                    <form action="@Url.Action("ProcesarComprobante", "Eventos")" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Token" value="@Model.Token" />
+
+                        @foreach (var id in Model.IdsPagosSeleccionados)
+                        {
+                            <input type="hidden" name="IdsPagosSeleccionados" value="@id" />
+                        }
+
+                        <div class="mb-4">
+                            <label class="form-label small text-muted">Selecciona la imagen o PDF</label>
+                            <input type="file" name="ArchivoComprobante" class="form-control form-control-lg" accept="image/*,.pdf" required />
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm">
+                                Enviar a Revisión
+                            </button>
+
+                            <div class="text-center mt-2 mb-2">
+                                <span class="text-muted small">- O -</span>
+                            </div>
+
+                            <button type="button" class="btn btn-outline-danger rounded-pill border-0 btn-sm" data-bs-toggle="modal" data-bs-target="#modalConfirmarEliminacion">
+                                <i class="fa-solid fa-trash me-1"></i> Eliminar intento y salir
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarEliminacion" tabindex="-1" aria-labelledby="modalConfirmarEliminacionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger" id="modalConfirmarEliminacionLabel">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Eliminar Operación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="fs-6">¿Seguro que deseas <strong>ELIMINAR</strong> esta operación?</p>
+                <p class="text-muted small mb-0">
+                    Se borrará el historial de este intento y podrás volver a seleccionar las personas para pagar desde cero.
+                </p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cerrar</button>
+                
+                <a href="@Url.Action("CancelarIntento", new { id = ViewBag.IdTransaccion, token = Model.Token })"
+                       class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">
+                    Sí, eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

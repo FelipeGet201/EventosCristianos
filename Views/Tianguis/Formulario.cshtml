@@ -1,0 +1,662 @@
+﻿@model RedAJP.Models.TianguisCrearViewModel
+@{
+    bool esEdicion = ViewBag.IdPublicacionEdicion != null;
+    bool puedeEliminar = ViewBag.PuedeEliminar == true;
+    bool estaActiva = ViewBag.PublicacionActiva == true;
+
+    var fotosViejas = ViewBag.ImagenesExistentes as List<string> ?? new List<string>();
+
+    Layout = "~/Views/Shared/Principal.cshtml";
+    ViewData["Title"] = esEdicion ? "Editar Publicación" : "Publicar en Tianguis";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-tienda');
+        }
+    });
+</script>
+<style>
+    :root {
+        --pez-azul: #00B8D4;
+        --header-footer: #073238;
+    }
+
+    .modalidad-card {
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 1.2rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background-color: #fff;
+        display: block;
+    }
+
+        .modalidad-card:has(input[type="radio"]:checked) {
+            border-color: var(--pez-azul);
+            background-color: rgba(0, 184, 212, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 184, 212, 0.1);
+        }
+
+    .icon-circle {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        transition: all 0.2s;
+    }
+
+        .nav-tabs .nav-link.active {
+            background-color: #fff !important;
+            color: var(--pez-azul) !important;
+            border-bottom: 3px solid var(--pez-azul) !important;
+        }
+
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+        .hover-scale:hover {
+            transform: scale(1.01);
+        }
+
+    .preview-item {
+        position: relative;
+        width: 130px;
+        height: 130px;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        transition: opacity 0.3s;
+    }
+    @@media (min-width: 576px) {
+        .preview-item {
+            width: 150px;
+            height: 150px;
+        }
+    }
+
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .preview-controls {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        justify-content: space-around;
+        padding: 2px 0;
+    }
+
+        .preview-controls button {
+            color: white;
+            border: none;
+            background: none;
+            font-size: 0.8rem;
+            padding: 2px 5px;
+        }
+
+            .preview-controls button:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
+            }
+
+    .preview-badge {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        color: white;
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-weight: bold;
+    }
+
+    .btn-delete-photo {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(255,0,0,0.8);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+        .btn-delete-photo:hover {
+            background: red;
+            transform: scale(1.1);
+        }
+</style>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-11">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+                <div class="card-header bg-white border-bottom p-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                        <h3 class="fw-bold mb-0 text-dark">
+                            <i class="fa-solid @(esEdicion ? "fa-pen" : "fa-shopping-bag") me-2 text-primary"></i> @ViewData["Title"]
+                        </h3>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            @if (esEdicion)
+                            {
+                                <form action="/Tianguis/AlternarEstadoActivo" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@ViewBag.IdPublicacionEdicion" />
+                                    <button type="submit" class="btn btn-outline-dark rounded-pill fw-bold" title="@(estaActiva ? "Ocultar publicación" : "Volver a mostrar")">
+                                        @if (estaActiva)
+                                        {
+                                            <i class="fa-solid fa-eye-slash"></i>
+                                            <span>Pausar</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-solid fa-eye text-success"></i>
+                                            <span>Reactivar</span>
+                                        }
+                                    </button>
+                                </form>
+
+                                @if (puedeEliminar)
+                                {
+                                    <form id="formEliminarGlobal" action="@Url.Action("EliminarPublicacion", "Tianguis")" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@ViewBag.IdPublicacionEdicion" />
+                                        <button type="button" class="btn btn-danger rounded-pill fw-bold" onclick="abrirModalEliminar()">
+                                            <i class="fa-solid fa-trash"></i> <span>Eliminar</span>
+                                        </button>
+                                    </form>
+                                }
+                            }
+                            <a href="@Url.Action(esEdicion ? "Panel" : "Index", "Tianguis")" class="btn btn-outline-secondary rounded-pill">
+                                <i class="fa-solid fa-arrow-left"></i> <span>Volver</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    @using (Html.BeginForm("Guardar", "Tianguis", FormMethod.Post, new { id = "formPublicacion", enctype = "multipart/form-data", onsubmit = "return prepararSubmit()" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        @if (esEdicion)
+                        {
+                            <input type="hidden" name="idPublicacion" value="@ViewBag.IdPublicacionEdicion" />
+                            @Html.HiddenFor(m => m.TipoVenta)
+                        }
+
+                        @Html.HiddenFor(m => m.TallasJson, new { id = "hiddenTallasJson" })
+
+                        <div id="contenedorInputsEliminar" class="d-none"></div>
+
+                        <ul class="nav nav-tabs nav-justified bg-light" id="tabPublicacion" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active py-3 fw-bold rounded-0 text-dark" id="info-tab" data-bs-toggle="tab" data-bs-target="#panel-publicacion" type="button" role="tab">
+                                    <i class="fa-solid fa-circle-info me-2 text-primary"></i> Información General
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link py-3 fw-bold rounded-0 text-dark" id="fotos-tab" data-bs-toggle="tab" data-bs-target="#panel-media" type="button" role="tab">
+                                    <i class="fa-solid fa-images me-2 text-primary"></i> Galería de Fotos
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content p-4 p-md-5">
+                            @* --- PANEL 1: INFO --- *@
+                            <div class="tab-pane fade show active" id="panel-publicacion" role="tabpanel">
+                                <div class="mb-5">
+                                    <label class="form-label fw-bold text-dark mb-3">Modalidad de Venta <span class="text-danger">*</span></label>
+
+                                    @if (esEdicion)
+                                    {
+                                        <div class="alert alert-info border-0 shadow-sm rounded-3">
+                                            <i class="fa-solid fa-circle-info me-2"></i> Modalidad actual: <strong>@(Model.TipoVenta == "SUB" ? "Subasta Abierta" : (Model.PrecioBase == 0 ? "Donación" : "Venta Directa"))</strong>.
+                                            <br><small class="text-muted ms-4">Por integridad de datos, no es posible cambiar la modalidad ni agregar nuevas tallas una vez publicada.</small>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="modalidad-card m-0 h-100" for="modSubasta">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3">@Html.RadioButtonFor(m => m.TipoVenta, "SUB", new { id = "modSubasta", @class = "form-check-input", onchange = "toggleModalidad()", style = "transform: scale(1.2);" })</div>
+                                                        <div class="icon-circle me-3"><i class="fa-solid fa-gavel text-primary"></i></div>
+                                                        <div><h6 class="mb-0 fw-bold">Subasta Abierta</h6><small class="text-muted">El mejor postor gana.</small></div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="modalidad-card m-0 h-100" for="modDirecta">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3">@Html.RadioButtonFor(m => m.TipoVenta, "TIE", new { id = "modDirecta", @class = "form-check-input", onchange = "toggleModalidad()", style = "transform: scale(1.2);" })</div>
+                                                        <div class="icon-circle me-3"><i class="fa-solid fa-cart-shopping text-success"></i></div>
+                                                        <div><h6 class="mb-0 fw-bold">Venta Directa</h6><small class="text-muted">Precio fijo e inventario.</small></div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="modalidad-card m-0 h-100" for="modRegalo">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3">@Html.RadioButtonFor(m => m.TipoVenta, "REG", new { id = "modRegalo", @class = "form-check-input", onchange = "toggleModalidad()", style = "transform: scale(1.2);" })</div>
+                                                        <div class="icon-circle me-3"><i class="fa-solid fa-hand-holding-heart text-danger"></i></div>
+                                                        <div><h6 class="mb-0 fw-bold">Donación</h6><small class="text-muted">Regala lo que no ocupes.</small></div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="row g-4">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Título de la Publicación</label>
+                                        @Html.TextBoxFor(m => m.Titulo, new { @class = "form-control form-control-lg", required = "required" })
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Categoría</label>
+                                        @Html.DropDownListFor(m => m.IdCategoria, new SelectList(ViewBag.Categorias, "IdCategoria", "Nombre"), "- Selecciona -", new { @class = "form-select", required = "required" })
+                                    </div>
+                                    @if (esEdicion && Model.TipoVenta == "REG")
+                                    {
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Precio</label>
+                                            <div class="form-control bg-light text-success fw-bold d-flex align-items-center" style="height: calc(3.5rem + 2px);">
+                                                <i class="fa-solid fa-gift me-2"></i> ¡Es una donación! (Gratis)
+                                            </div>
+                                            <input type="hidden" name="PrecioBase" value="0" />
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col-md-6" id="contenedorPrecio">
+                                            <label class="form-label fw-bold">Precio <span id="labelPrecioBase" class="text-muted fw-normal">@(Model.TipoVenta == "TIE" ? "(Fijo)" : "(Base)")</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light fw-bold">$</span>
+                                                @Html.TextBoxFor(m => m.PrecioBase, new { type = "number", step = "0.01", @class = "form-control", id = "PrecioBase", required = "required" })
+                                            </div>
+                                        </div>
+                                    }
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Descripción</label>
+                                        @Html.TextAreaFor(m => m.Descripcion, new { @class = "form-control", rows = "4" })
+                                    </div>
+
+                                    @if (!esEdicion)
+                                    {
+                                        <div id="seccionVentaDirecta" class="col-12 d-none">
+                                            <div class="p-3 bg-light rounded border">
+                                                <h6 class="fw-bold mb-3"><i class="fa-solid fa-boxes-stacked me-2"></i>Configuración de Inventario</h6>
+                                                <div class="form-check form-switch mb-3">
+                                                    <input class="form-check-input" type="checkbox" id="checkTallas" onchange="toggleTallas()">
+                                                    <label class="form-check-label fw-bold" for="checkTallas">Manejar Tallas o Variantes</label>
+                                                </div>
+                                                <div id="divStockGeneral">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-auto"><label class="form-label mb-0 small fw-bold">Stock Disponible:</label></div>
+                                                        <div class="col-md-3"><input type="number" id="inputStockGeneral" class="form-control" value="1" min="1"></div>
+                                                    </div>
+                                                </div>
+                                                <div id="divStockTallas" class="d-none">
+                                                    <div class="card card-body border-0 shadow-sm mb-3">
+                                                        <div class="row g-2 align-items-end">
+                                                            <div class="col">
+                                                                <label class="small fw-bold">Nombre Variante (CH, XL, Rojo, etc.)</label>
+                                                                <input type="text" id="inputNombreTalla" class="form-control form-control-sm" placeholder="Nombre">
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <label class="small fw-bold">Cantidad</label>
+                                                                <input type="number" id="inputCantidadTalla" class="form-control form-control-sm" value="1" min="1">
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <button type="button" class="btn btn-primary btn-sm px-3" onclick="agregarTallaDOM()"><i class="fa-solid fa-plus"></i></button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div id="listaTallasVisual">
+                                                        <p id="textoSinTallas" class="text-muted small text-center italic">No has agregado variantes.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="text-end mt-4">
+                                    <button type="button" class="btn btn-primary px-5 rounded-pill fw-bold" onclick="document.getElementById('fotos-tab').click()">
+                                        Siguiente: Fotos <i class="fa-solid fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            @* --- PANEL 2: FOTOS --- *@
+                            <div class="tab-pane fade" id="panel-media" role="tabpanel">
+
+                                <div class="text-center py-4 border rounded-4 mb-4 bg-light" style="border-style: dashed !important; border-width: 2px !important;">
+                                    <i class="fa-regular fa-images fa-3x mb-3 text-muted"></i>
+                                    <h4 class="fw-bold text-dark">Galería de Imágenes</h4>
+                                    <p class="text-muted mb-3 small">Sube hasta 5 fotos. Las nuevas fotos se añadirán al final.</p>
+                                    
+                                    <div class="col-md-6 mx-auto mb-4">
+                                        @* El HELPER necesita el accept para filtrar lo que el usuario ve y para que el iPhone convierta HEIC *@
+                                        <input type="file"
+                                               id="inputFotosHelper"
+                                               class="form-control"
+                                               accept="image/jpeg, image/png, image/webp"
+                                               multiple
+                                               onchange="manejarSeleccionFotos(this)">
+
+                                        @* El REAL necesita el name="Fotos" para que el controlador reciba los datos *@
+                                        <input type="file"
+                                               name="Fotos"
+                                               id="inputFotosReal"
+                                               class="d-none"
+                                               multiple
+                                               accept="image/jpeg, image/png, image/webp">
+                                    </div>
+
+                                    <div class="d-flex flex-wrap justify-content-center gap-3 px-2" id="contenedorGlobalFotos">
+                                        @* 1. Fotos Viejas *@
+                                        @foreach (var url in fotosViejas)
+                                        {
+                                            <div class="foto-existente-card fade-in">
+                                                <div class="preview-item shadow-sm" style="border-color: #dee2e6;">
+                                                    <span class="preview-badge bg-secondary">Actual</span>
+                                                    <div class="btn-delete-photo shadow" title="Eliminar foto actual" onclick="eliminarFotoExistente(this, '@url')">
+                                                        <i class="fa-solid fa-xmark"></i>
+                                                    </div>
+                                                    <img src="@url">
+                                                </div>
+                                            </div>
+                                        }
+                                        
+                                        @* 2. Fotos Nuevas (se inyectan aquí) *@
+                                        <div id="contenedorNuevasFotos" class="d-flex flex-wrap justify-content-center gap-3"></div>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer bg-transparent border-0 p-0 d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" onclick="document.getElementById('info-tab').click()">
+                                        <i class="fa-solid fa-arrow-left me-2"></i> Regresar
+                                    </button>
+                                    <button type="submit" class="btn btn-success px-5 rounded-pill fw-bold shadow hover-scale">
+                                        <i class="fa-solid fa-save me-2"></i> @(esEdicion ? "Guardar Cambios" : "Publicar Ahora")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="template-foto-nueva">
+    <div class="foto-nueva-card fade-in">
+        <div class="preview-item shadow-sm" style="border-color: var(--pez-azul);">
+            <span class="preview-badge bg-success"><i class="fa-solid fa-plus me-1"></i>Nueva</span>
+            <div class="btn-delete-photo shadow btn-borrar-nueva"><i class="fa-solid fa-xmark"></i></div>
+            <img src="" class="img-preview">
+            <div class="preview-controls">
+                <button type="button" class="btn-mover-izq"><i class="fa-solid fa-arrow-left"></i></button>
+                <button type="button" class="btn-mover-der"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<div class="modal fade" id="modalAlertaTianguis" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3"><i class="fa-solid fa-circle-exclamation text-warning fa-3x"></i></div>
+                <h5 class="fw-bold text-dark mb-2">Aviso</h5>
+                <p id="textoModalAlerta" class="text-muted mb-4"></p>
+                <button type="button" class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3"><div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px; background-color: #f8d7da;"><i class="fa-solid fa-trash-can fa-2x text-danger"></i></div></div>
+                <h4 class="fw-bold text-dark mb-2">¿Eliminar publicación?</h4>
+                <p class="text-muted mb-4">Esta acción no se puede deshacer. Se borrarán los datos, fotos e historial de interesados permanentemente.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" onclick="ejecutarEliminacion()">Sí, Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById('formPublicacion').addEventListener('invalid', function (e) {
+            let invalidControl = e.target;
+            let tabPane = invalidControl.closest('.tab-pane');
+            if (tabPane && !tabPane.classList.contains('active')) {
+                let tabTrigger = document.querySelector(`[data-bs-target="#${tabPane.id}"]`);
+                if (tabTrigger) {
+                    let tab = new bootstrap.Tab(tabTrigger);
+                    tab.show();
+                    setTimeout(() => invalidControl.focus(), 200);
+                }
+            }
+        }, true);
+    });
+
+    function mostrarAlerta(mensaje) {
+        document.getElementById('textoModalAlerta').textContent = mensaje;
+        new bootstrap.Modal(document.getElementById('modalAlertaTianguis')).show();
+    }
+
+    function abrirModalEliminar() {
+        new bootstrap.Modal(document.getElementById('modalConfirmarEliminar')).show();
+    }
+
+    function ejecutarEliminacion() { document.getElementById('formEliminarGlobal').submit(); }
+
+    function toggleModalidad() {
+        var modDirecta = document.getElementById('modDirecta');
+        var modRegalo = document.getElementById('modRegalo');
+        if(!modDirecta) return;
+
+        var esRegalo = modRegalo && modRegalo.checked;
+        var esDirecta = modDirecta.checked;
+
+        // Mostrar u ocultar contenedor de precio
+        var contPrecio = document.getElementById('contenedorPrecio');
+        if(contPrecio) {
+            contPrecio.classList.toggle('d-none', esRegalo);
+            document.getElementById('PrecioBase').required = !esRegalo;
+        }
+
+        if(esRegalo) document.getElementById('PrecioBase').value = 0;
+
+        document.getElementById('labelPrecioBase').textContent = esDirecta ? "(Fijo)" : "(Base)";
+        
+        // Mostrar inventario tanto para Directa como para Regalo
+        var seccionExtra = document.getElementById('seccionVentaDirecta');
+        if(seccionExtra) seccionExtra.classList.toggle('d-none', !(esDirecta || esRegalo));
+    }
+
+    function toggleTallas() {
+        var hasTallas = document.getElementById('checkTallas').checked;
+        document.getElementById('divStockGeneral').classList.toggle('d-none', hasTallas);
+        document.getElementById('divStockTallas').classList.toggle('d-none', !hasTallas);
+    }
+
+    function agregarTallaDOM() {
+        const nombreInp = document.getElementById('inputNombreTalla');
+        const cantInp = document.getElementById('inputCantidadTalla');
+        const nombre = nombreInp.value.trim().toUpperCase();
+        const cantidad = parseInt(cantInp.value);
+        if (!nombre || isNaN(cantidad) || cantidad < 1) return;
+
+        const lista = document.getElementById('listaTallasVisual');
+        document.getElementById('textoSinTallas')?.classList.add('d-none');
+
+        const item = document.createElement('div');
+        item.className = "d-flex justify-content-between align-items-center bg-white border rounded p-2 mb-2 shadow-sm talla-item";
+
+        const leftSide = document.createElement('div');
+        leftSide.className = "fw-bold";
+        leftSide.appendChild(document.createTextNode("Variante: "));
+        const spanNom = document.createElement('span');
+        spanNom.className = "text-primary talla-nom"; spanNom.textContent = nombre;
+        leftSide.appendChild(spanNom);
+
+        const rightSide = document.createElement('div');
+        rightSide.className = "d-flex align-items-center gap-2";
+
+        const inpCant = document.createElement('input');
+        inpCant.type = "number"; inpCant.className = "form-control form-control-sm text-center input-stock-vivo";
+        inpCant.style.width = "65px"; inpCant.value = cantidad;
+
+        const btnDel = document.createElement('button');
+        btnDel.type = "button"; btnDel.className = "btn btn-sm text-danger";
+        const icon = document.createElement('i'); icon.className = "fa-solid fa-trash";
+        btnDel.appendChild(icon);
+
+        btnDel.onclick = () => {
+            item.remove();
+            if (lista.querySelectorAll('.talla-item').length === 0) document.getElementById('textoSinTallas')?.classList.remove('d-none');
+        };
+
+        rightSide.appendChild(inpCant); rightSide.appendChild(btnDel);
+        item.appendChild(leftSide); item.appendChild(rightSide);
+        lista.appendChild(item);
+
+        nombreInp.value = ""; cantInp.value = "1"; nombreInp.focus();
+    }
+
+    function prepararSubmit() {
+        var modDirecta = document.getElementById('modDirecta');
+        var modRegalo = document.getElementById('modRegalo');
+        
+        // El inventario funciona si es Directa o Regalo
+        if ((modDirecta?.checked || modRegalo?.checked) && document.getElementById('checkTallas')) {
+            let data = [];
+            if (document.getElementById('checkTallas').checked) {
+                document.querySelectorAll('.talla-item').forEach(el => {
+                    data.push({ Nombre: el.querySelector('.talla-nom').textContent, Cantidad: parseInt(el.querySelector('.input-stock-vivo').value) });
+                });
+            } else {
+                data.push({ Nombre: 'GENERAL', Cantidad: parseInt(document.getElementById('inputStockGeneral').value) });
+            }
+            document.getElementById('hiddenTallasJson').value = JSON.stringify(data);
+        }
+        return true;
+    }
+
+    window.onload = toggleModalidad;
+
+    let listaArchivos = [];
+    const MAX_FOTOS = 5;
+
+    function getConteoActual() {
+        return document.querySelectorAll('.foto-existente-card:not(.d-none)').length + listaArchivos.length;
+    }
+
+    function eliminarFotoExistente(btnDOM, url) {
+        btnDOM.closest('.foto-existente-card').classList.add('d-none');
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'imagenesAEliminar';
+        input.value = url;
+        document.getElementById('contenedorInputsEliminar').appendChild(input);
+    }
+
+    function manejarSeleccionFotos(input) {
+        const nuevosArchivos = Array.from(input.files);
+        if (getConteoActual() + nuevosArchivos.length > MAX_FOTOS) {
+            mostrarAlerta("Límite superado. El total (viejas + nuevas) no puede exceder las 5 fotos.");
+            input.value = ""; return;
+        }
+
+        nuevosArchivos.forEach(file => { if (file.type.startsWith('image/')) listaArchivos.push(file); });
+        input.value = "";
+        renderizarFotosNuevas();
+    }
+
+    function renderizarFotosNuevas() {
+        const contenedorNuevas = document.getElementById('contenedorNuevasFotos');
+        contenedorNuevas.innerHTML = "";
+        const template = document.getElementById('template-foto-nueva');
+
+        listaArchivos.forEach((file, index) => {
+            const clon = template.content.cloneNode(true);
+
+            const imgDOM = clon.querySelector('.img-preview');
+            imgDOM.src = URL.createObjectURL(file);
+            imgDOM.onload = () => URL.revokeObjectURL(imgDOM.src);
+
+            clon.querySelector('.btn-borrar-nueva').onclick = () => eliminarFotoNueva(index);
+
+            const btnIzq = clon.querySelector('.btn-mover-izq');
+            const btnDer = clon.querySelector('.btn-mover-der');
+
+            if(index === 0) btnIzq.disabled = true;
+            if(index === listaArchivos.length - 1) btnDer.disabled = true;
+
+            btnIzq.onclick = () => moverFotoNueva(index, -1);
+            btnDer.onclick = () => moverFotoNueva(index, 1);
+
+            contenedorNuevas.appendChild(clon);
+        });
+
+        sincronizarInputReal();
+    }
+
+    function eliminarFotoNueva(index) {
+        listaArchivos.splice(index, 1);
+        renderizarFotosNuevas();
+    }
+
+    function moverFotoNueva(index, direccion) {
+        const nuevaPos = index + direccion;
+        if (nuevaPos >= 0 && nuevaPos < listaArchivos.length) {
+            const temp = listaArchivos[index];
+            listaArchivos[index] = listaArchivos[nuevaPos];
+            listaArchivos[nuevaPos] = temp;
+            renderizarFotosNuevas();
+        }
+    }
+
+    function sincronizarInputReal() {
+        const inputReal = document.getElementById('inputFotosReal');
+        const dataTransfer = new DataTransfer();
+        listaArchivos.forEach(file => dataTransfer.items.add(file));
+        inputReal.files = dataTransfer.files;
+    }
+</script>

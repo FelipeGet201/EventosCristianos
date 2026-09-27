@@ -1,0 +1,702 @@
+﻿@model List<RedAJP.Models.LibroViewModel>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Biblioteca Digital";
+    bool puedeCrear = ViewBag.PuedeCrear ?? false;
+    bool puedeEditar = ViewBag.PuedeEditar ?? false;
+    bool puedeBorrar = ViewBag.PuedeBorrar ?? false;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas', 'submenu-biblioteca');
+        }
+    });
+</script>
+
+<style>
+    :root {
+        --primary-color: var(--header-footer, #00334e);
+        --accent-color: var(--pez-azul, #00838f);
+        --gold-accent: var(--acento-dorado, #d4af37);
+        --card-bg: #ffffff;
+        --shadow-sm: 0 4px 6px rgba(0,0,0,0.05);
+        --shadow-md: 0 8px 15px rgba(0,0,0,0.1);
+        --shadow-lg: 0 12px 25px rgba(0,0,0,0.15);
+        --transition: all 0.3s ease;
+    }
+
+    /* Tarjeta del Libro */
+    .book-card {
+        background: var(--card-bg);
+        transition: var(--transition);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        border: 1px solid rgba(0,0,0,0.05);
+        z-index: 1; /* Nivel base */
+    }
+
+        /* SOLUCIÓN DE SUPERPOSICIÓN: Elevar la tarjeta al pasar el mouse o abrir menú */
+        .book-card:hover,
+        .book-card:focus-within {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg) !important;
+            border-color: var(--accent-color) !important;
+            z-index: 1050 !important;
+        }
+
+        .book-card:has(.dropdown-menu.show) {
+            z-index: 1050 !important;
+        }
+
+    /* Contenedor de la portada (Proporción 2:3) */
+    .book-cover-wrapper {
+        position: relative;
+        width: 100%;
+        padding-top: 150%;
+        background-color: #f1f3f5;
+        overflow: hidden;
+        border-top-left-radius: calc(.5rem - 1px);
+        border-top-right-radius: calc(.5rem - 1px);
+        border-bottom: 2px solid var(--gold-accent);
+    }
+
+    .book-cover {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .book-card:hover .book-cover {
+        transform: scale(1.05);
+    }
+
+    .book-info {
+        padding: 1.25rem 1rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .book-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.2;
+    }
+
+    .book-author {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+        font-style: italic;
+    }
+
+    .btn-nautico-outline {
+        border: 1px solid var(--accent-color);
+        color: var(--accent-color);
+        background: transparent;
+        transition: var(--transition);
+    }
+
+        .btn-nautico-outline:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+    /* Buscador UI */
+    .search-container {
+        max-width: 350px;
+        width: 100%;
+    }
+
+    .search-input:focus {
+        box-shadow: none;
+        border-color: transparent;
+    }
+</style>
+
+<div class="container-fluid py-4 fade-in mb-5">
+
+    <div class="card border-0 shadow-md rounded-4 mb-4 overflow-hidden">
+        <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 bg-white">
+
+            <div class="d-flex align-items-center w-100">
+                <div class="rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm flex-shrink-0"
+                     style="width: 65px; height: 65px; background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);">
+                    <i class="fa-solid fa-book-open-reader fa-2x text-white"></i>
+                </div>
+                <div>
+                    <h2 class="fw-bold mb-1" style="color: var(--primary-color);">Biblioteca Digital</h2>
+                    <p class="text-muted mb-0 small">Explora, descarga y lee nuestro catálogo de libros y material (PDF y EPUB).</p>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row gap-2 w-100 justify-content-md-end">
+                <div class="input-group shadow-sm rounded-pill overflow-hidden border search-container" style="border-color: #dee2e6;">
+                    <span class="input-group-text bg-white border-0 text-muted ps-3">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="buscadorLibros" class="form-control border-0 search-input" placeholder="Buscar título, autor o sinopsis..." onkeyup="filtrarLibros()">
+                </div>
+
+                @if (puedeCrear)
+                {
+                    <button class="btn text-white rounded-pill px-4 fw-bold shadow-sm d-flex align-items-center justify-content-center flex-shrink-0"
+                            onclick="abrirModalFormulario()" style="background-color: var(--accent-color);">
+                        <i class="fa-solid fa-plus me-2"></i> Agregar
+                    </button>
+                }
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-4" id="galeria-libros">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="col-12 w-100 estado-vacio">
+                <div class="text-center py-5 bg-white rounded-4 border-0 shadow-sm mt-3">
+                    <i class="fa-solid fa-book-open fa-4x text-muted mb-3 opacity-25"></i>
+                    <h4 class="text-secondary fw-bold">La biblioteca está vacía</h4>
+                    <p class="text-muted">No se encontraron libros en el sistema. @(puedeCrear ? "Agrega el primero haciendo clic en Agregar." : "")</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var libro in Model)
+            {
+                <div class="col book-item-col">
+                    <div class="card h-100 rounded-3 book-card">
+                        
+                        @if (puedeEditar || puedeBorrar)
+                        {
+                            <span class="badge position-absolute top-0 end-0 m-2 shadow-sm"
+                                  style="z-index: 2; background-color: var(--accent-color);"
+                                  title="Total de descargas">
+                                <i class="fa-solid fa-download me-1"></i> @libro.Descargas
+                            </span>
+                        }
+
+                        <div class="book-cover-wrapper" onclick="verDetalle('@libro.IdCarpeta', '@Html.Raw(libro.Titulo.Replace("\"", "&quot;").Replace("'", "\\'"))', '@Html.Raw(libro.Autor.Replace("\"", "&quot;").Replace("'", "\\'"))', '@Html.Raw((libro.Descripcion ?? "").Replace("\"", "&quot;").Replace("\r", "").Replace("\n", "<br>").Replace("'", "\\'"))', '@libro.RutaPortada')" style="cursor: pointer;">
+                            <img src="@libro.RutaPortada" class="book-cover" alt="Portada de @libro.Titulo" loading="lazy">
+                        </div>
+                        <div class="card-body book-info">
+                            <div class="book-title" title="@libro.Titulo">@libro.Titulo</div>
+                            <div class="book-author" title="@libro.Autor">@libro.Autor</div>
+                            
+                            <div class="book-desc d-none">@(libro.Descripcion ?? "")</div>
+
+                            <div class="mt-auto d-flex gap-2">
+                                <button class="btn btn-nautico-outline flex-grow-1 rounded-pill btn-sm fw-bold"
+                                        onclick="verDetalle('@libro.IdCarpeta', '@Html.Raw(libro.Titulo.Replace("\"", "&quot;").Replace("'", "\\'"))', '@Html.Raw(libro.Autor.Replace("\"", "&quot;").Replace("'", "\\'"))', '@Html.Raw((libro.Descripcion ?? "").Replace("\"", "&quot;").Replace("\r", "").Replace("\n", "<br>").Replace("'", "\\'"))', '@libro.RutaPortada')">
+                                    <i class="fa-solid fa-eye me-1"></i> Detalles
+                                </button>
+
+                                @if (puedeEditar || puedeBorrar)
+                                {
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm rounded-circle text-muted shadow-sm border" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px;">
+                                            <i class="fa-solid fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 12px;">
+                                            @if (puedeEditar)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" href="javascript:void(0)" onclick="editarLibro('@libro.IdCarpeta', '@Html.Raw(libro.Titulo.Replace("\"", "&quot;").Replace("'", "\\'"))', '@Html.Raw(libro.Autor.Replace("\"", "&quot;").Replace("'", "\\'"))', '@Html.Raw((libro.Descripcion ?? "").Replace("\"", "&quot;").Replace("\r", "").Replace("\n", "\\n").Replace("'", "\\'"))', '@libro.RutaPortada')">
+                                                        <i class="fa-solid fa-pen-to-square text-warning me-2"></i> Editar Información
+                                                    </a>
+                                                </li>
+                                            }
+                                            @if (puedeBorrar)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item text-danger fw-bold" href="javascript:void(0)" onclick="prepararEliminar('@libro.IdCarpeta', '@Html.Raw(libro.Titulo.Replace("\"", "&quot;").Replace("'", "\\'"))')">
+                                                        <i class="fa-solid fa-trash-can me-2"></i> Eliminar Libro
+                                                    </a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div id="no-results-msg" class="text-center py-5 bg-white rounded-4 border-0 shadow-sm mt-4" style="display: none;">
+        <i class="fa-solid fa-magnifying-glass-minus fa-3x text-muted mb-3 opacity-25"></i>
+        <h5 class="text-secondary fw-bold">No se encontraron resultados</h5>
+        <p class="text-muted">Intenta buscar con otras palabras.</p>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalle" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body pt-0 pb-5 px-4 px-md-5">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-4 mb-md-0 d-flex flex-column align-items-center">
+    
+                        <img id="detallePortada" src="" class="rounded-3 shadow-sm img-fluid" style="max-height: 320px; width: auto; object-fit: contain;" alt="Portada">
+    
+                        <a href="#" id="btnDescargar" class="btn text-white w-100 mt-4 rounded-pill fw-bold shadow-sm py-2" style="background-color: var(--primary-color);" target="_blank" onclick="setTimeout(recargarGaleria, 2000);">
+                            <i class="fa-solid fa-cloud-arrow-down me-2"></i> Descargar Archivo
+                        </a>
+                    </div>
+         
+                    <div class="col-md-8 ps-md-4 d-flex flex-column">
+                        <div>
+                            <span class="badge bg-light text-dark border mb-2 px-3 py-2 rounded-pill shadow-sm">
+                                <i class="fa-solid fa-book-open-reader me-1" style="color: var(--accent-color);"></i> Documento Digital
+                            </span>
+                            <h2 id="detalleNombre" class="fw-bold mb-1" style="color: var(--primary-color);"></h2>
+                            <h5 class="text-muted mb-4 border-bottom pb-3">
+                                <i class="fa-solid fa-feather-pointed me-2" style="color: var(--gold-accent);"></i> <span id="detalleAutor"></span>
+                            </h5>
+
+                            <h6 class="fw-bold text-uppercase text-secondary mb-2" style="font-size: 0.85rem; letter-spacing: 1px;">Sinopsis / Descripción</h6>
+                            <div id="detalleDescripcion" class="text-muted mb-4" style="line-height: 1.7; text-align: justify;"></div>
+                        </div>
+
+                        <div class="mt-auto pt-3">
+                            <div class="p-3 rounded-3" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                                <h6 class="fw-bold text-dark mb-1" style="font-size: 0.9rem;">
+                                    <i class="fa-brands fa-amazon text-primary me-1"></i> App de lectura recomendada
+                                </h6>
+                                <p class="text-muted small mb-3">Para una mejor experiencia leyendo archivos EPUB o PDF, te recomendamos descargar la app gratuita de <strong>Kindle</strong>.</p>
+                                
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="https://play.google.com/store/apps/details?id=com.amazon.kindle" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm">
+                                        <i class="fa-brands fa-android me-1"></i> Android
+                                    </a>
+                                    <a href="https://apps.apple.com/mx/app/amazon-kindle/id302584613" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3 shadow-sm">
+                                        <i class="fa-brands fa-apple me-1"></i> iPhone/iPad
+                                    </a>
+                                    <a href="https://www.amazon.com/kindle-dbs/fd/kcp" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
+                                        <i class="fa-solid fa-desktop me-1"></i> PC / Mac
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalFormulario" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-light border-bottom-0 rounded-top-4">
+                <h5 class="modal-title fw-bold" id="modalFormTitulo" style="color: var(--primary-color);">Agregar Libro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formLibro" onsubmit="guardarLibro(event)">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="IdCarpeta" name="IdCarpeta" />
+
+                <div class="modal-body px-4 pt-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary mb-1">Título del Libro <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control rounded-3" id="Titulo" name="Titulo" placeholder="Ej: La peregrinación" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary mb-1">Autor(es) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control rounded-3" id="Autor" name="Autor" placeholder="Ej: John Bunyan" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary mb-1">Descripción o Sinopsis <span class="text-danger">*</span></label>
+                        <textarea class="form-control rounded-3" id="Descripcion" name="Descripcion" rows="3" placeholder="Breve resumen del contenido..." required></textarea>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary mb-1">Archivo (PDF/EPUB) <span id="reqPdf" class="text-danger">*</span></label>
+                            <input class="form-control form-control-sm rounded-3" type="file" id="ArchivoPdf" name="ArchivoPdf" accept=".pdf,.epub">
+                            <div class="form-text text-info" id="helpPdf" style="font-size: 0.75rem;"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary mb-1">Portada <span id="reqImg" class="text-danger">*</span></label>
+                            <input class="form-control form-control-sm rounded-3" type="file" id="ArchivoPortada" name="ArchivoPortada" accept="image/png, image/jpeg, image/jpg" onchange="mostrarVistaPrevia(this)">
+                            <div class="form-text text-info" id="helpImg" style="font-size: 0.75rem;"></div>
+
+                            <div class="mt-2 text-center" id="contenedorVistaPrevia" style="display: none;">
+                                <span class="small text-muted d-block mb-1">Portada Actual / Previa:</span>
+                                <img id="vistaPreviaImg" src="" class="img-thumbnail shadow-sm rounded-3" style="max-height: 140px; object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0 rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn text-white rounded-pill px-4 fw-bold shadow-sm" id="btnGuardar" style="background-color: var(--accent-color);">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white border-bottom-0 rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 pt-4 text-center">
+                <div class="mb-3">
+                    <i class="fa-solid fa-trash-can fa-4x text-danger opacity-75"></i>
+                </div>
+                <h4 class="text-secondary fw-bold mb-2">¿Estás seguro?</h4>
+                <p class="text-muted mb-4">Estás a punto de eliminar el libro <br><strong id="tituloEliminar" class="text-dark fs-5"></strong></p>
+                <div class="alert alert-danger border-0 shadow-sm py-2 mb-0 text-start" role="alert">
+                    <i class="fa-solid fa-circle-info me-2"></i><small>Esta acción borrará los archivos permanentemente y <strong>no se puede deshacer</strong>.</small>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top-0 rounded-bottom-4 justify-content-center mt-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm" id="btnConfirmarEliminar" onclick="ejecutarEliminacion()">
+                    <i class="fa-solid fa-trash-can me-1"></i> Sí, Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // --- BUSCADOR EN TIEMPO REAL ---
+        function filtrarLibros() {
+            let input = document.getElementById('buscadorLibros').value.toLowerCase();
+            let cards = document.querySelectorAll('.book-item-col');
+            let resultados = 0;
+            
+            cards.forEach(card => {
+                let titulo = card.querySelector('.book-title').innerText.toLowerCase();
+                let autor = card.querySelector('.book-author').innerText.toLowerCase();
+                
+                // NUEVO: Obtener el texto del div oculto de la sinopsis
+                let desc = card.querySelector('.book-desc') ? card.querySelector('.book-desc').innerText.toLowerCase() : "";
+
+                // NUEVO: Agregar `desc.includes(input)` a la validación
+                if (titulo.includes(input) || autor.includes(input) || desc.includes(input)) {
+                    card.style.display = '';
+                    resultados++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            let msgEmpty = document.getElementById('no-results-msg');
+            if (msgEmpty) {
+                msgEmpty.style.display = (resultados === 0 && input !== '') ? 'block' : 'none';
+            }
+        }
+
+        // --- VISTA PREVIA DE LA IMAGEN ---
+        function mostrarVistaPrevia(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('vistaPreviaImg').src = e.target.result;
+                    document.getElementById('contenedorVistaPrevia').style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                document.getElementById('vistaPreviaImg').src = '';
+                document.getElementById('contenedorVistaPrevia').style.display = 'none';
+            }
+        }
+
+        function verDetalle(id, titulo, autor, desc, portada) {
+            document.getElementById('detalleNombre').innerText = titulo;
+            document.getElementById('detalleAutor').innerText = autor;
+            document.getElementById('detalleDescripcion').innerHTML = desc || "<em>No hay descripción disponible para este material.</em>";
+            document.getElementById('detallePortada').src = portada;
+            document.getElementById('btnDescargar').href = '/Biblioteca/Descargar/' + id;
+
+            var modal = new bootstrap.Modal(document.getElementById('modalDetalle'));
+            modal.show();
+        }
+
+        function abrirModalFormulario() {
+            document.getElementById('formLibro').reset();
+            document.getElementById('IdCarpeta').value = '';
+            document.getElementById('modalFormTitulo').innerHTML = '<i class="fa-solid fa-book-medical me-2" style="color: var(--accent-color);"></i> Agregar Libro Nuevo';
+
+            document.getElementById('ArchivoPdf').required = true;
+            document.getElementById('ArchivoPortada').required = true;
+            document.getElementById('reqPdf').style.display = 'inline';
+            document.getElementById('reqImg').style.display = 'inline';
+            document.getElementById('helpPdf').innerText = 'Formatos: .pdf, .epub';
+            document.getElementById('helpImg').innerText = 'Formatos: .jpg, .png';
+            
+            document.getElementById('vistaPreviaImg').src = '';
+            document.getElementById('contenedorVistaPrevia').style.display = 'none';
+
+            var modal = new bootstrap.Modal(document.getElementById('modalFormulario'));
+            modal.show();
+        }
+
+        function editarLibro(id, titulo, autor, desc, portada) {
+            document.getElementById('formLibro').reset();
+            document.getElementById('IdCarpeta').value = id;
+            document.getElementById('Titulo').value = titulo;
+            document.getElementById('Autor').value = autor;
+            document.getElementById('Descripcion').value = desc.replace(/<br>/g, "\n");
+            document.getElementById('modalFormTitulo').innerHTML = '<i class="fa-solid fa-pen-to-square me-2 text-warning"></i> Editar Información';
+
+            document.getElementById('ArchivoPdf').required = false;
+            document.getElementById('ArchivoPortada').required = false;
+            document.getElementById('reqPdf').style.display = 'none';
+            document.getElementById('reqImg').style.display = 'none';
+            document.getElementById('helpPdf').innerText = '(Opcional) Reemplazar archivo';
+            document.getElementById('helpImg').innerText = '(Opcional) Reemplazar portada';
+            
+            if (portada) {
+                document.getElementById('vistaPreviaImg').src = portada;
+                document.getElementById('contenedorVistaPrevia').style.display = 'block';
+            } else {
+                document.getElementById('contenedorVistaPrevia').style.display = 'none';
+            }
+
+            var modal = new bootstrap.Modal(document.getElementById('modalFormulario'));
+            modal.show();
+        }
+
+        async function guardarLibro(e) {
+            e.preventDefault();
+            const form = document.getElementById('formLibro');
+            const formData = new FormData(form);
+            const btn = document.getElementById('btnGuardar');
+
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Guardando...';
+
+            try {
+                const response = await fetch('@Url.Action("Guardar", "Biblioteca")', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success) {
+                    var modalEl = document.getElementById('modalFormulario');
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+
+                    await recargarGaleria();
+                    document.getElementById('buscadorLibros').value = '';
+
+                    if (typeof mostrarMensaje === 'function') {
+                        mostrarMensaje('¡Operación Exitosa!', 'El libro ha sido guardado correctamente.', 'exito');
+                    }
+                } else {
+                    if (typeof mostrarMensaje === 'function') mostrarMensaje('Error al Guardar', result.message, 'error');
+                }
+            } catch (error) {
+                if (typeof mostrarMensaje === 'function') mostrarMensaje('Error de Conexión', 'Ocurrió un error al intentar procesar la solicitud.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function eliminarLibro(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este libro por completo? Esta acción no se puede deshacer.')) return;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const formData = new FormData();
+            formData.append('id', id);
+            formData.append('__RequestVerificationToken', token);
+            
+            try {
+                const response = await fetch('@Url.Action("Eliminar", "Biblioteca")', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success) {
+                    await recargarGaleria();
+                    document.getElementById('buscadorLibros').value = '';
+                    if (typeof mostrarMensaje === 'function') {
+                        mostrarMensaje('Libro Eliminado', 'El libro y sus archivos fueron removidos.', 'info');
+                    }
+                } else {
+                    if (typeof mostrarMensaje === 'function') mostrarMensaje('Error al Eliminar', result.message, 'error');
+                }
+            } catch (error) {
+                if (typeof mostrarMensaje === 'function') mostrarMensaje('Error de Conexión', 'No se pudo comunicar con el servidor.', 'error');
+            }
+        }
+
+        async function recargarGaleria() {
+            try {
+                const response = await fetch('@Url.Action("ObtenerGaleria", "Biblioteca")');
+                const libros = await response.json();
+                const contenedor = document.getElementById('galeria-libros');
+
+                const puedeEditar = '@ViewBag.PuedeEditar' === 'True';
+                const puedeBorrar = '@ViewBag.PuedeBorrar' === 'True';
+                const puedeCrear = '@ViewBag.PuedeCrear' === 'True';
+                
+                if (libros.length === 0) {
+                    contenedor.innerHTML = `
+                        <div class="col-12 w-100 estado-vacio">
+                            <div class="text-center py-5 bg-white rounded-4 border-0 shadow-sm mt-3">
+                                <i class="fa-solid fa-book-open fa-4x text-muted mb-3 opacity-25"></i>
+                                <h4 class="text-secondary fw-bold">La biblioteca está vacía</h4>
+                                <p class="text-muted">No se encontraron libros. ${puedeCrear ? 'Agrega uno nuevo.' : ''}</p>
+                            </div>
+                        </div>`;
+                    return;
+                }
+
+                let html = '';
+                libros.forEach(l => {
+                    const safeTitulo = l.titulo.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                    const safeAutor = l.autor.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                    const safeDesc = (l.descripcion || '').replace(/"/g, '&quot;').replace(/\r/g, '').replace(/\n/g, "<br>").replace(/'/g, "\\'");
+                    const safeDescEdit = (l.descripcion || '').replace(/"/g, '&quot;').replace(/\r/g, '').replace(/\n/g, "\\n").replace(/'/g, "\\'");
+                    const descargas = l.descargas || 0;
+
+                    // BADGE DE DESCARGAS EN AJAX
+                    let badgeDescargas = (puedeEditar || puedeBorrar) ? `
+                        <span class="badge position-absolute top-0 end-0 m-2 shadow-sm"
+                              style="z-index: 2; background-color: var(--accent-color);"
+                              title="Total de descargas">
+                            <i class="fa-solid fa-download me-1"></i> ${descargas}
+                        </span>
+                    ` : '';
+
+                    let dropdownAdmin = '';
+                    if (puedeEditar || puedeBorrar) {
+                        let btnEditar = puedeEditar ? `
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0)" onclick="editarLibro('${l.idCarpeta}', '${safeTitulo}', '${safeAutor}', '${safeDescEdit}', '${l.rutaPortada}')">
+                                    <i class="fa-solid fa-pen-to-square text-warning me-2"></i> Editar Información
+                                </a>
+                            </li>` : '';
+                        let btnBorrar = puedeBorrar ? `
+                            <li>
+                                <a class="dropdown-item text-danger fw-bold" href="javascript:void(0)" onclick="prepararEliminar('${l.idCarpeta}', '${safeTitulo}')">
+                                    <i class="fa-solid fa-trash-can me-2"></i> Eliminar Libro
+                                </a>
+                            </li>` : '';
+                            
+                        dropdownAdmin = `
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm rounded-circle text-muted shadow-sm border" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px;">
+                                    <i class="fa-solid fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 12px;">
+                                    ${btnEditar}
+                                    ${btnBorrar}
+                                </ul>
+                            </div>`;
+                    }
+
+                    html += `
+                        <div class="col book-item-col">
+                            <div class="card h-100 rounded-3 book-card">
+                                ${badgeDescargas}
+                                <div class="book-cover-wrapper" onclick="verDetalle('${l.idCarpeta}', '${safeTitulo}', '${safeAutor}', '${safeDesc}', '${l.rutaPortada}')" style="cursor:pointer;">
+                                    <img src="${l.rutaPortada}" class="book-cover" alt="Portada" loading="lazy">
+                                </div>
+                                <div class="card-body book-info">
+                                    <div class="book-title" title="${l.titulo}">${l.titulo}</div>
+                                    <div class="book-author" title="${l.autor}">${l.autor}</div>
+                                    
+                                    <div class="book-desc d-none">${l.descripcion || ''}</div>
+
+                                    <div class="mt-auto d-flex gap-2">
+                                        <button class="btn btn-nautico-outline flex-grow-1 rounded-pill btn-sm fw-bold"
+                                                onclick="verDetalle('${l.idCarpeta}', '${safeTitulo}', '${safeAutor}', '${safeDesc}', '${l.rutaPortada}')">
+                                            <i class="fa-solid fa-eye me-1"></i> Detalles
+                                        </button>
+                                        ${dropdownAdmin}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                contenedor.innerHTML = html;
+                filtrarLibros(); // Mantiene el filtro de búsqueda
+                
+            } catch (error) {
+                console.error("Error al recargar galería:", error);
+                window.location.reload();
+            }
+        }
+        // --- LÓGICA DE ELIMINACIÓN CON MODAL ---
+        let idLibroAEliminar = ''; // Variable global para guardar el ID temporalmente
+
+        function prepararEliminar(id, titulo) {
+            idLibroAEliminar = id;
+            document.getElementById('tituloEliminar').innerHTML = `"${titulo}"`;
+            var modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+            modal.show();
+        }
+
+        async function ejecutarEliminacion() {
+            if (!idLibroAEliminar) return;
+
+            const btn = document.getElementById('btnConfirmarEliminar');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Eliminando...';
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const formData = new FormData();
+            formData.append('id', idLibroAEliminar);
+            formData.append('__RequestVerificationToken', token);
+            
+            try {
+                const response = await fetch('@Url.Action("Eliminar", "Biblioteca")', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success) {
+                    // Ocultar el modal
+                    var modalEl = document.getElementById('modalEliminar');
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+
+                    await recargarGaleria();
+                    document.getElementById('buscadorLibros').value = '';
+                    
+                    if (typeof mostrarMensaje === 'function') {
+                        mostrarMensaje('Libro Eliminado', 'El libro y sus archivos fueron removidos exitosamente.', 'info');
+                    }
+                } else {
+                    if (typeof mostrarMensaje === 'function') mostrarMensaje('Error al Eliminar', result.message, 'error');
+                }
+            } catch (error) {
+                if (typeof mostrarMensaje === 'function') mostrarMensaje('Error de Conexión', 'No se pudo comunicar con el servidor.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                idLibroAEliminar = ''; // Limpiar variable
+            }
+        }
+    </script>
+}

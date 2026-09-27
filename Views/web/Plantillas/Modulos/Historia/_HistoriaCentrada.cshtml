@@ -1,0 +1,23 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<div class="container py-5 fade-in-up">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h2 class="mb-4" style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-primary); font-size: 2.5rem;">
+                Nuestra Historia
+            </h2>
+            <div style="color: var(--theme-text-main); font-family: var(--theme-font-body); font-size: 1.1rem; line-height: 1.8; text-align: left;">
+                @if (!string.IsNullOrWhiteSpace(Model.Historia))
+                {
+                    @Html.Raw(Model.Historia.Replace("\n", "<br>").Replace("\r\n", "<br>"))
+                }
+                else
+                {
+                    <div class="text-center p-4" style="border: 2px dashed rgba(128, 128, 128, 0.3); border-radius: 12px; color: var(--theme-text-muted);">
+                        La historia de la congregación no ha sido registrada.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

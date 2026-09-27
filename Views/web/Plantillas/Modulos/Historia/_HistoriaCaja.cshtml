@@ -1,0 +1,19 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<div class="container py-5 fade-in-up">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 class="mb-4" style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-primary);">Historia</h2>
+            <div class="p-4 p-md-5 rounded-4 shadow-sm" style="background: var(--theme-surface); border: 1px solid rgba(128, 128, 128, 0.2); font-family: var(--theme-font-body); color: var(--theme-text-main); font-size: 1.1rem; line-height: 1.8;">
+                @if (!string.IsNullOrWhiteSpace(Model.Historia))
+                {
+                    @Html.Raw(Model.Historia.Replace("\n", "<br>").Replace("\r\n", "<br>"))
+                }
+                else
+                {
+                    <p class="mb-0 text-center" style="color: var(--theme-text-muted);">Información histórica no registrada.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

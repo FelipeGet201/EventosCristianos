@@ -1,0 +1,293 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+@{
+    Layout = null;
+    string sIdIglesia = ViewBag.sIdIglesia;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Constructor Visual | @Model.NombreIglesia</title>
+    <link rel="icon" type="image/png" href="/Images/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="/css/constructorWEB.css" />
+    <link rel="stylesheet" href="~/css/constructorWEB.css" asp-append-version="true" />
+    <style>
+        @Html.Raw("@") media (max-width: 1023px) {
+            .mobile-block-overlay {
+                display: flex;
+            }
+
+            .app-wrapper {
+                display: none !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="mobile-block-overlay">
+        <i class="fa-solid fa-desktop mb-4" style="font-size: 5rem; color: #ee9b00;"></i>
+        <h2 class="fw-bold mb-3">La pantalla es muy pequeña</h2>
+        <p class="fs-5 opacity-75" style="max-width: 500px;">El Constructor Visual requiere un área de trabajo amplia para organizar los módulos correctamente. Por favor, usa una computadora de escritorio o gira tu tablet.</p>
+        <a href="@Url.Action("Index", "IglesiasWeb")" class="btn btn-outline-light rounded-pill px-4 py-2 mt-4 fw-bold">Volver al Panel</a>
+    </div>
+
+    <div class="app-wrapper fade-in">
+        <header class="app-toolbar">
+            <div class="d-flex align-items-center gap-3">
+                <a href="@Url.Action("Index", "IglesiasWeb")" class="btn btn-outline-secondary rounded-pill fw-bold btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Regresar
+                </a>
+                <h5 class="m-0 fw-bold"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i> Constructor</h5>
+            </div>
+
+            <div class="btn-group shadow-sm">
+                <button type="button" class="btn btn-light px-3" id="btn-desktop" onclick="toggleDevice('desktop')" title="Vista Escritorio">
+                    <i class="fa-solid fa-desktop fs-5" style="color: #005f73;"></i>
+                </button>
+                <button type="button" class="btn btn-outline-light text-white-50 px-3" id="btn-mobile" onclick="toggleDevice('mobile')" title="Vista Móvil">
+                    <i class="fa-solid fa-mobile-screen fs-5"></i>
+                </button>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-danger rounded-pill fw-bold btn-sm px-3" onclick="reiniciarDiseno()">
+                    <i class="fa-solid fa-trash-can me-1"></i> Vaciar Lienzo
+                </button>
+                <button type="button" class="btn btn-light text-dark rounded-pill fw-bold shadow px-4" onclick="guardarDiseno()">
+                    <i class="fa-solid fa-save me-1" style="color: #005f73;"></i> Guardar Diseño
+                </button>
+            </div>
+        </header>
+
+        <div class="app-main">
+            <aside class="app-sidebar">
+                <ul class="nav nav-tabs nav-tabs-builder sidebar-header m-0" role="tablist">
+                    <li class="nav-item flex-fill text-center">
+                        <button type="button" class="nav-link active w-100" data-bs-toggle="tab" data-bs-target="#tab-modulos">
+                            <i class="fa-solid fa-cubes me-1"></i> Secciones
+                        </button>
+                    </li>
+                    <li class="nav-item flex-fill text-center">
+                        <button type="button" class="nav-link w-100" data-bs-toggle="tab" data-bs-target="#tab-tema">
+                            <i class="fa-solid fa-palette me-1"></i> Tema
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content sidebar-content">
+                    <div class="tab-pane fade show active" id="tab-modulos">
+                        <p class="text-muted small mb-3"><i class="fa-solid fa-circle-info me-1" style="color: #005f73;"></i> Arrastra un bloque al lienzo o da clic en (+).</p>
+                        <div id="catalog-list"></div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-tema">
+                        <h6 class="fw-bold text-dark mb-2 border-bottom pb-1" style="font-size: 0.9rem;">Paleta de Colores</h6>
+
+                        <div class="alert alert-info py-1 px-2 mb-2 d-flex align-items-center gap-2 shadow-sm rounded-2" style="font-size: 0.75rem; background-color: #f0f9ff; border-left: 3px solid #0284c7; color: #0369a1;">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span><strong>Consejo:</strong> Usa un tema predefinido o mantén armonía al personalizar.</span>
+                        </div>
+
+                        <div class="theme-control-group p-2 mb-2">
+                            <label style="font-size: 0.7rem;" class="mb-1">Temas Predefinidos</label>
+                            <div class="dropdown w-100">
+                                <button class="btn btn-sm btn-light border w-100 d-flex justify-content-between align-items-center text-start" type="button" id="dropdownTemas" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span id="selected-theme-preview" class="d-flex align-items-center gap-2" style="font-size: 0.8rem;">
+                                        <i class="fa-solid fa-palette text-muted"></i> <span>Personalizado</span>
+                                    </span>
+                                    <i class="fa-solid fa-chevron-down text-muted" style="font-size: 0.7rem;"></i>
+                                </button>
+                                <ul class="dropdown-menu w-100 shadow-sm" id="lista-temas-predefinidos" style="max-height: 200px; overflow-y: auto; font-size: 0.85rem;">
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <div class="theme-control-group p-2 mb-0 h-100">
+                                    <label style="font-size: 0.7rem;" class="mb-1 text-truncate">Fondo (--bg)</label>
+                                    <div class="color-picker-wrapper gap-1">
+                                        <input type="color" id="thm-bg" value="#F4F7F9" onchange="onColorManualChange()" style="width: 32px; height: 32px; padding: 0;">
+                                        <input type="text" class="form-control form-control-sm px-0 text-center" id="thm-bg-txt" readonly style="font-family: monospace; font-size: 0.7rem; border: none; background: transparent;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="theme-control-group p-2 mb-0 h-100">
+                                    <label style="font-size: 0.7rem;" class="mb-1 text-truncate">Superficie</label>
+                                    <div class="color-picker-wrapper gap-1">
+                                        <input type="color" id="thm-surface" value="#FFFFFF" onchange="onColorManualChange()" style="width: 32px; height: 32px; padding: 0;">
+                                        <input type="text" class="form-control form-control-sm px-0 text-center" id="thm-surface-txt" readonly style="font-family: monospace; font-size: 0.7rem; border: none; background: transparent;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="theme-control-group p-2 mb-0 h-100">
+                                    <label style="font-size: 0.7rem;" class="mb-1 text-truncate">Primario</label>
+                                    <div class="color-picker-wrapper gap-1">
+                                        <input type="color" id="thm-primary" value="#0F172A" onchange="onColorManualChange()" style="width: 32px; height: 32px; padding: 0;">
+                                        <input type="text" class="form-control form-control-sm px-0 text-center" id="thm-primary-txt" readonly style="font-family: monospace; font-size: 0.7rem; border: none; background: transparent;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="theme-control-group p-2 mb-0 h-100">
+                                    <label style="font-size: 0.7rem;" class="mb-1 text-truncate">Acento</label>
+                                    <div class="color-picker-wrapper gap-1">
+                                        <input type="color" id="thm-accent" value="#E11D48" onchange="onColorManualChange()" style="width: 32px; height: 32px; padding: 0;">
+                                        <input type="text" class="form-control form-control-sm px-0 text-center" id="thm-accent-txt" readonly style="font-family: monospace; font-size: 0.7rem; border: none; background: transparent;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="theme-control-group p-2 mb-0 h-100">
+                                    <label style="font-size: 0.7rem;" class="mb-1 text-truncate">Texto Principal</label>
+                                    <div class="color-picker-wrapper gap-1">
+                                        <input type="color" id="thm-text-main" value="#1E293B" onchange="onColorManualChange()" style="width: 32px; height: 32px; padding: 0;">
+                                        <input type="text" class="form-control form-control-sm px-0 text-center" id="thm-text-main-txt" readonly style="font-family: monospace; font-size: 0.7rem; border: none; background: transparent;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="theme-control-group p-2 mb-0 h-100">
+                                    <label style="font-size: 0.7rem;" class="mb-1 text-truncate">Texto Sec.</label>
+                                    <div class="color-picker-wrapper gap-1">
+                                        <input type="color" id="thm-text-muted" value="#64748B" onchange="onColorManualChange()" style="width: 32px; height: 32px; padding: 0;">
+                                        <input type="text" class="form-control form-control-sm px-0 text-center" id="thm-text-muted-txt" readonly style="font-family: monospace; font-size: 0.7rem; border: none; background: transparent;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-dark mb-2 mt-3 border-bottom pb-1" style="font-size: 0.9rem;">Tipografía y Estructura</h6>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <div class="theme-control-group p-2 mb-0">
+                                    <label style="font-size: 0.7rem;" class="mb-1">Fuente para Títulos</label>
+                                    <select id="thm-font-title" class="form-select form-select-sm" onchange="aplicarTemaVivo()" style="font-size: 0.8rem;">
+                                        <option value="'Outfit', sans-serif">Outfit (Moderna/Geo)</option>
+                                        <option value="'Playfair Display', serif">Playfair Display (Serif Elegante)</option>
+                                        <option value="'Inter', sans-serif">Inter (UI Limpia)</option>
+                                        <option value="'Cormorant Garamond', serif">Cormorant Garamond (Clásica)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="theme-control-group p-2 mb-0 h-100">
+                                    <label style="font-size: 0.7rem;" class="mb-1">Cuerpo</label>
+                                    <select id="thm-font-body" class="form-select form-select-sm" onchange="aplicarTemaVivo()" style="font-size: 0.8rem;">
+                                        <option value="'Inter', sans-serif">Inter</option>
+                                        <option value="'Lora', serif">Lora</option>
+                                        <option value="'Space Grotesk', sans-serif">Space</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="theme-control-group p-2 mb-0 h-100">
+                                    <label style="font-size: 0.7rem;" class="mb-1">Bordes</label>
+                                    <select id="thm-radius" class="form-select form-select-sm" onchange="aplicarTemaVivo()" style="font-size: 0.8rem;">
+                                        <option value="16px">16px (Curvo)</option>
+                                        <option value="8px">8px (Medio)</option>
+                                        <option value="0px">0px (Recto)</option>
+                                        <option value="30px">30px (Píldora)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </aside>
+
+            <main class="app-canvas-container" id="canvas-scroll-area">
+                <div id="page-frame">
+                    <style id="live-theme-styles"></style>
+                    <div id="drop-zone" style="min-height: 100%; position: relative; display: flex; flex-direction: column;">
+                        <div class="canvas-empty" id="empty-message">
+                            <i class="fa-solid fa-file-circle-plus fs-1 mb-3" style="color: #005f73;"></i>
+                            <h5>Lienzo de Diseño Vacío</h5>
+                            <p class="mb-0">Arrastra una sección o usa el botón (+).</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="sysWelcomeModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 p-2">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-circle-info text-info me-2"></i>Aviso Importante</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-muted" style="font-size: 0.95rem; line-height: 1.6;">
+                    <p>El Constructor Visual te ofrece una <strong>representación aproximada</strong> de tu página.</p>
+                    <p class="mb-0">Debido a las diferencias entre pantallas, te recomendamos <strong>Guardar tu Diseño</strong> y utilizar el botón de <strong>Vista Previa</strong> en tu panel principal para comprobar con exactitud cómo lucirá en dispositivos reales antes de publicarla.</p>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-primary rounded-pill w-100 fw-bold py-2" data-bs-dismiss="modal">¡Entendido!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalSelectDesign" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-light border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalSelectTitle">Elegir Diseño</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light p-4">
+                    <div class="row g-3" id="design-options-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="sysAlertModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+                <i class="fa-solid fa-circle-info text-primary fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-3">Aviso</h5>
+                <p id="sysAlertMessage" class="text-muted mb-4"></p>
+                <button type="button" class="btn btn-primary rounded-pill w-100 fw-bold" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="sysConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4 text-center p-4">
+                <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-3">¿Estás seguro?</h5>
+                <p id="sysConfirmMessage" class="text-muted mb-4"></p>
+                <div class="d-flex gap-2 w-100">
+                    <button type="button" class="btn btn-light rounded-pill w-50 fw-bold border" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger rounded-pill w-50 fw-bold" id="sysConfirmBtnOk">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" id="sIdIglesia" value="@sIdIglesia" />
+    @Html.AntiForgeryToken()
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script>
+        const catalogoBruto = @Html.Raw(ViewBag.CatalogoJson ?? "[]");
+        const configGuardada = @Html.Raw(ViewBag.ConfiguracionActual ?? "{ }");
+    </script>
+    <script src="~/js/constructorWEB.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<style>
+    .ev-neox-card {
+        background: var(--theme-surface);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+    }
+
+    .ev-neox-img {
+        position: relative;
+        height: 220px;
+        background: var(--theme-bg);
+    }
+
+        .ev-neox-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
+        }
+
+    .ev-neox-date {
+        position: absolute;
+        bottom: -20px;
+        right: 20px;
+        background: var(--theme-accent);
+        color: var(--theme-bg); /* Contraste inteligente */
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-align: center;
+        line-height: 1.1;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+</style>
+
+<div class="container py-5 fade-in-up">
+    <h2 class="mb-5" style="font-family: var(--theme-font-title); color: var(--theme-primary); font-weight: 800;">Próximos Eventos</h2>
+    <div class="row g-4">
+        @if (Model.Eventos != null && Model.Eventos.Any())
+        {
+            @foreach (var ev in Model.Eventos)
+            {
+                <div class="col-md-6">
+                    <div class="ev-neox-card h-100 d-flex flex-column">
+                        <div class="ev-neox-img">
+                            @if (!string.IsNullOrWhiteSpace(ev.ImagenUrl))
+                            {
+                                <img src="@ev.ImagenUrl" alt="Evento">
+                            }
+                            <div class="ev-neox-date">
+                                <div style="font-size: 1.8rem; font-weight: 900; font-family: var(--theme-font-title);">@(ev.Fecha == default ? "--" : ev.Fecha.ToString("dd"))</div>
+                                <div style="font-size: 0.7rem; text-transform: uppercase; font-family: var(--theme-font-body);">@(ev.Fecha == default ? "---" : ev.Fecha.ToString("MMM"))</div>
+                            </div>
+                        </div>
+                        <div class="p-4 pt-5 mt-2 d-flex flex-column flex-grow-1">
+                            <h4 class="mb-2" style="color: var(--theme-primary); font-family: var(--theme-font-title); font-weight: 700;">@ev.Titulo</h4>
+                            <p class="mb-3 small fw-bold" style="color: var(--theme-text-main); font-family: var(--theme-font-body);">
+                                <i class="fa-regular fa-clock me-1" style="color: var(--theme-accent);"></i> @ev.Horarios
+                            </p>
+                            <p class="small mb-0 mt-auto" style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">
+                                @if (!string.IsNullOrWhiteSpace(ev.Descripcion))
+                                {
+                                    @Html.Raw(ev.Descripcion.Replace("\n", "<br>"))
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

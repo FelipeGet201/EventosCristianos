@@ -1,0 +1,1235 @@
+@using RedAJP.Globales
+@using RedAJP.Services;
+@inject ISolicitudesService SolicitudesSvc
+@{
+    // =========================================================================
+    // 1. LÓGICA DE SERVIDOR (Permisos y Roles)
+    // =========================================================================   
+    int nIdUsuario = 0;
+    if (User.Identity.IsAuthenticated)
+    {
+        var claimId = User.FindFirst("IdUsuario");
+        if (claimId != null)
+        {
+            nIdUsuario = int.Parse(claimId.Value);
+        }
+    }
+
+    bool bOcultarMascotaVista = ViewBag.bOcultarMascota != null && ViewBag.bOcultarMascota == true;
+    bool p_Caja = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Leer);
+    bool p_Rifas = User.TienePermiso(Parametros.Modulos.Rifas, Parametros.Permisos.Leer);
+    bool p_RifasPersonales = User.TienePermiso(Parametros.Modulos.RifasPersonales, Parametros.Permisos.Leer);
+    bool p_Usuarios = User.TienePermiso(Parametros.Modulos.Usuarios, Parametros.Permisos.Leer);
+    bool p_Grupos = User.TienePermiso(Parametros.Modulos.Grupos, Parametros.Permisos.Leer);
+    bool p_Roles = User.TienePermiso(Parametros.Modulos.Roles, Parametros.Permisos.Leer);
+    bool p_TiendaConfig = User.TienePermiso(Parametros.Modulos.TiendaConfig, Parametros.Permisos.Leer);
+    bool p_Devoluciones = User.TienePermiso(Parametros.Modulos.Devoluciones, Parametros.Permisos.Editar);
+    bool p_ValidaTransferencias = User.TienePermiso(Parametros.Modulos.Eventos, Parametros.Permisos.Admin);
+    bool p_ValidaDonaciones = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Crear);
+    bool p_Entregas = User.TienePermiso(Parametros.Modulos.Entregas, Parametros.Permisos.Leer);
+    bool p_Visitas = User.TienePermiso(Parametros.Modulos.Visitas, Parametros.Permisos.Leer);
+    bool p_Encuestas = User.TienePermiso(Parametros.Modulos.Encuestas, Parametros.Permisos.Leer);
+    bool p_GeneradorQR = User.TienePermiso(Parametros.Modulos.GeneradorQR, Parametros.Permisos.Leer);
+    bool p_Biblioteca = User.TienePermiso(Parametros.Modulos.Biblioteca, Parametros.Permisos.Leer);
+    bool p_Cupones = User.TienePermiso(Parametros.Modulos.Cupones, Parametros.Permisos.Leer);
+    bool p_AlertasCorreos = User.TienePermiso(Parametros.Modulos.AlertasCorreos, Parametros.Permisos.Leer);
+    bool p_PuedeAutorizarSolicIglesias = User.TienePermiso(Parametros.Modulos.Reuniones, Parametros.Permisos.Editar);
+    bool p_Colores = User.TienePermiso(Parametros.Modulos.Colores, Parametros.Permisos.Leer);
+    bool p_Comunidad = User.TienePermiso(Parametros.Modulos.Comunidad, Parametros.Permisos.Leer);
+    bool p_PuedeVerDatosStripe = User.TienePermiso(Parametros.Modulos.CuentasStripe, Parametros.Permisos.Leer);
+    bool p_PuedeVerEstadisticas = User.TienePermiso(Parametros.Modulos.Estadisticas, Parametros.Permisos.Leer);
+
+    bool esMiembro = User.Identity!.IsAuthenticated;
+    bool p_Material = esMiembro;
+    bool p_Formatos = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Leer); ;
+    bool verMenuHerramientas = p_Visitas || p_Material || p_Formatos || p_Encuestas || p_GeneradorQR || p_Colores || p_Biblioteca;
+    bool verMenuGestion = p_Caja || p_Rifas || p_Usuarios || p_Grupos || p_Roles || p_TiendaConfig || p_Devoluciones  || p_ValidaTransferencias || p_ValidaDonaciones || p_Cupones || p_AlertasCorreos || p_PuedeAutorizarSolicIglesias || p_PuedeVerEstadisticas;
+
+    string inicialUsuario = esMiembro ? User.Identity.Name.Substring(0, 1).ToUpper() : "U";
+
+    int nContadorAlertasGestion = 0;
+    int nContadorAlertasMovilAgrup = 0;
+
+    int nDiseñosPendientes = 0;
+    if (esMiembro && p_TiendaConfig)
+    {
+        nDiseñosPendientes = await SolicitudesSvc.ObtenerContadorPendientesAsync();
+    }
+    nContadorAlertasGestion += nDiseñosPendientes;
+
+    int nTransferenciasPendientes = 0;
+    if (esMiembro && p_ValidaTransferencias)
+    {
+        nTransferenciasPendientes = await SolicitudesSvc.ObtenerContadorTransferenciasPendAsync();
+    }    
+    nContadorAlertasGestion += nTransferenciasPendientes;
+
+    int nEntregasPendientes = 0;
+    if (esMiembro && p_Entregas)
+    {
+        nEntregasPendientes = await SolicitudesSvc.ObtenerContadorEntregasAsync();
+    }
+    nContadorAlertasGestion += nEntregasPendientes;
+
+    int nDonacionesPendientes = 0;
+    if (esMiembro && p_ValidaDonaciones)
+    {
+        nDonacionesPendientes = await SolicitudesSvc.ObtenerContadorDonacionesPendientesAsync(nIdUsuario);
+    }
+    nContadorAlertasGestion += nDonacionesPendientes;
+
+    int nVinculacionesPendientes = 0;
+    if (esMiembro && p_PuedeAutorizarSolicIglesias)
+    {
+        nVinculacionesPendientes = await SolicitudesSvc.ObtenerContadorVinculacionesPendientesAsync();
+    }
+    nContadorAlertasGestion += nVinculacionesPendientes;
+
+    int nObjetosCarrito = 0;
+    int nAlertasComprasCliente = 0;
+    int nMensajesComunidad = 0;
+    if (esMiembro)
+    {
+        // Buscamos el ID en la cookie encriptada
+        var claimId = User.FindFirst("IdUsuario");
+        // 3. Solo si encontramos el ID, llamamos a la base de datos
+        if (claimId != null)
+        {
+            nObjetosCarrito = await SolicitudesSvc.ObtenerContadorCarritoAsync(int.Parse(claimId.Value));
+            nAlertasComprasCliente = await SolicitudesSvc.ObtenerContadorAlertasClienteAsync(int.Parse(claimId.Value));
+            
+            if (p_Comunidad)
+            {
+                bool esAdminComunidad = User.TienePermiso(Parametros.Modulos.Comunidad, Parametros.Permisos.Admin);
+                nMensajesComunidad = await SolicitudesSvc.ObtenerContadorMensajesComunidadAsync(int.Parse(claimId.Value), esAdminComunidad);
+            }
+        }
+    }
+
+    // CONTADORES PARA RIFAS PERSONALES
+    int nAlertasRifasPersonales = 0;
+    if (esMiembro && p_RifasPersonales)
+    {
+        int nRifasAsignadas = await SolicitudesSvc.ObtenerContadorRifasAsignadasAsync(nIdUsuario);
+        int nPagosPendientesRifas = await SolicitudesSvc.ObtenerContadorRifasPagosPendientesAsync(nIdUsuario);
+        
+        nAlertasRifasPersonales = nRifasAsignadas + nPagosPendientesRifas;
+    }
+    // Sumamos al candado principal de Gestión
+    nContadorAlertasGestion += nAlertasRifasPersonales;
+    nContadorAlertasMovilAgrup = nContadorAlertasGestion + nAlertasComprasCliente + nMensajesComunidad;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="theme-color" content="#002b36">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>@ViewData["Title"] - ICIAR | AJP</title>
+    <link rel="icon" type="image/png" href="~/Images/favicon.ico">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <link rel="stylesheet" href="~/css/estilos_pagina.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/movimiento_peces.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/mascota.css" asp-append-version="true" />
+</head>
+
+@if (esMiembro && !bOcultarMascotaVista)
+{
+    <div id="mascota-flotante" class="mascota-oculta-inicial" role="button" aria-label="Dar ofrenda" data-reset="@TempData["ResetMascota"]">
+
+        <div class="mensaje-mascota"><strong>!Hola Pescador!</strong> <br> Te invitamos a apoyar la Obra de Dios. ¿Te animas?</div>
+
+        <button class="boton-cerrar-mascota" aria-label="Cerrar mascota">×</button>
+
+        <i class="fa-solid fa-heart corazon-icon-boya"></i>
+
+        <div class="brazos-corazon">
+            <div class="mano-corazon mano-izq"></div>
+            <div class="mano-corazon mano-der"></div>
+        </div>
+
+        <div class="rostro-corazon">
+            <div class="contenedor-ojos">
+                <div class="ojo-mascota"><div class="pupila-mascota"></div></div>
+                <div class="ojo-mascota"><div class="pupila-mascota"></div></div>
+            </div>
+            <div class="boca-mascota"></div>
+        </div>
+    </div>
+}
+
+<body class="d-flex flex-column min-vh-100">
+    <style>
+        /* Prevenir desbordamiento horizontal global causado por la animación */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
+            width: 100%;
+        }
+        /* Asegurar que el mar no genere scroll */
+        #mar-animado {
+            overflow: hidden;
+            max-width: 100vw;
+        }
+        /* Estilo para el número sobre el candado de Gestión (Desktop) */
+        .navbar-nav .nav-link i.position-relative .badge-dinamico {
+            position: absolute;
+            top: -10px;
+            right: -12px;
+            background-color: var(--acento-coral);
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 5px;
+            border-radius: 50px;
+            border: 2px solid var(--header-footer);
+            font-weight: bold;
+            line-height: 1;
+            min-width: 16px;
+            text-align: center;
+            z-index: 5;
+        }
+
+        /* Asegura que el icono de Gestión permita posicionamiento absoluto interno */
+        #menu-gestion i {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+              
+
+        .ajp-corto{
+            display: block;
+        }
+        .ajp-largo{
+            display: none;
+        }
+        
+        @@media (min-width: 992px) {            
+            .nav-link span {
+                font-size: 0.6rem !important;
+            }
+        }
+        @@media (min-width: 1280px) {
+            .nav-link span {
+                font-size: 0.7rem !important;
+            }
+        }
+
+        @@media (max-width: 991px) {
+            .ajp-corto {
+                display: none;
+            }
+            .ajp-largo {
+                display: block;
+            }
+            .letra-nombre{
+                margin-left: 0.5rem;
+            }
+            .navbar-nav {
+                text-align: center;
+            }
+                /* APLICAR BORDES SOLO A LOS ÍTEMS DE NIVEL SUPERIOR */
+                /* El selector '>' asegura que solo afecte a los hijos directos del menú principal */
+                .navbar-nav > .nav-item {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    border-left: none !important;
+                    padding: 10px 0;
+                }
+            /* QUITAR BORDES EN LOS ÍTEMS DENTRO DE DROPDOWNS */
+            .dropdown-menu .dropdown-item {
+                border-bottom: none !important; /* Limpia las líneas internas */
+                padding: 10px 15px; /* Espaciado cómodo para el dedo */
+            }
+
+            .dropdown-menu {
+                min-width: 250px;
+                text-align: center;
+                background-color: rgba(255, 255, 255, 0.05);
+                border: none;
+                padding: 0; /* Quitar padding extra del contenedor */
+            }
+            /* Mantener el <hr> funcional dentro de los dropdowns (para tus separadores lógicos) */
+            .dropdown-divider {
+                border-top: 1px solid rgba(255,255,255,0.2) !important;
+                margin: 0.5rem 0;
+            }
+
+            .navbar-nav .nav-link i.position-relative .badge-dinamico {
+                top: -5px;
+                right: -15px;
+            }
+
+            .user-avatar-btn {
+                justify-content: center !important;
+            }
+        }        
+
+        @@media (max-width: 770px) {
+            .ajp-corto {
+                display: block;
+            }
+            .ajp-largo {
+                display: none;
+            }
+        }  
+        /* Estilo del botón "Ojo" Para contraseñas */
+        .ojo-global-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            z-index: 10;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s;
+        }
+
+            .ojo-global-btn:hover {
+                color: #00334e; /* Tu color azul náutico */
+            }
+
+        /* Clase para dar espacio al texto y que no choque con el icono */
+        .input-con-ojo-padding {
+            padding-right: 45px !important;
+        }
+
+        /* Aseguramos posicionamiento relativo en el padre */
+        .contenedor-ojo-relativo {
+            position: relative !important;
+        }
+    </style>
+    <div id="mar-animado"></div>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-nautica navbar-dark sticky-top shadow-sm">
+            <div class="container">
+
+                <a class="navbar-brand d-flex align-items-center py-2 me-auto" href="@Url.Action("Index", "Home")">
+                    <img src="~/Images/logo_ajp.jpg" alt="Logo" height="50" class="me-2 rounded-circle">
+    
+                    <span class="fw-bold tracking-wide ajp-corto">AJP</span>
+    
+                    <span class="fw-bold tracking-wide ajp-largo">Alianza Juvenil Los Pescadores</span>
+                </a>
+
+                @if (esMiembro)
+                {
+                    <div class="d-flex align-items-center d-lg-none ms-2">
+                        <a class="nav-link p-0" id="menuCarrito" href="@Url.Action("Carrito", "Tienda")">
+                            <div class="social-buoy position-relative" style="width: 40px;height: 40px;background: linear-gradient(135deg, var(--pez-azul) 0%, #00838f 100%);border: 1px solid rgba(255, 255, 255, 0.25);box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);display: flex;align-items: center;justify-content: center;">
+
+                                <i class="fa-solid fa-cart-shopping" style="color: white !important; font-size: 1rem;"></i>
+
+                                @if (nObjetosCarrito > 0)
+                                {
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" style="font-size: 0.6rem;">
+                                        @nObjetosCarrito
+                                        <span class="visually-hidden">artículos en carrito</span>
+                                    </span>
+                                }
+                            </div>
+                        </a>
+                    </div>
+                }
+
+                <button class="navbar-toggler position-relative" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir navegación" style="margin-right: 1rem;">
+                    <span class="navbar-toggler-icon"></span>
+
+                    @if (nContadorAlertasMovilAgrup > 0)
+                    {
+                        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill">@nContadorAlertasMovilAgrup</span>
+                    }
+                </button>
+
+                <div class="collapse navbar-collapse" id="menuPrincipal">
+
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" id="menu-nosotros" href="@Url.Action("Nosotros", "Home")">
+                                <i class="fa-solid fa-people-group"></i> <span>Nosotros</span>
+                            </a>
+                        </li>
+                        <li class="nav-item border-start-lg">
+                            <a class="nav-link" id="menu-reuniones" href="@Url.Action("Index", "Reuniones")">
+                                <i class="fa-solid fa-map-location-dot"></i> <span>UBICACIONES</span>
+                            </a>
+                        </li>
+                        @if (esMiembro)
+                        {
+                            <li class="nav-item border-start-lg">
+                                <a class="nav-link" id="menu-eventos" href="@Url.Action("Index", "Eventos")">
+                                    <i class="fa-solid fa-calendar-check"></i> <span>Eventos</span>
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item border-start-lg">
+                                <a class="nav-link" id="menu-miembros" href="@Url.Action("Index", "Login")">
+                                    <i class="fa-solid fa-users"></i> <span>Miembros</span>
+                                </a>
+                            </li>
+                        }
+                            <li class="nav-item border-start-lg">
+                            <a class="nav-link" id="menu-donaciones" href="@Url.Action("Index", "Donaciones")">
+                                <i class="fa-solid fas fa-hand-holding-heart"></i> <span>Donaciones</span>
+                            </a>
+                        </li> 
+                        @if (esMiembro && p_Comunidad)
+                        {
+                            <li class="nav-item border-start-lg">
+                                <a class="nav-link" id="menu-comunidad" href="@Url.Action("Index", "Comunidad")">
+                                    <i class="fa-solid far fa-envelope position-relative">
+                                        @if (nMensajesComunidad > 0)
+                                        {
+                                            <span class="badge-dinamico">@nMensajesComunidad</span>
+                                        }
+                                    </i> 
+                                    <span>Comunidad</span>
+                                </a>
+                            </li>
+                        }
+                        <li class="nav-item border-start-lg">
+                            <a class="nav-link" id="menu-tienda" href="@Url.Action("Index", "Tienda")">
+                                <i class="fa-solid fa-store"></i> <span>Tienda</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
+                        @if (esMiembro)
+                        {
+                            <div class="d-none d-lg-block">
+                                <a class="nav-link p-0" id="menuCarrito" href="@Url.Action("Carrito", "Tienda")">
+                                    <div class="social-buoy position-relative" style="width: 40px;height: 40px;background: linear-gradient(135deg, var(--pez-azul) 0%, #00838f 100%);border: 1px solid rgba(255, 255, 255, 0.25);box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);display: flex;align-items: center;justify-content: center;">
+
+                                        <i class="fa-solid fa-cart-shopping" style="color: white !important; font-size: 1rem;"></i>
+
+                                        @if (nObjetosCarrito > 0)
+                                        {
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" style="font-size: 0.6rem;">
+                                                @nObjetosCarrito
+                                                <span class="visually-hidden">artículos en carrito</span>
+                                            </span>
+                                        }
+                                    </div>
+                                </a>
+                            </div>
+
+                            @if (verMenuHerramientas)
+                            {
+                                <li class="nav-item dropdown border-start-lg">
+                                    <a class="nav-link dropdown-toggle" id="menu-herramientas" href="#" role="button" data-bs-toggle="dropdown">
+                                        <i class="fa-solid fas fa-file-video"></i> <span>Recursos</span>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        @if (p_Visitas)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-visitas" href="@Url.Action("Index", "Visitas")"><i class="fa-solid fa-chart-line"></i> Ver Visitas</a></li>
+                                        }
+                                        @if (p_Material)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-material" href="@Url.Action("Index", "Materiales")"><i class="fa-solid fa-book-bible"></i> Material Evangelístico</a></li>
+                                        }
+                                        @if (p_Biblioteca)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-biblioteca" href="@Url.Action("Index", "Biblioteca")"><i class="fa-solid fas fa-book"></i> Biblioteca</a></li>
+                                        }
+                                        @if (p_Formatos)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-formatos" href="@Url.Action("Index", "Formatos")"><i class="fa-solid fas fa-file-video"></i> Videos y Formatos AJP</a></li>
+                                        }
+                                        @if (p_Encuestas)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-encuestas" href="@Url.Action("Index", "Encuestas")"><i class="fa-solid fas fa-poll"></i> Encuestas</a></li>
+                                        }
+                                        @if (p_GeneradorQR)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-qr" href="@Url.Action("Index", "CodigosQR")"><i class="fa-solid fa-solid fa-qrcode"></i> Generador QR</a></li>
+                                        }
+                                        @if (p_Colores)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-colores" href="@Url.Action("Index", "Colores")"><i class="fa-solid fa-solid fas fa-palette"></i> Catálogo de Colores AJP</a></li>
+                                        }
+                                        else
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-colores" href="@Url.Action("Index", "Colores")"><i class="fa-solid fa-solid fas fa-palette"></i> Combinador de Colores</a></li> 
+                                        }
+                                        </ul>
+                                </li>
+                            }  
+
+                            @if (verMenuGestion)
+                            {
+                                <li class="nav-item dropdown border-start-lg">
+                                    <a class="nav-link dropdown-toggle text-warning" id="menu-gestion" href="#" role="button" data-bs-toggle="dropdown">
+                                        <i class="fa-solid fa-lock position-relative">
+                                            @if (nContadorAlertasGestion > 0)
+                                            {
+                                                <span class="badge-dinamico">@nContadorAlertasGestion</span>
+                                            }
+                                        </i>
+                                        <span> Gestión</span>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+
+                                        @if (p_Caja || p_Rifas)
+                                        {
+                                            if (p_Caja)
+                                            {
+                                                <li><a class="dropdown-item" id="submenu-caja" href="@Url.Action("Index", "Caja")"><i class="fa-solid fa-sack-dollar"></i> Caja</a></li>
+                                            }
+                                            if (p_Rifas)
+                                            {
+                                                <li><a class="dropdown-item" id="submenu-rifas" href="@Url.Action("Index", "Rifas")"><i class="fa-solid fa-ticket"></i> Rifas AJP</a></li>
+                                            }
+                                            if (p_RifasPersonales)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" id="submenu-rifaspersonales" href="@Url.Action("Index", "RifasPersonales")">
+                                                        <span><i class="fa-solid fas fa-hand-holding-usd"></i> Rifas Personales</span>
+                                                        @if (nAlertasRifasPersonales > 0)
+                                                        {
+                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nAlertasRifasPersonales</span>
+                                                        }
+                                                    </a>
+                                                </li>
+                                            }
+
+                                            // LOGICA DEL SEPARADOR: Solo se muestra si hay permisos en los bloques siguientes
+                                            if (p_Entregas || p_TiendaConfig || p_Usuarios || p_Grupos || p_Roles)
+                                            {
+                                                <li><hr class="dropdown-divider"></li>
+                                            }
+                                        }
+
+                                        @if (p_Entregas || p_TiendaConfig || p_Cupones)
+                                        {
+                                            if (p_Entregas)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" id="submenu-entregasadmin" href="@Url.Action("EntregasAdmin", "Tienda")">
+                                                        <span><i class="fa-solid fa-truck-fast"></i> Entregas y Pedidos</span>
+                                                        @if (nEntregasPendientes > 0)
+                                                        {
+                                                            <span class="badge rounded-pill bg-warning text-dark ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nEntregasPendientes</span>
+                                                        }
+                                                    </a>
+                                                </li>
+                                            }
+
+                                            if (p_Cupones)
+                                            {
+                                                <li><a class="dropdown-item" id="submenu-cupones" href="@Url.Action("Index", "Cupones")"><i class="fa-solid fas fa-gift"></i> Cupones</a></li>
+                                            }
+
+                                            if (p_TiendaConfig)
+                                            {
+                                                <li><a class="dropdown-item" id="submenu-categorias" href="@Url.Action("Categorias", "TiendaConfig")"><i class="fa-solid fa-tags"></i> Categorías</a></li>
+                                                <li><a class="dropdown-item" id="submenu-catalogotienda" href="@Url.Action("Index", "TiendaProductos")"><i class="fa-solid fa-shirt"></i> Catálogo</a></li>
+                                                <li>
+                                                    <a class="dropdown-item" id="submenu-solicitudes" href="@Url.Action("Solicitudes", "TiendaDisenos")">
+                                                        <span><i class="fa-solid fa-palette"></i> Solicitudes</span>
+                                                        @if (nDiseñosPendientes > 0)
+                                                        {
+                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nDiseñosPendientes</span>
+                                                        }
+                                                    </a>
+                                                </li>
+                                            }
+                                            // LOGICA DEL SEPARADOR 2: Solo si hay usuarios o roles abajo
+                                            if (p_ValidaTransferencias || p_ValidaDonaciones || p_Usuarios || p_Grupos || p_Roles)
+                                            {
+                                                <li><hr class="dropdown-divider"></li>
+                                            }
+                                        }
+
+                                        @if (p_Devoluciones || p_ValidaTransferencias || p_ValidaDonaciones)
+                                        {
+                                            if (p_Devoluciones)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" id="submenu-devoluciones" href="@Url.Action("Index", "Devoluciones")">
+                                                        <span><i class="fas fa-reply"></i> Devoluciones</span>
+                                                    </a>
+                                                </li>
+                                            }
+                                            if (p_ValidaTransferencias)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" id="submenu-transferencias" href="@Url.Action("Autorizaciones", "Eventos")">
+                                                        <span><i class="far fa-money-bill-alt"></i> Transferencias</span>
+                                                        @if (nTransferenciasPendientes > 0)
+                                                        {
+                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nTransferenciasPendientes</span>
+                                                        }
+                                                    </a>
+                                                </li>
+                                            }
+                                            if (p_ValidaDonaciones)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" id="submenu-autorizacion-donaciones" href="@Url.Action("Autorizaciones", "Donaciones")">
+                                                        <span><i class="fas fa-hand-holding-heart"></i> Donaciones</span>
+                                                        @if (nDonacionesPendientes > 0)
+                                                        {
+                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nDonacionesPendientes</span>
+                                                        }
+                                                    </a>
+                                                </li>
+                                            }
+                                            if (p_PuedeAutorizarSolicIglesias)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" id="submenu-autorizacion-vinculacion" href="@Url.Action("Autorizaciones", "Vinculacion")">
+                                                        <span><i class="fas fa-clipboard-check"></i> Solicitudes de Iglesias</span>
+                                                        @if (nVinculacionesPendientes > 0)
+                                                        {
+                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nVinculacionesPendientes</span>
+                                                        }
+                                                    </a>
+                                                </li>
+                                            }
+                                            if (p_PuedeVerEstadisticas)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" id="submenu-estadisticas" href="@Url.Action("Index", "Estadisticas")">
+                                                        <span><i class="far fa-chart-bar"></i> Estadísticas</span>
+                                                    </a>
+                                                </li>
+                                            }
+                                            if (p_Usuarios || p_Grupos || p_Roles)
+                                            {
+                                                <li><hr class="dropdown-divider"></li>
+                                            }
+                                        }
+                                        @if (p_PuedeVerDatosStripe)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-cuentas-stripe" href="@Url.Action("Index", "CuentasStripe")"><i class="fa-brands fa-stripe"></i> Pasarelas Stripe</a></li>
+                                        }
+
+                                        @if (p_Usuarios || p_Grupos || p_Roles || p_AlertasCorreos)
+                                        {
+                                            if (p_Usuarios)
+                                            {
+                                                <li><a class="dropdown-item" id="submenu-usuarios" href="@Url.Action("Index", "Usuarios")"><i class="fa-solid fa-users"></i> Usuarios</a></li>
+                                            }
+                                            if (p_Grupos)
+                                            {
+                                                <li><a class="dropdown-item" id="submenu-grupos" href="@Url.Action("Index", "Grupos")"><i class="fa-solid fas fa-users-cog"></i> Grupos de Usuarios</a></li>
+                                            }
+                                            if (p_Roles)
+                                            {
+                                                <li><a class="dropdown-item" id="submenu-roles" href="@Url.Action("Index", "Roles")"><i class="fa-solid fa-id-badge"></i> Roles</a></li>
+                                            }
+                                            if (p_AlertasCorreos)
+                                            {
+                                                <li><a class="dropdown-item" id="submenu-alertascorreos" href="@Url.Action("Index", "AlertasCorreos")"><i class="fa-solid fas fa-paper-plane"></i> Correos de Alerta</a></li>
+                                            }
+                                        }
+                                    </ul>
+                                </li>
+                            }
+
+                            <li class="nav-item dropdown ms-lg-2">
+                                <a class="nav-link dropdown-toggle user-avatar-btn" href="#" id="menu-usuario" role="button" data-bs-toggle="dropdown" style="min-width: auto;">
+
+                                    <div class="rounded-circle text-dark d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px; background-color: var(--acento-dorado);">
+                                        
+                                        <i class="position-relative letra-nombre" style="font-style: normal; display: inline-flex;">
+                                            <span class="fw-bold small">@inicialUsuario</span>
+
+                                            @if (nAlertasComprasCliente > 0)
+                                            {
+                                                <span class="badge-dinamico" style="top: -1rem;right: -1rem;">@nAlertasComprasCliente</span>
+                                            }
+                                        </i>
+                                    </div>
+
+                                    <span class="nombre-usuario-texto small fw-bold text-truncate" style="max-width: 150px; color: var(--acento-dorado);">
+                                        @User.Identity.Name
+                                    </span>
+                                </a>
+
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li class="dropdown-header text-center">SESIÓN ACTIVA</li>
+                                    <li><a class="dropdown-item" id="submenu-miperfil" href="@Url.Action("Index", "Perfil")"><i class="fa-solid fa-address-card"></i> Mi Perfil</a></li>
+
+                                    <li>
+                                        <a class="dropdown-item align-items-center" id="submenu-miscompras" href="@Url.Action("MisCompras", "Tienda")">
+                                            <span><i class="fa-solid fa-bag-shopping me-1"></i> Mis Compras</span>
+                                            @if (nAlertasComprasCliente > 0)
+                                            {
+                                                <span class="badge rounded-pill bg-danger shadow-sm ms-3">@nAlertasComprasCliente</span>
+                                            }
+                                        </a>
+                                    </li>
+
+                                    <li><a class="dropdown-item" id="submenu-diseños" href="@Url.Action("MisDisenos", "Perfil")"><i class="fa-solid fa-paint-roller"></i> Mis Diseños</a></li>
+                                    @if (ViewBag.nMisPaginasWeb != null && ViewBag.nMisPaginasWeb > 0)
+                                    {
+                                        <li><a class="dropdown-item" id="submenu-paginasweb" href="@Url.Action("Index", "IglesiasWeb")"><i class="fa-solid fa-globe"></i> Mis Páginas WEB</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger fw-bold" href="@Url.Action("Salir", "Login")"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</a></li>
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container flex-grow-1">
+        @RenderBody()
+    </main>
+
+    <footer class="py-4 mt-auto">
+        <div class="container text-center">
+            @if (ViewBag.sAmbiente == "dev")
+            {
+                <div class="mb-3">
+                    <span class="badge bg-warning text-dark px-3 py-2"
+                          style="font-size:0.75rem; letter-spacing:1px;">
+                        AMBIENTE DE PRUEBAS
+                    </span>
+                </div>
+            }
+            <div class="mb-3">
+                <i class="fa-solid fa-anchor me-2" style="color: var(--acento-dorado); opacity: 0.8;"></i>
+                <span class="fw-bold text-white tracking-wide">Alianza Juvenil Los Pescadores</span>
+            </div>
+
+            <div class="mb-4 px-3">
+                <small class="fst-italic" style="color: var(--texto-arena); font-size: 0.85rem;">
+                    "Y les dijo: Venid en pos de mí, y os haré pescadores de hombres." <br> (Mateo 4:19)
+                </small>
+            </div>
+
+            <div class="mb-4">
+                <div class="small text-uppercase fw-bold mb-2" style="color: var(--texto-arena); font-size: 0.65rem; letter-spacing: 1.5px; opacity: 0.7;">
+                    ¿NECESITAS AYUDA?
+                </div>
+
+                <a href="mailto:soporte@lospescadores.org"
+                   class="d-inline-flex align-items-center px-4 py-2 rounded-pill text-decoration-none transition-hover"
+                   style="border: 1px solid rgba(255, 255, 255, 0.15); background-color: rgba(255, 255, 255, 0.05); color: var(--texto-arena);">
+
+                    <i class="fa-regular fa-envelope me-2" style="color: var(--acento-dorado);"></i>
+                    <span style="font-size: 0.9rem;">soporte@lospescadores.org</span>
+                </a>
+            </div>
+
+            <div class="d-flex justify-content-center align-items-center">
+                <span class="small text-uppercase me-3 fw-bold" style="font-size: 0.75rem; color: var(--texto-arena); letter-spacing: 1px;">SÍGUENOS</span>
+
+                <div class="d-flex gap-2">
+                    <a href="https://www.facebook.com/yosoyAJP" class="social-buoy" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/yosoyajp/" class="social-buoy" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <div class="modal fade modal-nautico" id="modalUniversal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <i id="modalIcono" class="modal-icono-grande fa-solid fa-circle-info"></i>
+                    <h5 class="modal-title modal-titulo-nautico" id="modalTitulo">Mensaje</h5>
+                </div>
+
+                <div class="modal-body">
+                    <p class="mb-0" id="modalMensaje">...</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-nautico px-4 py-2" data-bs-dismiss="modal">
+                        Entendido
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/movimiento_peces.js" asp-append-version="true"></script>
+    <script src="~/js/mascota.js" asp-append-version="true"></script>
+
+    <script>
+
+        // A. Función para el Menú (UI)
+        function activarMenu(idMenu, idSubMenu = null) {
+            const menu = document.getElementById(idMenu);
+            if (menu) {
+                menu.classList.add('active');
+                if(idMenu === 'menu-gestion') menu.classList.add('text-warning');
+            }
+            if (idSubMenu) {
+                const subMenu = document.getElementById(idSubMenu);
+                if (subMenu) subMenu.classList.add('active');
+            }
+        }
+
+        // B. Función para mostrar el Modal Mensaje
+                function mostrarMensaje(titulo, mensaje, tipo = 'info') {
+            $('#modalTitulo').text(titulo); // El título lo dejamos como texto plano por seguridad
+            $('#modalMensaje').html(mensaje); // <--- CAMBIO AQUÍ: Usamos .html() en lugar de .text()
+
+            var modalEl = $('#modalUniversal');
+            var iconoEl = $('#modalIcono');
+
+            // Limpiamos estilos previos
+            modalEl.removeClass('tipo-error tipo-exito tipo-alerta tipo-info');
+            iconoEl.attr('class', 'modal-icono-grande');
+
+            // Aplicamos nuevo estilo
+            switch(tipo) {
+                case 'error':
+                    modalEl.addClass('tipo-error');
+                    iconoEl.addClass('fa-solid fa-circle-xmark');
+                    break;
+                case 'exito':
+                    modalEl.addClass('tipo-exito');
+                    iconoEl.addClass('fa-solid fa-circle-check');
+                    break;
+                case 'alerta':
+                    modalEl.addClass('tipo-alerta');
+                    iconoEl.addClass('fa-solid fa-triangle-exclamation');
+                    break;
+                default: // info
+                    modalEl.addClass('tipo-info');
+                    iconoEl.addClass('fa-solid fa-circle-info');
+            }
+
+            var myModal = new bootstrap.Modal(document.getElementById('modalUniversal'));
+            myModal.show();
+        }
+
+        // C. Auto-detectar mensajes del Backend (TempData) al cargar
+        $(document).ready(function() {
+            // 1. Leemos los mensajes usando Html.Raw y Json.Serialize para respetar ñ, tildes y signos
+            var msgError  = @Html.Raw(Json.Serialize(TempData["Error"]));
+            var msgExito  = @Html.Raw(Json.Serialize(TempData["Exito"]));
+            var msgAlerta = @Html.Raw(Json.Serialize(TempData["Alerta"]));
+
+            // 2. Leemos el TÍTULO personalizado
+            var tituloPersonalizado = @Html.Raw(Json.Serialize(TempData["Titulo"]));
+
+            // 3. Lógica con Títulos dinámicos
+            if (msgError) {
+                mostrarMensaje(tituloPersonalizado || '¡Algo salió mal!', msgError, 'error');
+            }
+            else if (msgExito) {
+                mostrarMensaje(tituloPersonalizado || '¡Excelente!', msgExito, 'exito');
+            }
+            else if (msgAlerta) {
+                mostrarMensaje(tituloPersonalizado || 'Importante', msgAlerta, 'alerta');
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Buscar todos los inputs de tipo password en la página
+            const passwordInputs = document.querySelectorAll('input[type="password"]');
+
+            passwordInputs.forEach(input => {
+                // Evitar duplicados si ya se procesó (por si usaste ajax)
+                if (input.getAttribute('data-ojo-activo') === 'true') return;
+
+                // 2. Preparar el contenedor padre
+                const parent = input.parentElement;
+                parent.classList.add('contenedor-ojo-relativo');
+
+                // 3. Agregar padding al input para que el texto no toque el ojo
+                input.classList.add('input-con-ojo-padding');
+                input.setAttribute('data-ojo-activo', 'true'); // Marcar como procesado
+
+                // 4. Crear el botón del ojo dinámicamente
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'ojo-global-btn';
+                btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+
+                // 5. Lógica del click
+                btn.addEventListener('click', function() {
+                    const icono = btn.querySelector('i');
+                    if (input.type === "password") {
+                        input.type = "text";
+                        icono.classList.remove("fa-eye");
+                        icono.classList.add("fa-eye-slash");
+                    } else {
+                        input.type = "password";
+                        icono.classList.remove("fa-eye-slash");
+                        icono.classList.add("fa-eye");
+                    }
+                });
+
+                // 6. Insertar el botón en el contenedor
+                parent.appendChild(btn);
+            });
+        });
+    </script>
+
+    @if (User.Identity.IsAuthenticated && ViewBag.RequiereVinculacion == true)
+    {
+        @if (ViewBag.EstadoSolIglesia != "PEN")
+        {
+            <div class="modal fade show" id="modalVinculacion" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" style="display: block; background: rgba(0,0,0,0.85); z-index: 10500;">
+                <div class="modal-dialog modal-dialog-centered modal-lg mx-3 mx-md-auto">
+                    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+
+                        <div class="modal-body p-4 p-md-5">
+                            @if (TempData["ErrorAsignacion"] != null)
+                            {
+                                <div id="errorVinculacion" class="alert alert-danger shadow-sm rounded-3 mb-4" style="border-left: 5px solid #dc3545;">@TempData["ErrorAsignacion"]</div>
+                            }
+                            <form id="formVinculacionExistente" action="@Url.Action("GuardarSolicitud", "Vinculacion")" method="POST">
+                                <div id="vistaBienvenida">
+                                    <div class="text-center mb-4">
+                                        <i class="fa-solid fa-map-location-dot fa-3x mb-3" style="color: var(--header-footer, #00334e);"></i>
+                                        <h3 class="fw-bold" style="color: var(--header-footer, #00334e);">¡Hola, Pescador!</h3>
+                                        <p id="textoBienvenidaVinculacion" class="text-muted fs-5">¿De qué iglesia nos visitas?</p>
+                                    </div>
+
+                                    @if (ViewBag.EstadoSolIglesia == "RCH")
+                                    {
+                                        <div class="alert alert-danger text-center shadow-sm rounded-3">
+                                            <strong><i class="fa-solid fa-circle-xmark me-1"></i> Solicitud Rechazada:</strong> @ViewBag.MotivoRchIglesia<br>
+                                            <small>Por favor, inténtalo de nuevo.</small>
+                                        </div>
+                                    }
+
+                                    <div class="form-group mb-4">
+                                        <select id="selectIglesiaVinculacion" name="iglesia_seleccionada_id" class="form-select w-100" required>
+                                            <option value=""></option>
+                                        </select>
+                                    </div>
+
+                                    <div class="d-grid gap-3">
+                                        <button type="submit" id="btnElegirIglesia" class="btn btn-nautico rounded-pill py-3 fw-bold fs-5 shadow-sm">
+                                            <i class="fa-solid fa-check me-2"></i>Elegir esta Iglesia
+                                        </button>
+                                        <button type="button" id="btnIrNuevaIglesia" class="btn btn-outline-secondary rounded-pill py-2 border-0">
+                                            Mi iglesia no está en la lista
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <div id="vistaNuevaIglesia" style="display: none;">
+                                <div class="d-flex align-items-center mb-4">
+                                    <button type="button" id="btnVolverVistaA" class="btn btn-light rounded-circle me-3 shadow-sm" style="width:40px; height:40px;">
+                                        <i class="fa-solid fa-arrow-left"></i>
+                                    </button>
+                                    <div>
+                                        <h5 class="fw-bold mb-0 text-dark">Registrar Nueva Iglesia</h5>
+                                        <small class="text-muted fw-bold"><i class="fa-solid fa-triangle-exclamation text-warning"></i> Los datos estarán sujetos a una revisión.</small>
+                                    </div>
+                                </div>
+                                @if (ViewBag.EstadoSolIglesia == "RCH")
+                                {
+                                    <div class="alert alert-danger shadow-sm rounded-3 mb-4">
+                                        <strong><i class="fa-solid fa-circle-xmark me-1"></i> Tu solicitud anterior fue rechazada:</strong><br>
+                                        @ViewBag.MotivoRchIglesia<br>
+                                        <small class="text-dark">Por favor, corrige los datos o verifica la información y vuelve a enviar la solicitud.</small>
+                                    </div>
+                                }
+
+                                <form id="formNuevaIglesia" action="@Url.Action("GuardarSolicitud", "Vinculacion")" method="POST">
+                                    <input type="hidden" name="horarios" id="v_horarios_hidden" />
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <label for="v_municipio" class="form-label small fw-bold text-secondary mb-1">1. Elige Tu Municipio <span class="text-danger">*</span></label>
+                                            <select id="v_municipio" name="municipio_id" class="form-select w-100 rounded-3" required>
+                                                <option value=""></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="v_nombre" class="form-label small fw-bold text-secondary mb-1">2. Indícanos el Nombre de Tu Iglesia <span class="text-danger">*</span></label>
+                                            <input type="text" id="v_nombre" name="nombre" class="form-control rounded-3" placeholder="Ejemplo: Fuente de Agua Viva" required>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label for="v_mapa" class="form-label small fw-bold text-secondary mb-1">3. Pega la ubicación de Tu Iglesia en Google Maps <span class="text-danger">*</span></label>
+                                            <div class="input-group shadow-sm rounded-3 overflow-hidden border" style="border-color: #dee2e6;">
+                                                <span class="input-group-text bg-white border-0"><i class="fa-solid fa-map-location-dot" style="color: #00838f;"></i></span>
+                                                <input type="url" id="v_mapa" name="mapa_url" class="form-control border-0 bg-white" placeholder="https://maps.app.goo.gl/..." required>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12 mt-3">
+                                            <label class="form-label small fw-bold text-secondary mb-1">4. Añade al menos un Horario de Reunión <span class="text-danger">*</span></label>
+                                            <div class="bg-white p-3 rounded-3 border shadow-sm" style="border-color: #dee2e6;">
+                                                <div id="contenedor-horarios-vinculacion" class="d-flex flex-column gap-2"></div>
+                                                <button type="button" class="btn btn-sm btn-outline-primary mt-2 rounded-pill fw-bold" onclick="agregarHorarioVinculacion()">
+                                                    <i class="fa-solid fa-plus me-1"></i> Añadir un Horario
+                                                </button>
+                                            </div>
+                                            <div id="errorHorarios" class="text-danger mt-1 small fw-bold" style="display: none;">
+                                                <i class="fa-solid fa-circle-exclamation"></i> Debes ingresar al menos un horario válido (hora y actividad).
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card border-info border-opacity-25 shadow-sm rounded-4 mb-4" style="border-color: #00838f !important;">
+                                        <a class="card-header bg-light text-decoration-none d-flex justify-content-between align-items-center"
+                                        data-bs-toggle="collapse"
+                                        href="#seccionOpcional" 
+                                        role="button" 
+                                        aria-expanded="false"
+                                        aria-controls="seccionOpcional" 
+                                        style="border-radius: 1rem; cursor: pointer;">
+                                            <div>
+                                                <h6 class="text-info fw-bold mb-1" style="color: #00838f !important;">
+                                                    <i class="fa-solid fa-heart me-2"></i>¿Podrías ayudarnos con algunos datos extra? (Opcional)
+                                                    </h6>
+                                                <small class="text-muted d-block" style="font-size: 0.8rem;">
+                                                    Toca aquí para ver algunos campos extra.
+                                                    </small>
+                                            </div>
+                                            <i class="fa-solid fa-chevron-down text-info transition-icon" id="iconoColapso" style="color: #00838f !important; transition: transform 0.3s ease;"></i>
+                                        </a>
+
+                                        <div class="collapse" id="seccionOpcional">
+                                            <div class="card-body bg-light" style="border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;">
+                                                <p class="small text-muted mb-3">
+                                                    Los siguientes datos no son obligatorios, pero <strong>te pedimos por favor que los llenes si los conoces</strong>. Con tu ayuda, otras personas podrán encontrar tu congregación más fácilmente y mantendremos todo bien organizado. ¡Gracias por tu apoyo!
+                                                </p>
+
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <input type="text" id="v_localidad" name="localidad" class="form-control rounded-3 bg-white" placeholder="Localidad">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <input type="text" id="v_colonia" name="colonia" class="form-control rounded-3 bg-white" placeholder="Colonia">
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <input type="text" id="v_calle" name="calle" class="form-control rounded-3 bg-white" placeholder="Calle">
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <input type="text" id="v_numero" name="numero" class="form-control rounded-3 bg-white" placeholder="Núm. ext/int">
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <input type="text" id="v_referencia" name="referencia" class="form-control rounded-3 bg-white" placeholder="Referencia (ej. Frente al parque)">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid mt-4">
+                                        <button type="submit" id="btnEnviarNuevaIglesia" class="btn text-white rounded-pill py-3 fw-bold shadow-sm" style="background-color: #00334e;">
+                                            <i class="fa-solid fa-paper-plane me-2"></i>Enviar Solicitud
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <template id="template-horario-vinculacion">
+                <div class="card p-2 dynamic-row horario-row shadow-sm border-0 bg-light">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-4">
+                            <select class="form-select form-select-sm horario-dia bg-white">
+                                <option value="Domingo">Domingo</option>
+                                <option value="Lunes">Lunes</option>
+                                <option value="Martes">Martes</option>
+                                <option value="Miércoles">Miércoles</option>
+                                <option value="Jueves">Jueves</option>
+                                <option value="Viernes">Viernes</option>
+                                <option value="Sábado">Sábado</option>
+                                <option value="Diario">Diario</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control form-control-sm horario-hora bg-white" placeholder="Ej. 10:00 AM" />
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-sm horario-act bg-white" placeholder="Ej. Culto General" />
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger w-100 p-1" onclick="eliminarHorarioVinculacion(this)">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <style>
+                /* Estilizar Select2 para que se vea redondeado y bonito como los inputs de Bootstrap */
+                #modalVinculacion .select2-container--default .select2-selection--single {
+                    border-radius: 50rem; /* Forma de píldora */
+                    height: 50px;
+                    display: flex;
+                    align-items: center;
+                    border: 1px solid #ced4da;
+                    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+                }
+
+                    #modalVinculacion .select2-container--default .select2-selection--single .select2-selection__rendered {
+                        padding-left: 20px;
+                        color: #495057;
+                        font-size: 1.1rem;
+                    }
+
+                    #modalVinculacion .select2-container--default .select2-selection--single .select2-selection__arrow {
+                        height: 50px;
+                        right: 15px;
+                    }
+
+                #modalVinculacion .select2-dropdown {
+                    border-radius: 1rem;
+                    border: 1px solid #ced4da;
+                    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+                    overflow: hidden;
+                }
+                /* Quitar borde negro al enfocar */
+                #modalVinculacion .select2-container--default.select2-container--focus .select2-selection--single {
+                    border-color: #86b7fe;
+                    outline: 0;
+                }
+            </style>
+
+            <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+            <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+            <script>
+                $(document).ready(function () {
+                    // 1. Configuración inicial y Select2
+                    $('body').css('overflow', 'hidden');
+
+                    $.get('@Url.Action("ObtenerCatalogos", "Vinculacion")', function (data) {
+                        // Forzamos un elemento vacío al inicio para que el placeholder funcione y no preseleccione
+                        data.iglesias.unshift({ id: '', text: '' });
+
+                        var selectIglesia = $('#selectIglesiaVinculacion').select2({
+                            data: data.iglesias,
+                            placeholder: "🔍 Buscar congregación...",
+                            allowClear: true,
+                            dropdownParent: $('#modalVinculacion'),
+                            width: '100%'
+                        });
+                        // Aseguramos que inicie en blanco
+                        selectIglesia.val(null).trigger('change');
+
+                        $('#v_municipio').select2({
+                            data: data.municipios,
+                            placeholder: "Seleccionar Municipio *",
+                            dropdownParent: $('#modalVinculacion'),
+                            width: '100%'
+                        });
+                        $('#v_municipio').val(null).trigger('change');
+                    });
+
+                    // 2. Navegación: Ir a registrar Nueva Iglesia
+                    $('#btnIrNuevaIglesia').click(function () {
+                        $('#vistaBienvenida').fadeOut(150, function() {
+                            $('#selectIglesiaVinculacion').val(null).trigger('change');
+                            // Si el panel de horarios está vacío, no hacemos nada hasta que abran el acordeón
+                            $('#vistaNuevaIglesia').fadeIn(250);
+                        });
+                    });
+
+                    // 3. Navegación: Volver a la lista de Iglesias
+                    $('#btnVolverVistaA').click(function () {
+                        $('#vistaNuevaIglesia').fadeOut(150, function() {
+                            $('#formNuevaIglesia')[0].reset();
+                            $('#v_municipio').val(null).trigger('change');
+                            $('#contenedor-horarios-vinculacion').empty();
+                            $('#seccionOpcional').collapse('hide'); // Cerramos el acordeón por si quedó abierto
+
+                            $('#textoBienvenidaVinculacion')
+                                .html('<strong>Si registras una nueva iglesia, pasará por una breve revisión.</strong><br><span class="fs-6 text-muted">Te sugerimos buscarla primero en la lista. Si tu congregación ya está registrada, la nueva solicitud no podrá ser aprobada para evitar duplicados.</span>')
+                                .removeClass('text-muted')
+                                .addClass('text-warning');
+
+                            $('#vistaBienvenida').fadeIn(250);
+                        });
+                    });
+
+                    // 4. Enviar: Formulario Existente (Automático por el botón de submit, solo evitamos re-clicks)
+                    $('#formVinculacionExistente').on('submit', function() {
+                        $('#btnElegirIglesia').html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Procesando...').prop('disabled', true);
+                        $('#btnIrNuevaIglesia').prop('disabled', true);
+                    });
+
+                    // 5. Enviar: Formulario de Nueva Iglesia
+                    $('#formNuevaIglesia').on('submit', function (e) {
+                        let horariosFinal = [];
+                        $('#contenedor-horarios-vinculacion .horario-row').each(function() {
+                            let d = $(this).find('.horario-dia').val().trim();
+                            let h = $(this).find('.horario-hora').val().trim();
+                            let a = $(this).find('.horario-act').val().trim();
+
+                            if(h !== '' && a !== '') {
+                                h = h.replace(/\|/g, '-');
+                                a = a.replace(/\|/g, '-');
+                                horariosFinal.push(`${d} | ${h} | ${a}`);
+                            }
+                        });
+
+                        // VALIDACIÓN CLIENTE
+                        if (horariosFinal.length === 0) {
+                            e.preventDefault(); // Detenemos el envío
+                            $('#errorHorarios').slideDown();
+                            return;
+                        } else {
+                            $('#errorHorarios').slideUp();
+                        }
+
+                        // Pasamos los horarios armados al input hidden
+                        $('#v_horarios_hidden').val(horariosFinal.join('\n'));
+
+                        // Bloqueamos botón para evitar doble submit
+                        $('#btnEnviarNuevaIglesia').html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Procesando...').prop('disabled', true);
+                    });
+
+
+                    $('#seccionOpcional').on('hide.bs.collapse', function () {
+                        $('#iconoColapso').css('transform', 'rotate(0deg)');
+                    });
+                });
+
+                // 8. Funciones auxiliares para la tabla de horarios (Afuera del document.ready para que el onClick del HTML las vea)
+                function agregarHorarioVinculacion(dia = 'Domingo', hora = '', act = '') {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = document.getElementById('template-horario-vinculacion').innerHTML;
+                    const row = tempDiv.firstElementChild;
+
+                    row.querySelector('.horario-dia').value = dia;
+                    row.querySelector('.horario-hora').value = hora;
+                    row.querySelector('.horario-act').value = act;
+
+                    document.getElementById('contenedor-horarios-vinculacion').appendChild(row);
+                }
+
+                function eliminarHorarioVinculacion(btn) {
+                    $(btn).closest('.horario-row').remove();
+                }
+            </script>
+        }
+    }
+
+
+    </body>
+</html>

@@ -1,0 +1,112 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<style>
+    .ev-vertical-card {
+        background: var(--theme-surface);
+        border-radius: 16px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .ev-vertical-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+
+    .ev-vertical-img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        background-color: var(--theme-bg);
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    }
+
+    .ev-vertical-date {
+        background: var(--theme-accent);
+        color: var(--theme-bg); /* Contraste inteligente */
+        text-align: center;
+        padding: 10px;
+        border-radius: 12px;
+        min-width: 80px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+        .ev-vertical-date .dia {
+            font-size: 1.8rem;
+            font-weight: 800;
+            line-height: 1;
+            font-family: var(--theme-font-title);
+        }
+
+        .ev-vertical-date .mes {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            font-family: var(--theme-font-body);
+        }
+</style>
+
+<div class="container py-5 fade-in-up">
+    <h2 class="text-center mb-5" style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-primary);">Próximos Eventos</h2>
+
+    @if (Model.Eventos != null && Model.Eventos.Any())
+    {
+        <div class="row g-4 justify-content-center">
+            @foreach (var ev in Model.Eventos)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="ev-vertical-card">
+                        @if (!string.IsNullOrWhiteSpace(ev.ImagenUrl))
+                        {
+                            <img src="@ev.ImagenUrl" alt="Evento" class="ev-vertical-img" loading="lazy">
+                        }
+                        else
+                        {
+                            <div class="ev-vertical-img d-flex align-items-center justify-content-center">
+                                <i class="fa-regular fa-image fs-1" style="color: var(--theme-text-muted); opacity: 0.3;"></i>
+                            </div>
+                        }
+
+                        <div class="card-body p-4 d-flex flex-column flex-grow-1">
+                            <div class="d-flex gap-3 mb-3 align-items-start">
+                                <div class="ev-vertical-date">
+                                    <div class="dia">@(ev.Fecha == default ? "--" : ev.Fecha.ToString("dd"))</div>
+                                    <div class="mes">@(ev.Fecha == default ? "---" : ev.Fecha.ToString("MMM"))</div>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1" style="font-family: var(--theme-font-title); font-weight: 700; color: var(--theme-primary);">
+                                        @(string.IsNullOrWhiteSpace(ev.Titulo) ? "Evento" : ev.Titulo)
+                                    </h5>
+                                    <span class="badge" style="background: var(--theme-bg); color: var(--theme-text-main); border: 1px solid rgba(128, 128, 128, 0.2); font-family: var(--theme-font-body);">
+                                        <i class="fa-regular fa-clock me-1" style="color: var(--theme-accent);"></i> @(string.IsNullOrWhiteSpace(ev.Horarios) ? "TBD" : ev.Horarios)
+                                    </span>
+                                </div>
+                            </div>
+                            <p class="small flex-grow-1 mb-0" style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">
+                                @if (!string.IsNullOrWhiteSpace(ev.Descripcion))
+                                {
+                                    @Html.Raw(ev.Descripcion.Replace("\n", "<br>"))
+                                }
+                                else
+                                {
+                                    <span>Sin descripción detallada.</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5" style="border: 2px dashed rgba(128, 128, 128, 0.3); border-radius: 16px;">
+            <i class="fa-regular fa-calendar-xmark fs-1 mb-3" style="color: var(--theme-text-muted);"></i>
+            <h5 style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">No hay eventos programados.</h5>
+        </div>
+    }
+</div>

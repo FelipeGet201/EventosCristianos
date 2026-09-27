@@ -1,0 +1,30 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<div class="container py-5 fade-in-up" id="contacto">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="p-5 rounded-4 h-100 d-flex flex-column justify-content-center" style="background: var(--theme-primary); color: var(--theme-bg);">
+                <h3 class="mb-4" style="font-family: var(--theme-font-title); font-weight: 800;">Atención y Contacto</h3>
+                @if (!string.IsNullOrWhiteSpace(Model.Telefono))
+                {
+                    <a href="tel:@Model.Telefono" class="text-decoration-none fs-4 mb-3" style="font-family: var(--theme-font-body); color: var(--theme-bg);"><i class="fa-solid fa-phone me-3" style="color: var(--theme-accent);"></i>@Model.Telefono</a>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+                {
+                    <a href="https://wa.me/52@(Model.Whatsapp)" target="_blank" class="text-decoration-none fs-4" style="font-family: var(--theme-font-body); color: var(--theme-bg);"><i class="fa-brands fa-whatsapp me-3" style="color: #25d366;"></i>@Model.Whatsapp</a>
+                }
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="p-5 rounded-4 h-100 d-flex flex-column justify-content-center" style="background: var(--theme-surface); border: 1px solid rgba(128, 128, 128, 0.2);">
+                <h3 class="mb-4" style="font-family: var(--theme-font-title); font-weight: 800; color: var(--theme-primary);">Ubicación Sede</h3>
+                <p class="fs-5 mb-1" style="font-family: var(--theme-font-body); color: var(--theme-text-main);">@(string.IsNullOrWhiteSpace(Model.DireccionCompleta) ? "Sin dirección" : Model.DireccionCompleta)</p>
+                <p class="mb-4" style="font-family: var(--theme-font-body); color: var(--theme-text-muted);">@Model.Municipio</p>
+                @if (!string.IsNullOrWhiteSpace(Model.MapaUrl))
+                {
+                    <a href="@Model.MapaUrl" target="_blank" class="btn fw-bold align-self-start" style="background: var(--theme-bg); color: var(--theme-primary); border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 50px; padding: 0.8rem 2rem;">Abrir en Maps</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,177 @@
+﻿@using RedAJP.Controllers
+@model RedAJP.Models.SubirComprobanteViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Subir Comprobante";
+
+    // OBTENER LA CUENTA REAL DEL EVENTO
+    var cuentaInfo = GlobalController.DatosBancarios.ObtenerCuenta(Model.ClaveCuentaBancaria);
+}
+
+<script>
+    window.addEventListener('load', function() { if (typeof activarMenu === 'function') activarMenu('menu-eventos'); });
+
+    function copiarTexto(texto, elementoBoton) {
+        navigator.clipboard.writeText(texto).then(function() {
+            if (elementoBoton) {
+                const icono = elementoBoton.querySelector('i');
+                if (icono) {
+                    // Guardamos las clases originales (el icono de copiar)
+                    const clasesOriginales = icono.className;
+                    // Cambiamos a la palomita
+                    icono.className = 'fa-solid fa-check';
+
+                    // Regresamos al icono original después de 2 segundos
+                    setTimeout(() => {
+                        icono.className = clasesOriginales;
+                    }, 2000);
+                }
+            }
+        }, function(err) {
+            console.error('Error al copiar: ', err);
+        });
+    }
+</script>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+
+            <div class="text-center mb-4">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 70px; height: 70px;">
+                    <i class="fa-solid fa-money-bill-transfer fa-2x"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-1">Pago por Transferencia</h3>
+                @if (!string.IsNullOrEmpty(Model.TituloEvento))
+                {
+                    <p class="text-muted mb-0">Evento: <strong class="text-dark">@Model.TituloEvento</strong></p>
+                }
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+                <div class="card-header bg-white border-bottom p-3">
+                    <h6 class="mb-0 fw-bold text-muted small text-uppercase">Resumen</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-borderless mb-0 align-middle">
+                        <tbody class="small">
+                            @foreach (var item in Model.Detalles)
+                            {
+                                <tr class="border-bottom border-light">
+                                    <td class="ps-4 py-3">
+                                        <div class="fw-bold text-dark">@item.Concepto</div>
+                                        <div class="text-muted">@item.Persona</div>
+                                    </td>
+                                    <td class="text-end pe-4 fw-bold font-monospace">$@item.Monto.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="bg-light">
+                            @if (Model.MontoDescuento > 0)
+                            {
+                                <tr>
+                                    <td class="ps-4 py-2 text-muted text-end small">Subtotal:</td>
+                                    <td class="pe-4 py-2 text-muted text-end small text-decoration-line-through">$@Model.SubTotalOriginal.ToString("N2")</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4 py-2 text-success text-end small fw-bold">
+                                        <i class="fa-solid fa-ticket me-1"></i> Descuento (@(Model.CodigoCupon ?? "CUPÓN")):
+                                    </td>
+                                    <td class="pe-4 py-2 text-success text-end small fw-bold">-$@Model.MontoDescuento.ToString("N2")</td>
+                                </tr>
+                            }
+                            <tr>
+                                <td class="ps-4 py-3 fw-bold text-primary text-end">TOTAL A PAGAR:</td>
+                                <td class="pe-4 py-3 fw-bold text-primary text-end fs-5">$@Model.TotalPagar.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card bg-dark text-white border-0 shadow rounded-4 mb-3">
+                <div class="card-body p-4 position-relative overflow-hidden">
+
+                    <i class="fa-solid fa-building-columns position-absolute bottom-0 end-0 mb-n2 me-n2"
+                       style="font-size: 8rem; z-index: 0; opacity: 0.05; pointer-events: none;"></i>
+
+                    <div style="position: relative; z-index: 10;">
+
+                        <h6 class="text-warning fw-bold text-uppercase small mb-4">Datos para Transferencia</h6>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <small class="text-white-50 d-block">Banco</small>
+                                <span class="fs-5 fw-bold">@cuentaInfo.Banco</span>
+                            </div>
+                            <div class="col-6 mb-3 text-end">
+                                <small class="text-white-50 d-block">Beneficiario</small>
+                                <span class="fw-bold">@cuentaInfo.Titular</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-warning bg-opacity-10 rounded-3 p-3 border border-warning border-opacity-50 mb-3">
+                            <small class="text-warning fw-bold d-block mb-1">CONCEPTO / MOTIVO DE PAGO (Requerido)</small>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fs-4 fw-bold font-monospace text-white">@ViewBag.ReferenciaPago</span>
+                                <button class="btn btn-sm btn-outline-warning rounded-circle ms-2" type="button" onclick="copiarTexto('@ViewBag.ReferenciaPago', this)"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                            <small class="text-white-50 mt-1 d-block"><i class="fa-solid fa-circle-info me-1"></i> Escribe esto en tu app bancaria para identificar tu pago.</small>
+                        </div>
+
+                        <div class="bg-white bg-opacity-10 rounded-3 p-3 border border-white border-opacity-25 mb-3">
+                            <small class="text-warning fw-bold d-block mb-1">CLAVE INTERBANCARIA</small>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fs-4 font-monospace tracking-wide text-break">@cuentaInfo.Clabe</span>
+                                <button class="btn btn-sm btn-outline-light rounded-circle ms-2" type="button" onclick="copiarTexto('@cuentaInfo.Clabe', this)"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white bg-opacity-10 rounded-3 p-3 border border-white border-opacity-25 mb-3">
+                            <small class="text-warning fw-bold d-block mb-1">CUENTA</small>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fs-4 font-monospace tracking-wide text-break">@cuentaInfo.Cuenta</span>
+                                <button class="btn btn-sm btn-outline-light rounded-circle ms-2" type="button" onclick="copiarTexto('@cuentaInfo.Cuenta', this)"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border border-success border-opacity-25 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-upload me-2"></i> Confirmar Pago</h6>
+
+                    <form action="@Url.Action("ProcesarComprobante")" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Token" value="@Model.Token" />
+                        @foreach (var id in Model.IdsPagosSeleccionados)
+                        {
+                            <input type="hidden" name="IdsPagosSeleccionados" value="@id" />
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Comprobante (Foto/PDF)</label>
+                            <input type="file" name="ArchivoComprobante" class="form-control" accept="image/*,.pdf" required />
+                            <div class="form-text small">Asegúrate que sea visible la fecha, monto y clave de rastreo.</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success rounded-pill fw-bold py-2">Enviar a Revisión</button>
+
+                            @if (!string.IsNullOrEmpty(Model.Token))
+                            {
+                                <a href="@Url.Action("Registro", new { token = Model.Token })" class="btn btn-link text-muted text-decoration-none small">Cancelar</a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("CancelarIntento", new { id = int.Parse(Model.IdsPagosSeleccionados.First()) })" class="btn btn-link text-muted text-decoration-none small">Cancelar Operación</a>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

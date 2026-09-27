@@ -1,0 +1,638 @@
+﻿@using RedAJP.Globales
+@using RedAJP.Servicios
+@model List<RedAJP.Controllers.CodigoQRViewModel>
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Gestión de Códigos QR";
+
+    bool p_Crear = User.TienePermiso(Parametros.Modulos.GeneradorQR, Parametros.Permisos.Crear);
+    bool p_Editar = User.TienePermiso(Parametros.Modulos.GeneradorQR, Parametros.Permisos.Editar);
+    bool p_Borrar = User.TienePermiso(Parametros.Modulos.GeneradorQR, Parametros.Permisos.Borrar);
+
+    int totalQR = Model.Count;
+}
+
+<style>
+    .btn-nautico {
+        background-color: var(--header-footer, #002b36);
+        color: white;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul, #005a66);
+            color: white;
+        }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .empty-state-icon {
+        font-size: 100px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        width: 180px;
+        height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin: 0 auto 25px;
+        color: #dee2e6;
+        border: 4px solid white;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+    /* Estilo base neutro para ambos botones */
+    .btn-check + .btn-custom-qr {
+        border-color: #ced4da;
+        /* Gris suave */
+        color: #6c757d;
+        /* Texto gris */
+        background-color: transparent;
+        transition: all 0.2s ease-in-out;
+    }
+
+        /* Efecto Hover */
+        .btn-check + .btn-custom-qr:hover {
+            background-color: #f8f9fa;
+            border-color: #adb5bd;
+        }
+
+    /* Cuando CUALQUIERA de los dos esté seleccionado, se vuelve verde */
+    .btn-check:checked + .btn-custom-qr {
+        background-color: #198754 !important;
+        /* Verde Success */
+        border-color: #198754 !important;
+        color: white !important;
+    }
+    /* Agregar esto: */
+    .info-guardar {
+        display: none;
+        /* Oculto por defecto */
+        width: 100%;
+        /* Fuerza a que el mensaje baje a la siguiente línea */
+        margin-top: 12px;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    /* Muestra el mensaje de éxito si se selecciona 'Si' */
+    #guardarSi:checked ~ .info-si {
+        display: block;
+    }
+
+    /* Muestra el mensaje de advertencia si se selecciona 'No' */
+    #guardarNo:checked ~ .info-no {
+        display: block;
+    }
+</style>
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-qr');
+        }
+
+        // Intercepta el formulario para manejar si se guarda en BD o solo se previsualiza
+        document.getElementById('formCrearQR').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            let btnSubmit = document.getElementById('btnSubmitCrear');
+            let originalText = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Generando...';
+            btnSubmit.disabled = true;
+
+            let formData = new FormData(this);
+
+            try {
+                let response = await fetch(this.action, { method: 'POST', body: formData });
+                let result = await response.json();
+
+                if (result.exito) {
+                    let modalCrear = bootstrap.Modal.getInstance(document.getElementById('modalCrearQR'));
+                    if (result.guardado) {
+                        // Si se guardó en BD, refresca para que salga en la lista
+                        location.reload();
+                    } else {
+                        // Si solo fue generación al vuelo, esconde modal y muestra resultado
+                        modalCrear.hide();
+                        verPreview(result.base64, formData.get('Titulo'), formData.get('Url'));
+                    }
+                } else {
+                    alert(result.mensaje);
+                }
+            } catch (error) {
+                alert("Ocurrió un error al procesar el código QR.");
+                console.error(error);
+            } finally {
+                btnSubmit.innerHTML = originalText;
+                btnSubmit.disabled = false;
+            }
+        });
+    });
+
+    function filtrarTabla() {
+        let input = document.getElementById("buscadorQR");
+        if (!input) return;
+        let val = input.value.toLowerCase();
+        let items = document.querySelectorAll(".qr-item-filtro");
+
+        items.forEach(item => {
+            let texto = item.getAttribute("data-busqueda").toLowerCase();
+            if (texto.includes(val)) {
+                item.style.display = item.tagName === "TR" ? "" : "block";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    }
+
+    function copiarAlPortapapeles(texto) {
+        navigator.clipboard.writeText(texto).then(() => {
+            alert("URL copiada al portapapeles");
+        });
+    }
+
+    function abrirModalEliminar(id, titulo) {
+        document.getElementById('Eliminar_Id').value = id;
+        document.getElementById('Eliminar_TituloDisplay').innerText = titulo;
+        new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+    }
+
+    function abrirModalEditar(id, titulo, url, colFrente, colFondo, formaOjos, formaModulos) {
+        document.getElementById('Editar_Id').value = id;
+        document.getElementById('Editar_Titulo').value = titulo;
+        document.getElementById('Editar_Url').value = url;
+        document.getElementById('Editar_ColorFrente').value = colFrente;
+        document.getElementById('Editar_ColorFondo').value = colFondo;
+
+        // Cargar valores de forma correctos
+        let selectOjos = document.getElementById('Editar_FormaOjos');
+        if(selectOjos) selectOjos.value = formaOjos || 'Cuadrado';
+
+        let selectModulos = document.getElementById('Editar_FormaModulos');
+        if(selectModulos) selectModulos.value = formaModulos || 'Rellenar';
+
+        // Actualizar previsualización de formas en el modal
+        actualizarPreviewForma('Editar', 'Ojos');
+        actualizarPreviewForma('Editar', 'Modulos');
+
+        new bootstrap.Modal(document.getElementById('modalEditarQR')).show();
+    }
+
+    function verPreview(img, titulo, url) {
+        document.getElementById('prev_img').src = img;
+        document.getElementById('prev_titulo').innerText = titulo;
+        document.getElementById('prev_url').innerText = url;
+
+        let btnDescargar = document.getElementById('prev_download');
+        btnDescargar.href = img;
+        btnDescargar.download = `QR_${titulo.replace(/\s+/g, '_')}.png`;
+
+        new bootstrap.Modal(document.getElementById('modalPreview')).show();
+    }
+
+    // Función súper optimizada que carga la imagen directamente desde los archivos estáticos en wwwroot
+    function actualizarPreviewForma(prefix, tipo) {
+        let select = document.getElementById(`${prefix}_Forma${tipo}`);
+        let img = document.getElementById(`${prefix}_Preview${tipo}`);
+        if (!select || !img) return;
+
+        let forma = select.value;
+        // La ruta se arma dinámicamente: ej. /img/qr-formas/Ojo_Cuadrado.png
+        let tipoArchivo = tipo === "Ojos" ? "Ojo" : "Modulos";
+        img.src = `/img/qr-formas/${tipoArchivo}_${forma}.png`;
+    }
+</script>
+
+<div class="container py-4 fade-in">
+    <div class="mb-4 fade-in">
+        <div class="row align-items-center mb-3 g-3">
+            <div class="col-12 col-md-6">
+                <h2 class="fw-bold mb-0" style="color: #002b36;">
+                    <i class="fa-solid fa-qrcode me-2 text-warning"></i>Códigos QR
+                </h2>
+                <span class="text-dark opacity-75 small fw-semibold">Generador y administrador de QR</span>
+            </div>
+
+            <div class="col-12 col-md-6 d-flex justify-content-between justify-content-md-end gap-2">
+                <span class="badge bg-white text-dark shadow-sm rounded-pill px-3 py-2 d-flex align-items-center" style="font-size: 0.9rem;">
+                    <i class="fa-solid fa-qrcode me-2 text-primary"></i> Total generados: @totalQR
+                </span>
+            </div>
+        </div>
+
+        @if (totalQR > 0)
+        {
+            <div class="d-flex flex-row flex-nowrap align-items-center gap-2">
+                <div class="input-group shadow-sm bg-white rounded-pill overflow-hidden flex-grow-1" style="max-width: 380px;">
+                    <span class="input-group-text bg-white border-0 text-muted ps-3 pe-2">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="buscadorQR" class="form-control border-0 shadow-none bg-white py-2 ps-0" placeholder="Buscar título o URL..." onkeyup="filtrarTabla()">
+                </div>
+
+                <div class="d-md-none me-auto"></div>
+                @if (p_Crear)
+                {
+                    <button type="button" class="btn btn-nautico rounded-pill px-4 shadow-sm flex-shrink-0" style="min-width: 11rem;" data-bs-toggle="modal" data-bs-target="#modalCrearQR">
+                        <i class="fa-solid fa-plus me-2"></i>Nuevo QR
+                    </button>
+                }
+                else
+                {
+                    <div class="d-flex flex-column align-items-end gap-1">
+                        <small class="text-muted fw-semibold" style="font-size: 0.7rem;">
+                            <i class="fa-solid fa-eye me-1"></i> Códigos sin guardado local.
+                        </small>
+                        <button type="button" class="btn btn-nautico rounded-pill px-4 shadow-sm flex-shrink-0" style="min-width: 11rem;" data-bs-toggle="modal" data-bs-target="#modalCrearQR">
+                            <i class="fa-solid fa-plus me-2"></i>Nuevo QR
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (totalQR == 0)
+    {
+        <div class="card border-0 fade-in" style="border: 2px dashed #dee2e6 !important; border-radius: 20px; background-color: rgba(248, 249, 250, 0.5);">
+            <div class="card-body py-5 text-center">
+                <div class="mb-3">
+                    <i class="fa-solid fa-qrcode text-muted opacity-25" style="font-size: 60px;"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-1">Lista de códigos vacía</h5>
+                <p class="text-muted small mb-4">No se han guardado registros en el sistema.</p>
+                <button type="button" class="btn btn-nautico rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearQR">
+                    <i class="fa-solid fa-plus me-2"></i>Generar mi primer QR
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="d-block d-md-none">
+            @foreach (var item in Model)
+            {
+                <div class="card mb-3 border-0 shadow-sm qr-item-filtro" style="border-radius: 15px;" data-busqueda="@item.Titulo @item.Url">
+                    <div class="card-body">
+                        <div class="d-flex gap-3 align-items-center mb-3">
+                            <div class="shadow-sm rounded border bg-white d-flex align-items-center justify-content-center p-1 flex-shrink-0" style="width: 80px; height: 80px; cursor:pointer;" onclick="verPreview('@item.ImagenBase64', '@item.Titulo', '@item.Url')">
+                                <img src="@item.ImagenBase64" class="img-fluid rounded" alt="QR" />
+                            </div>
+                            <div style="min-width: 0;">
+                                <h6 class="fw-bold text-dark text-truncate mb-1">@item.Titulo</h6>
+                                <div class="small text-primary text-truncate d-flex align-items-center gap-1">
+                                    <i class="fa-solid fa-link text-muted"></i>
+                                    <a href="@item.Url" target="_blank" class="text-decoration-none text-primary text-truncate">@item.Url</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
+                            <button class="btn btn-light btn-sm text-primary shadow-sm w-100 me-2" onclick="verPreview('@item.ImagenBase64', '@item.Titulo', '@item.Url')">
+                                <i class="fa-solid fa-eye me-1"></i>Ver
+                            </button>
+
+                            <a href="@item.ImagenBase64" download="QR_@(item.Titulo.Replace(" ", "_")).png" class="btn btn-light btn-sm text-info shadow-sm w-100 me-2">
+                                <i class="fa-solid fa-download me-1"></i>Descargar
+                            </a>
+
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-light btn-sm text-muted shadow-sm" onclick="copiarAlPortapapeles('@item.Url')" title="Copiar Link">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                                @if (p_Editar)
+                                {
+                                    <button class="btn btn-light btn-sm text-warning shadow-sm" onclick="abrirModalEditar(@item.Id_QR, '@item.Titulo', '@item.Url', '@item.ColorFrente', '@item.ColorFondo', '@item.FormaOjos', '@item.FormaModulos')" title="Editar QR">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                }
+                                @if (p_Borrar)
+                                {
+                                    <button type="button" class="btn btn-light btn-sm text-danger shadow-sm" onclick="abrirModalEliminar(@item.Id_QR, '@item.Titulo')" title="Eliminar Definitivamente">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="card border-0 shadow-sm d-none d-md-block" style="border-radius: 15px;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="tablaQR">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Código QR</th>
+                                <th>Información</th>
+                                <th class="d-none d-md-table-cell">Fecha Creación</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="qr-item-filtro" data-busqueda="@item.Titulo @item.Url">
+                                    <td class="ps-4 py-3" style="width: 100px;">
+                                        <div class="shadow-sm rounded border bg-white d-flex align-items-center justify-content-center p-1" style="width: 70px; height: 70px; cursor:pointer;" onclick="verPreview('@item.ImagenBase64', '@item.Titulo', '@item.Url')">
+                                            <img src="@item.ImagenBase64" class="img-fluid rounded" alt="QR" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="min-width: 0;">
+                                            <span class="fw-bold d-block text-dark text-wrap text-break mb-1">
+                                                @item.Titulo
+                                            </span>
+                                            <div class="small text-primary text-wrap text-break mb-1 d-flex align-items-center gap-2">
+                                                <i class="fa-solid fa-link text-muted"></i>
+                                                <a href="@item.Url" target="_blank" class="text-decoration-none text-primary">@item.Url</a>
+                                                <button class="btn btn-sm btn-link text-muted p-0" onclick="copiarAlPortapapeles('@item.Url')" title="Copiar URL">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="d-none d-md-table-cell text-muted small">
+                                        <i class="fa-regular fa-calendar me-1"></i> @item.Fecha_Creacion.ToString("dd/MM/yyyy")
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end flex-wrap gap-1">
+                                            <button class="btn btn-light btn-sm text-primary shadow-sm" onclick="verPreview('@item.ImagenBase64', '@item.Titulo', '@item.Url')" title="Vista Previa">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <a href="@item.ImagenBase64" download="QR_@(item.Titulo.Replace(" ", "_")).png" class="btn btn-light btn-sm text-info shadow-sm" title="Descargar QR">
+                                                <i class="fa-solid fa-download"></i>
+                                            </a>
+                                            @if (p_Editar)
+                                            {
+                                                <button type="button" class="btn btn-light btn-sm text-warning shadow-sm" onclick="abrirModalEditar(@item.Id_QR, '@item.Titulo', '@item.Url', '@item.ColorFrente', '@item.ColorFondo', '@item.FormaOjos', '@item.FormaModulos')" title="Editar QR">
+                                                    <i class="fa-solid fa-pen"></i>
+                                                </button>
+                                            }
+                                            @if (p_Borrar)
+                                            {
+                                                <button type="button" class="btn btn-light btn-sm text-danger shadow-sm" onclick="abrirModalEliminar(@item.Id_QR, '@item.Titulo')" title="Eliminar Definitivamente">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="modalCrearQR" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-muted"><i class="fa-solid fa-qrcode me-2 text-primary"></i>Generador de QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formCrearQR" method="post" action="@Url.Action("Crear", "CodigosQR")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+
+                    <div class="mb-4 text-center border p-3 rounded bg-white shadow-sm">
+                        <label class="small fw-bold text-muted d-block mb-2">¿Guardar registro en la base de datos?</label>
+
+                        <div class="btn-group w-100 flex-wrap" role="group">
+
+                            <input type="radio" class="btn-check" name="GuardarDatos" id="guardarSi" value="true" @(p_Crear ? "checked" : "disabled")>
+                            <label class="btn btn-custom-qr" for="guardarSi">
+                                <i class="fa-solid fa-cloud-arrow-up me-1"></i> Si
+                            </label>
+
+                            <input type="radio" class="btn-check" name="GuardarDatos" id="guardarNo" value="false" @(!p_Crear ? "checked" : "")>
+                            <label class="btn btn-custom-qr" for="guardarNo">
+                                <i class="fa-solid fa-eye me-1"></i> No
+                            </label>
+
+                            <div class="info-guardar info-si">
+                                <small class="text-success fw-bold">
+                                    <i class="fa-solid far fa-check-circle me-1"></i> El código QR se guardará en el catálogo.
+                                </small>
+                            </div>
+
+                            <div class="info-guardar info-no">
+                                <small class="text-secondary fw-semibold">
+                                    <i class="fa-solid fa-check-circle me-1"></i> Generación libre sin Guardado.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Título de Referencia</label>
+                        <input type="text" class="form-control bg-light border-0" name="Titulo" placeholder="Ej. Título del QR" required maxlength="150" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="small fw-bold text-muted">URL / Enlace de destino</label>
+                        <input type="url" class="form-control bg-light border-0" name="Url" placeholder="https://mi-enlace.com" required />
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted">Color del Código</label>
+                            <input type="color" class="form-control form-control-color w-100 border-0 shadow-sm" name="ColorFrente" value="#000000" title="Color principal del QR">
+                        </div>
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted">Color de Fondo</label>
+                            <input type="color" class="form-control form-control-color w-100 border-0 shadow-sm" name="ColorFondo" value="#ffffff" title="Fondo del QR">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted d-block">Recuadros Grandes</label>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <select class="form-select bg-light border-0 shadow-sm flex-grow-1" name="FormaOjos" id="Crear_FormaOjos" onchange="actualizarPreviewForma('Crear', 'Ojos')">
+                                    @foreach (var forma in Enum.GetNames(typeof(FormaOjos)))
+                                    {
+                                        <option value="@forma">@forma</option>
+                                    }
+                                </select>
+                                <img id="Crear_PreviewOjos" src="/img/qr-formas/Ojo_Cuadrado.png" style="width: 35px; height: 35px; border-radius: 5px;" class="border shadow-sm bg-white" alt="Preview" />
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted d-block">Marcas Internas</label>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <select class="form-select bg-light border-0 shadow-sm flex-grow-1" name="FormaModulos" id="Crear_FormaModulos" onchange="actualizarPreviewForma('Crear', 'Modulos')">
+                                    @foreach (var forma in Enum.GetNames(typeof(FormaModulos)))
+                                    {
+                                        <option value="@forma">@forma</option>
+                                    }
+                                </select>
+                                <img id="Crear_PreviewModulos" src="/img/qr-formas/Modulos_Rellenar.png" style="width: 35px; height: 35px; border-radius: 5px;" class="border shadow-sm bg-white" alt="Preview" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="small fw-bold text-muted">Logo Central (Opcional)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-image"></i></span>
+                            <input type="file" class="form-control border-start-0" name="Logo" accept="image/png, image/jpeg, image/jpg" />
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Se ajustará perfectamente en un recuadro sin deformar la cuadrícula.</small>
+                    </div>
+
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" id="btnSubmitCrear" class="btn btn-nautico rounded-pill px-4 shadow-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Generar QR
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarQR" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-muted"><i class="fa-solid fa-pen me-2 text-warning"></i>Editar Código QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("Editar", "CodigosQR")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="Editar_Id" name="Id_QR" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Título de Referencia</label>
+                        <input type="text" class="form-control bg-light border-0" id="Editar_Titulo" name="Titulo" required maxlength="150" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="small fw-bold text-muted">URL / Enlace de destino</label>
+                        <input type="url" class="form-control bg-light border-0" id="Editar_Url" name="Url" required />
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted">Color del Código</label>
+                            <input type="color" class="form-control form-control-color w-100 border-0 shadow-sm" id="Editar_ColorFrente" name="ColorFrente" title="Color principal del QR">
+                        </div>
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted">Color de Fondo</label>
+                            <input type="color" class="form-control form-control-color w-100 border-0 shadow-sm" id="Editar_ColorFondo" name="ColorFondo" title="Fondo del QR">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted d-block">Forma de Ojos</label>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <select class="form-select bg-light border-0 shadow-sm flex-grow-1" name="FormaOjos" id="Editar_FormaOjos" onchange="actualizarPreviewForma('Editar', 'Ojos')">
+                                    @foreach (var forma in Enum.GetNames(typeof(FormaOjos)))
+                                    {
+                                        <option value="@forma">@forma</option>
+                                    }
+                                </select>
+                                <img id="Editar_PreviewOjos" src="/img/qr-formas/Ojo_Cuadrado.png" style="width: 35px; height: 35px; border-radius: 5px;" class="border shadow-sm bg-white" alt="Preview" />
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="small fw-bold text-muted d-block">Forma de Módulos</label>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <select class="form-select bg-light border-0 shadow-sm flex-grow-1" name="FormaModulos" id="Editar_FormaModulos" onchange="actualizarPreviewForma('Editar', 'Modulos')">
+                                    @foreach (var forma in Enum.GetNames(typeof(FormaModulos)))
+                                    {
+                                        <option value="@forma">@forma</option>
+                                    }
+                                </select>
+                                <img id="Editar_PreviewModulos" src="/img/qr-formas/Modulos_Rellenar.png" style="width: 35px; height: 35px; border-radius: 5px;" class="border shadow-sm bg-white" alt="Preview" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="small fw-bold text-muted">Nuevo Logo Central (Dejar vacío para mantener igual)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-image"></i></span>
+                            <input type="file" class="form-control border-start-0" name="Logo" accept="image/png, image/jpeg, image/jpg" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning text-dark rounded-pill px-4 shadow-sm"><i class="fa-solid fa-floppy-disk me-2"></i>Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPreview" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-muted"><i class="fa-solid fa-eye me-2 text-primary"></i>Vista Previa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <h5 id="prev_titulo" class="fw-bold text-dark mb-3"></h5>
+
+                <div class="shadow-sm p-2 rounded border d-inline-block mb-3 bg-white">
+                    <img id="prev_img" src="" style="width: 100%; max-width: 250px;" class="img-fluid rounded" alt="Vista Previa QR" />
+                </div>
+
+                <p id="prev_url" class="text-muted small text-break px-3"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pt-0 pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                <a id="prev_download" href="" download="" class="btn btn-nautico rounded-pill px-4 shadow-sm">
+                    <i class="fa-solid fa-download me-2"></i>Descargar QR
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-danger bg-opacity-10 border-0">
+                <h5 class="modal-title fw-bold text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Eliminar QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("Eliminar", "CodigosQR")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 text-center">
+                    <input type="hidden" id="Eliminar_Id" name="idEliminar" />
+                    <p class="text-muted mb-2">¿Estás seguro de que deseas eliminar permanentemente este código QR?</p>
+                    <h6 class="fw-bold text-dark text-break" id="Eliminar_TituloDisplay"></h6>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pt-0 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger text-white rounded-pill px-4 fw-bold shadow-sm">Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

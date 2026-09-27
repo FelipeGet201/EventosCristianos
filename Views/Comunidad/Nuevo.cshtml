@@ -1,0 +1,601 @@
+﻿@model RedAJP.Models.ComunidadFormViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Redactar Mensaje";
+    var tiposMensaje = ViewBag.TiposMensaje as List<RedAJP.Models.TipoMensajeItem> ?? new List<RedAJP.Models.TipoMensajeItem>();
+    var usuariosSelect = ViewBag.UsuariosSelect as List<SelectListItem> ?? new List<SelectListItem>();
+    bool esDirectivo = ViewBag.EsDirectivo == true;
+}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .wizard-step { display: none; }
+    .wizard-step.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .option-card { border: 2px solid #e9ecef; border-radius: 1rem; padding: 1.5rem; cursor: pointer; transition: all 0.2s; text-align: center; height: 100%; background-color: #fff; }
+    .option-card:hover { border-color: #a5c8ff; background-color: #f8faff; transform: translateY(-2px); }
+    .option-card.selected { border-color: #0d6efd; background-color: #f0f6ff; box-shadow: 0 4px 12px rgba(13,110,253,0.1); }
+    .option-icon { font-size: 2.5rem; margin-bottom: 1rem; color: #adb5bd; }
+    .option-card.selected .option-icon { color: #0d6efd; }
+    .option-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.4rem; color: #343a40; }
+    .option-desc { font-size: 0.85rem; color: #6c757d; line-height: 1.4; }
+
+    .time-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px; }
+    .time-option { cursor: pointer; border: 1px solid #dee2e6; border-radius: 8px; padding: 10px; text-align: center; background: white; transition: 0.2s; }
+    .time-option:hover { background: #f8f9fa; }
+    input[name="tipoExpiracion"]:checked + .time-option { background: #0d6efd; color: white; border-color: #0d6efd; }
+
+    .select2-container .select2-selection--single { height: 38px !important; border: 1px solid #ced4da; border-radius: 0.375rem; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 38px; padding-left: 12px; }
+    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
+
+    .scroll-usuarios { max-height: 110px; overflow-y: auto; scrollbar-width: thin; }
+    .scroll-usuarios::-webkit-scrollbar { width: 6px; }
+    .scroll-usuarios::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                
+                <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <a href="@Url.Action("Index")" class="btn btn-sm btn-light border me-3 rounded-circle"><i class="fa-solid fa-arrow-left"></i></a>
+                        <h5 class="fw-bold mb-0 text-dark">Nuevo Mensaje</h5>
+                    </div>
+                    <span id="step-badge" class="badge bg-primary rounded-pill px-3 py-2">Paso 1</span>
+                </div>
+
+                <div class="card-body p-4">
+                    <form id="formNuevoMensaje" action="@Url.Action("GuardarMensaje")" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="hidden-es-directivo" name="EsDirectivo" value="false" />
+                        <input type="hidden" id="hidden-anonimo" name="Es_Anonimo" value="false" />
+                        <input type="hidden" id="hidden-destinatario" name="Destinatario" value="" />
+                        <input type="hidden" id="hidden-tipo" name="Tipo_Mensaje" value="" />
+
+                        @if (esDirectivo)
+                        {
+                            <div id="step-identidad" class="wizard-step active">
+                                <div class="text-center mb-4">
+                                    <h4 class="fw-bold">¿Cómo quieres enviar este mensaje?</h4>
+                                    <p class="text-muted small">Elige tu rol para esta publicación.</p>
+                                </div>
+                                <div class="row g-3 justify-content-center">
+                                    <div class="col-md-5">
+                                        <div class="option-card" onclick="seleccionarIdentidad(true, this)">
+                                            <i class="fa-solid fa-building-columns option-icon"></i>
+                                            <div class="option-title">Directiva AJP</div>
+                                            <div class="option-desc">Mensaje institucional. Se publicará a nombre del equipo oficial.</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="option-card" onclick="seleccionarIdentidad(false, this)">
+                                            <i class="fa-solid fa-user option-icon"></i>
+                                            <div class="option-title">Usuario Normal</div>
+                                            <div class="option-desc">Mensaje personal. Participarás como un miembro más de la comunidad.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                                    <button type="button" class="btn btn-primary btn-lg px-4" onclick="navegar(1)" id="btnNextId" disabled>Siguiente <i class="fa-solid fa-chevron-right ms-1"></i></button>
+                                </div>
+                            </div>
+                        }
+
+                        <div id="step-destinatario" class="wizard-step @(!esDirectivo ? "active" : "")">
+                            <div class="text-center mb-4">
+                                <h4 class="fw-bold">¿A quién va dirigido?</h4>
+                                <p class="text-muted small">Selecciona quién podrá leer tu mensaje.</p>
+                            </div>
+                            <div class="row g-3 justify-content-center">
+                                <div class="col-md-4">
+                                    <div class="option-card" onclick="seleccionarDestinatario('Directiva', this)">
+                                        <i class="fa-solid fa-user-shield option-icon"></i>
+                                        <div class="option-title">A la Directiva</div>
+                                        <div class="option-desc"><strong>Privado.</strong> Solo el equipo administrativo lo verá.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="option-card" onclick="seleccionarDestinatario('Todos', this)">
+                                        <i class="fa-solid fa-users option-icon"></i>
+                                        <div class="option-title">A Toda la Comunidad</div>
+                                        <div class="option-desc"><strong>Público.</strong> Se publicará en el muro general.</div>
+                                    </div>
+                                </div>
+                                @if(esDirectivo)
+                                {
+                                    <div class="col-md-4 fade-in" id="col-especificos" style="display: none;">
+                                        <div class="option-card" onclick="seleccionarDestinatario('Especificos', this)">
+                                            <i class="fa-solid fa-user-tag option-icon"></i>
+                                            <div class="option-title">Usuarios Específicos</div>
+                                            <div class="option-desc"><strong>Dirigido.</strong> Envía a uno o varios miembros en particular.</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            @if(esDirectivo)
+                            {
+                                <div id="panel-usuarios-especificos" class="mt-4 p-4 bg-light rounded-4 border fade-in" style="display: none;">
+                                    <div class="row g-3">
+                                        <div class="col-md-7 border-end">
+                                            <label class="form-label small fw-bold text-muted">Búsqueda Manual</label>
+                                            <div class="input-group">
+                                                <select class="form-control" id="cboUsuarios" style="width: 80%;">
+                                                    <option value=""></option>
+                                                    @foreach (var u in usuariosSelect)
+                                                    {
+                                                        <option value="@u.Value" data-nom="@u.Text">@u.Text</option>
+                                                    }
+                                                </select>
+                                                <button class="btn btn-primary" type="button" onclick="agregarDeSistema()"><i class="fa-solid fa-plus"></i></button>
+                                            </div>
+                                            <div class="mt-3 table-responsive" style="max-height: 150px; overflow-y: auto;">
+                                                <table class="table table-sm table-hover align-middle bg-white mb-0 border">
+                                                    <tbody id="tbodyDestinatarios"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label small fw-bold text-success"><i class="fa-solid fa-file-excel me-1"></i> Carga Masiva (Excel)</label>
+                                            <input class="form-control form-control-sm border-success mb-2" type="file" id="fileExcel" accept=".xlsx">
+                                            <button type="button" class="btn btn-sm btn-outline-success w-100 mb-2 fw-bold" onclick="procesarExcel(event)">
+                                                <i class="fa-solid fa-file-import me-1"></i> Cargar a la Lista
+                                            </button>
+                                            <a href="@Url.Action("DescargarPlantillaDestinatarios")" class="small fw-bold text-success text-decoration-none d-block text-center mt-1">
+                                                <i class="fa-solid fa-download me-1"></i> Descargar Plantilla
+                                            </a>
+                                            <div class="form-text small mt-2" style="line-height: 1.2;">Agregará los usuarios que coincidan con su <strong>Nombre de Usuario exacto</strong>.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="d-flex @(esDirectivo ? "justify-content-between" : "justify-content-end") mt-4 pt-3 border-top">
+                                @if (esDirectivo) { <button type="button" class="btn btn-light border px-4" onclick="navegar(-1)">Atrás</button> }
+                                <button type="button" class="btn btn-primary btn-lg px-4" onclick="navegar(1)" id="btnNextDest" disabled>Siguiente <i class="fa-solid fa-chevron-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <div id="step-contenido" class="wizard-step">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">¿De qué trata tu mensaje?</label>
+                                <div class="row g-2" id="contenedor-tipos">
+                                    @foreach (var tipo in tiposMensaje)
+                                    {
+                                        <div class="col-6 col-md-3 tipo-card-container" data-solo-directiva="@tipo.Solo_Directiva.ToString().ToLower()" data-clave="@tipo.Clave">
+                                            <div class="option-card p-2" onclick="seleccionarTipo('@tipo.Clave', '@tipo.Nombre', this)">
+                                                <i class="fa-solid @tipo.Icono d-block mb-1 text-secondary fs-3"></i>
+                                                <span class="small fw-bold">@tipo.Nombre</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div id="editor-seccion" style="display:none;">
+                                <div class="form-group mb-4">
+                                    <label class="form-label fw-bold">Escribe tu mensaje</label>
+                                    <textarea class="form-control bg-light border-0" name="Contenido" id="Contenido" rows="4" placeholder="Redacta los detalles aquí..." style="resize: none;" required></textarea>
+                                </div>
+
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <div class="row g-3">
+                                        <div class="col-md-5" id="div-anonimo">
+                                            <label class="form-label fw-bold mb-1"><i class="fa-solid fa-user-secret text-primary me-1"></i> Privacidad</label>
+                                            <div class="form-check form-switch mt-2 mb-1" style="padding-left: 2.5em;">
+                                                <input class="form-check-input" type="checkbox" id="checkAnonimo" style="transform: scale(1.3); margin-left: -2.5em; cursor: pointer;">
+                                                <label class="form-check-label fw-bold ms-1" for="checkAnonimo" style="cursor: pointer;">Ocultar mi identidad</label>
+                                            </div>
+                                            <p id="texto-ayuda-anonimo" class="small text-muted mb-0 mt-2" style="line-height: 1.3; font-size: 0.8rem;"></p>
+                                        </div>
+                                        <div class="col-md-7">
+                                            <label class="form-label fw-bold mb-1"><i class="fa-solid fa-hourglass-half text-primary me-1"></i> Tiempo de visualización</label>
+                                            <p class="small text-muted mb-2" style="font-size: 0.8rem; line-height: 1.2;">¿Cuándo deseas que este mensaje desaparezca automáticamente?</p>
+                                            <div class="time-grid">
+                                                <label class="m-0"><input type="radio" name="tipoExpiracion" value="1Dia" class="d-none"><div class="time-option small fw-bold">1 Día</div></label>
+                                                <label class="m-0"><input type="radio" name="tipoExpiracion" value="1Semana" class="d-none"><div class="time-option small fw-bold">1 Sem.</div></label>
+                                                <label class="m-0"><input type="radio" name="tipoExpiracion" value="1Mes" class="d-none" checked><div class="time-option small fw-bold">1 Mes</div></label>
+                                                <label class="m-0"><input type="radio" name="tipoExpiracion" value="Fija" class="d-none"><div class="time-option small fw-bold">Elegir Fecha</div></label>
+                                            </div>
+                                            <div id="div-fecha-fija" class="mt-2" style="display:none;">
+                                                <input type="date" class="form-control form-control-sm border-secondary" name="Fecha_Expiracion" id="Fecha_Expiracion" value="@Model.Fecha_Expiracion.ToString("yyyy-MM-dd")">
+                                                <small id="error-fecha" class="text-danger d-none fw-bold mt-1">La fecha seleccionada debe ser a futuro.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                                <button type="button" class="btn btn-light border px-4" onclick="navegar(-1)">Atrás</button>
+                                <button type="button" class="btn btn-primary btn-lg px-4" onclick="prepararResumen()" id="btnNextCont" disabled>Revisar <i class="fa-solid fa-check ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <div id="step-resumen" class="wizard-step">
+                            <div class="text-center mb-4">
+                                <h4 class="fw-bold">Confirmar Envío</h4>
+                                <p class="text-muted small">Verifica que todo esté correcto antes de enviar.</p>
+                            </div>
+                            <div class="alert alert-info border-0 rounded-4 p-4 shadow-sm">
+                                <div class="row g-3 text-center mb-3">
+                                    <div class="col-4 border-end border-info">
+                                        <small class="text-muted d-block fw-bold" style="font-size: 0.7rem;">QUIÉN LO ENVÍA</small>
+                                        <strong id="res-de" class="text-dark"></strong>
+                                    </div>
+                                    <div class="col-4 border-end border-info">
+                                        <small class="text-muted d-block fw-bold" style="font-size: 0.7rem;">QUIÉN LO VERÁ</small>
+                                        <strong id="res-para" class="text-dark"></strong>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted d-block fw-bold" style="font-size: 0.7rem;">TEMA</small>
+                                        <strong id="res-tipo" class="text-dark"></strong>
+                                    </div>
+                                </div>
+                                <div id="res-usuarios-especificos" class="bg-white bg-opacity-50 p-3 rounded border mb-3 text-center d-none">
+                                    <small class="text-muted d-block fw-bold mb-2" style="font-size: 0.7rem;">DESTINATARIOS SELECCIONADOS</small>
+                                    <div class="scroll-usuarios">
+                                        <div id="lista-badges-destinatarios" class="d-flex flex-wrap justify-content-center gap-2"></div>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-3 rounded-3 shadow-sm text-break mt-3 border">
+                                    <p id="res-msg" class="mb-0 fst-italic text-secondary" style="white-space: pre-wrap;"></p>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-light border px-4" onclick="navegar(-1)">Modificar</button>
+                                <button type="submit" class="btn btn-success btn-lg px-5 fw-bold shadow-sm" id="btnSubmitFinal">Enviar Ahora <i class="fa-regular fa-paper-plane ms-2"></i></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="modalAlertaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold" id="modalAlertaLabel">Atención</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4 fs-5" id="modalAlertaBody"></div>
+            <div class="modal-footer border-top-0 justify-content-center">
+                <button type="button" class="btn btn-primary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let stepActual = 0;
+        let steps = [];
+
+        document.addEventListener("DOMContentLoaded", function () {
+            steps = Array.from(document.querySelectorAll('.wizard-step'));
+            
+            if ($('#cboUsuarios').length > 0) {
+                $('#cboUsuarios').select2({ placeholder: "Buscar por nombre o usuario...", allowClear: true });
+            }
+            
+            actualizarPasoUI();
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+            const expInput = document.getElementById('Fecha_Expiracion');
+            if (expInput) expInput.setAttribute('min', todayStr);
+        });
+
+        function mostrarAlerta(mensajeHTML, icono = '<i class="fa-solid fa-circle-exclamation text-warning me-2"></i>', titulo = 'Atención') {
+            document.getElementById('modalAlertaLabel').innerHTML = icono + titulo;
+            document.getElementById('modalAlertaBody').innerHTML = mensajeHTML;
+            var myModal = new bootstrap.Modal(document.getElementById('modalAlerta'));
+            myModal.show();
+        }
+
+        function marcarSeleccion(contenedor, elemento) {
+            document.querySelectorAll(`${contenedor} .option-card`).forEach(c => c.classList.remove('selected'));
+            elemento.classList.add('selected');
+        }
+
+        function navegar(dir) {
+            steps[stepActual].classList.remove('active');
+            stepActual += dir;
+            steps[stepActual].classList.add('active');
+            actualizarPasoUI();
+        }
+
+        function actualizarPasoUI() {
+            let esDir = document.getElementById('hidden-es-directivo');
+            // Mantenemos indexación natural sin saltos para UI
+            document.getElementById('step-badge').innerText = `Paso ${stepActual + 1} de ${steps.length}`;
+            window.scrollTo(0, 0);
+        }
+
+        function seleccionarIdentidad(actuaComoDirectiva, el) {
+            document.getElementById('hidden-es-directivo').value = actuaComoDirectiva ? 'true' : 'false';
+            marcarSeleccion('#step-identidad', el);
+            document.getElementById('btnNextId').disabled = false;
+            
+            let colEspecificos = document.getElementById('col-especificos');
+            if (colEspecificos) colEspecificos.style.display = actuaComoDirectiva ? 'block' : 'none';
+
+            let destActual = document.getElementById('hidden-destinatario').value;
+            if (!actuaComoDirectiva && destActual === 'Especificos') {
+                document.getElementById('hidden-destinatario').value = '';
+                document.querySelectorAll('#step-destinatario .option-card').forEach(c => c.classList.remove('selected'));
+                let panelEspec = document.getElementById('panel-usuarios-especificos');
+                if (panelEspec) panelEspec.style.display = 'none';
+                let tbody = document.getElementById('tbodyDestinatarios');
+                if (tbody) tbody.innerHTML = '';
+                document.getElementById('btnNextDest').disabled = true;
+            }
+            
+            actualizarReglasAnonimato();
+        }
+
+        function seleccionarDestinatario(dest, el) {
+            document.getElementById('hidden-destinatario').value = dest;
+            marcarSeleccion('#step-destinatario', el);
+            
+            let panelEspecificos = document.getElementById('panel-usuarios-especificos');
+            if (panelEspecificos) {
+                panelEspecificos.style.display = (dest === 'Especificos') ? 'block' : 'none';
+            }
+
+            // APLICAMOS LA LÓGICA VISUAL CORREGIDA DE TIPOS
+            document.querySelectorAll('.tipo-card-container').forEach(c => {
+                let soloDir = c.getAttribute('data-solo-directiva') === 'true';
+                let tipoClave = c.getAttribute('data-clave');
+                
+                let mostrar = true;
+                
+                // 1. Ocultar si el destino es "Todos" y el tipo es exclusivo para Directiva
+                if (dest === 'Todos' && soloDir) mostrar = false;
+                
+                // 2. Ocultar si el destino es "Específicos" y el tipo no es "General"
+                if (dest === 'Especificos' && tipoClave !== 'General') mostrar = false;
+                
+                c.style.display = mostrar ? 'block' : 'none';
+            });
+
+            let tipoActivo = document.querySelector('#contenedor-tipos .option-card.selected');
+            if (tipoActivo && tipoActivo.parentElement.style.display === 'none') {
+                tipoActivo.classList.remove('selected');
+                document.getElementById('hidden-tipo').value = '';
+                document.getElementById('btnNextCont').disabled = true;
+                document.getElementById('editor-seccion').style.display = 'none';
+            }
+
+            actualizarReglasAnonimato();
+            validarPasoDestinatario();
+        }
+
+        function actualizarReglasAnonimato() {
+            const esDir = document.getElementById('hidden-es-directivo').value === 'true';
+            const dest = document.getElementById('hidden-destinatario').value;
+            const check = document.getElementById('checkAnonimo');
+            const div = document.getElementById('div-anonimo');
+            const textoAyuda = document.getElementById('texto-ayuda-anonimo');
+
+            if (!check || !div || !textoAyuda) return;
+
+            if (esDir) {
+                div.style.display = 'none';
+                check.checked = false;
+            } else {
+                div.style.display = 'block';
+                if (dest === 'Todos') {
+                    check.checked = true;
+                    check.disabled = true;
+                    textoAyuda.innerHTML = '<span class="text-primary fw-bold"><i class="fa-solid fa-shield-halved"></i> Obligatorio:</span> Por tu seguridad, todos los mensajes públicos son <strong>100% anónimos</strong>.';
+                } else {
+                    check.disabled = false;
+                    textoAyuda.innerHTML = 'Si activas esta opción, <strong>nadie</strong> sabrá que tú enviaste este mensaje.';
+                }
+            }
+            document.getElementById('hidden-anonimo').value = check.checked;
+        }
+
+        function validarPasoDestinatario() {
+            let dest = document.getElementById('hidden-destinatario').value;
+            let val = (dest !== '');
+            if (dest === 'Especificos') {
+                let filas = document.querySelectorAll('#tbodyDestinatarios tr').length;
+                val = filas > 0;
+            }
+            document.getElementById('btnNextDest').disabled = !val;
+        }
+
+        function seleccionarTipo(clave, nombre, el) {
+            document.getElementById('hidden-tipo').value = clave;
+            document.getElementById('res-tipo').innerText = nombre;
+            marcarSeleccion('#contenedor-tipos', el);
+            document.getElementById('editor-seccion').style.display = 'block';
+            validarPasoContenido();
+        }
+
+        function agregarDeSistema() {
+            var cbo = document.getElementById("cboUsuarios");
+            if (cbo.value === "") return;
+            var nombreCompleto = cbo.options[cbo.selectedIndex].text;
+            
+            if (document.querySelector(`input[name="idsDestinatarios"][value="${cbo.value}"]`)) return;
+            
+            var tbody = document.getElementById("tbodyDestinatarios");
+            var tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="ps-3 py-2">
+                    <input type="hidden" name="idsDestinatarios" value="${cbo.value}" />
+                    <span class="small fw-bold text-dark nombre-badge">${nombreCompleto}</span>
+                </td>
+                <td class="text-end pe-3">
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove(); validarPasoDestinatario();">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </td>`;
+            tbody.appendChild(tr);
+            $('#cboUsuarios').val(null).trigger('change');
+            validarPasoDestinatario();
+        }
+
+        function procesarExcel(event) {
+            var fileInput = document.getElementById('fileExcel');
+            var file = fileInput.files[0];
+            
+            if (!file) {
+                mostrarAlerta("Por favor, selecciona un archivo Excel primero.");
+                return;
+            }
+
+            var btn = event.currentTarget;
+            var originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Leyendo...';
+            btn.disabled = true;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var data = new Uint8Array(e.target.result);
+                var workbook = XLSX.read(data, {type: 'array'});
+                var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                var rows = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+
+                var agregados = 0;
+                var ignorados = 0;
+
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    if (!row || row.length === 0) continue;
+                    
+                    var usuarioVal = row[0] ? row[0].toString().trim() : "";
+                    if (usuarioVal === "" || usuarioVal.toLowerCase().includes("plantilla") || usuarioVal.toLowerCase().includes("usuario")) continue;
+
+                    if (agregarPorUsuario(usuarioVal)) agregados++;
+                    else ignorados++;
+                }
+
+                mostrarAlerta(`Carga finalizada.<br><br><span class="badge bg-success">Agregados: ${agregados}</span> <span class="badge bg-secondary">Ignorados: ${ignorados}</span>`, '<i class="fa-solid fa-file-excel text-success me-2"></i>', 'Resumen');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                fileInput.value = ""; 
+                validarPasoDestinatario();
+            };
+            reader.onerror = function() {
+                mostrarAlerta("Ocurrió un error al leer el archivo Excel.", '<i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>', 'Error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function agregarPorUsuario(usuarioVal) {
+            var cbo = document.getElementById("cboUsuarios");
+            var lowerUsuario = usuarioVal.toLowerCase();
+            
+            for (var i = 0; i < cbo.options.length; i++) {
+                var opt = cbo.options[i];
+                if (opt.value === "") continue;
+
+                var match = opt.text.match(/\(([^)]+)\)$/);
+                if (match && match[1].toLowerCase() === lowerUsuario) {
+                    var id = opt.value;
+                    var nombre = opt.getAttribute("data-nom");
+
+                    if (document.querySelector(`input[name="idsDestinatarios"][value="${id}"]`)) return false;
+
+                    var tbody = document.getElementById("tbodyDestinatarios");
+                    var tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td class="ps-3 py-2">
+                            <input type="hidden" name="idsDestinatarios" value="${id}" />
+                            <span class="small fw-bold text-dark nombre-badge">${nombre}</span>
+                            <span class="badge bg-success ms-2" style="font-size: 0.65rem;">Excel</span>
+                        </td>
+                        <td class="text-end pe-3">
+                            <button type="button" class="btn btn-sm text-danger border-0 p-1" onclick="this.closest('tr').remove(); validarPasoDestinatario();">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function validarPasoContenido() {
+            let val = document.getElementById('hidden-tipo').value !== '' && document.getElementById('Contenido').value.trim() !== '';
+            let tipoExp = document.querySelector('input[name="tipoExpiracion"]:checked').value;
+            if (tipoExp === 'Fija') {
+                let d = document.getElementById('Fecha_Expiracion').value;
+                if (!d || new Date(d) <= new Date()) {
+                    document.getElementById('error-fecha').classList.remove('d-none');
+                    val = false;
+                } else {
+                    document.getElementById('error-fecha').classList.add('d-none');
+                }
+            }
+            document.getElementById('btnNextCont').disabled = !val;
+        }
+
+        function prepararResumen() {
+            let actuaComoDirectiva = document.getElementById('hidden-es-directivo').value === 'true';
+            document.getElementById('res-de').innerHTML = actuaComoDirectiva 
+                ? '<i class="fa-solid fa-building-columns text-primary me-1"></i> Directiva AJP' 
+                : '<i class="fa-solid fa-user text-primary me-1"></i> Usuario Normal';
+            
+            let dest = document.getElementById('hidden-destinatario').value;
+            let destTexto = '';
+            document.getElementById('res-usuarios-especificos').classList.add('d-none');
+
+            if (dest === 'Directiva') destTexto = '<i class="fa-solid fa-user-shield text-danger me-1"></i> Solo Directiva';
+            else if (dest === 'Todos') destTexto = '<i class="fa-solid fa-users text-success me-1"></i> Toda la Comunidad';
+            else if (dest === 'Especificos') {
+                destTexto = '<i class="fa-solid fa-user-tag text-warning me-1"></i> Usuarios Específicos';
+                document.getElementById('res-usuarios-especificos').classList.remove('d-none');
+                
+                let container = document.getElementById('lista-badges-destinatarios');
+                container.innerHTML = '';
+                document.querySelectorAll('#tbodyDestinatarios tr').forEach(tr => {
+                    let nombre = tr.querySelector('.nombre-badge').innerText;
+                    container.innerHTML += `<span class="badge bg-light text-dark border shadow-sm">${nombre}</span>`;
+                });
+            }
+            
+            document.getElementById('res-para').innerHTML = destTexto;
+            document.getElementById('res-msg').innerText = document.getElementById('Contenido').value;
+            navegar(1);
+        }
+
+        document.getElementById('Contenido').addEventListener('input', validarPasoContenido);
+        document.getElementById('Fecha_Expiracion').addEventListener('change', validarPasoContenido);
+        document.getElementById('checkAnonimo').addEventListener('change', function() { document.getElementById('hidden-anonimo').value = this.checked; });
+        document.querySelectorAll('input[name="tipoExpiracion"]').forEach(r => {
+            r.addEventListener('change', function() {
+                document.getElementById('div-fecha-fija').style.display = this.value === 'Fija' ? 'block' : 'none';
+                validarPasoContenido();
+            });
+        });
+        
+        document.getElementById('formNuevoMensaje').addEventListener('submit', function(e) {
+            const txt = document.getElementById('Contenido').value.trim();
+            if(txt === "") {
+                e.preventDefault();
+                mostrarAlerta("No puedes enviar un mensaje vacío. Por favor, escribe los detalles.", '<i class="fa-solid fa-circle-exclamation text-warning me-2"></i>', 'Atención');
+            } else {
+                document.getElementById('btnSubmitFinal').disabled = true;
+                document.getElementById('btnSubmitFinal').innerHTML = 'Enviando mensaje... <i class="fa-solid fa-circle-notch fa-spin ms-1"></i>';
+            }
+        });
+    </script>
+}

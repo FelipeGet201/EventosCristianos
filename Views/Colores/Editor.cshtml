@@ -1,0 +1,367 @@
+﻿@using RedAJP.Globales
+@model RedAJP.Controllers.ColoresController.PaletaItem
+@{
+    Layout = "~/Views/Shared/Principal.cshtml";
+    bool esEdicion = Model != null && Model.IdPaleta > 0;
+    bool puedeGestionar = ViewBag.PuedeGestionar ?? false;
+    
+    // Ajustamos el título dependiendo de si es admin o usuario
+    ViewData["Title"] = esEdicion ? "Editar Paleta" : (puedeGestionar ? "Nueva Paleta" : "Herramienta de Colores");
+}
+
+<script>
+    // --- 1. Activar Menú (si existe la función) ---
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas','submenu-colores');
+        }
+    });
+</script>
+<style>
+    .text-main { color: #073238 !important; }
+    .editor-header-card { background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 5px solid #002b36 !important; }
+    .editor-icon-wrapper { background-color: #002b36; color: #ffffff; border-radius: 12px; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(32, 201, 151, 0.3); }
+
+    /* Picker Input */
+    .color-picker-group { display: flex; align-items: center; background: #fff; border: 1px solid #ced4da; border-radius: 0.5rem; padding: 0.3rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
+    .color-picker-input { border: none; width: 40px; height: 40px; cursor: pointer; border-radius: 0.25rem; padding: 0; }
+    .color-hex-input { border: none; outline: none; flex-grow: 1; padding-left: 10px; font-family: monospace; font-size: 1.1rem; font-weight: bold; color: #495057; text-transform: uppercase; }
+
+    /* Lienzo Interactivo */
+    .builder-canvas { display: flex; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1); min-height: 220px; background: #e9ecef; position: relative;}
+    
+    .color-block { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem 0.5rem; position: relative; transition: flex 0.3s; min-width: 0; }
+    .color-block:hover { flex: 1.5; z-index: 10; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
+    
+    .block-controls { display: flex; flex-direction: column; align-items: center; width: 85%; max-width: 150px; opacity: 0.8; transition: opacity 0.2s;}
+    .color-block:hover .block-controls { opacity: 1; }
+
+    /* Inputs transparentes dentro del bloque de color */
+    .block-hex-input { background: transparent; border: 1px dashed transparent; text-align: center; font-family: monospace; font-size: 1.2rem; font-weight: bold; width: 100%; border-radius: 4px; padding: 2px; text-transform: uppercase;}
+    .block-hex-input:focus, .block-hex-input:hover { border-color: currentColor; outline: none; background: rgba(255,255,255,0.1); }
+    
+    .block-name-input { background: transparent; border: 1px dashed transparent; text-align: center; font-size: 0.85rem; font-weight: 500; width: 100%; border-radius: 4px; padding: 2px; margin-top: 5px;}
+    .block-name-input:focus, .block-name-input:hover { border-color: currentColor; outline: none; background: rgba(255,255,255,0.1); }
+    .block-name-input::placeholder { color: currentColor; opacity: 0.5; }
+
+    .btn-remove-color { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.2); border: none; color: white; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity 0.2s; font-size: 0.8rem;}
+    .color-block:hover .btn-remove-color { opacity: 1; }
+    .btn-remove-color:hover { background: rgba(220, 53, 69, 0.9); }
+</style>
+
+<div class="fade-in py-3 py-md-4 mt-2">
+    
+    @if (puedeGestionar)
+    {
+        <div class="mb-3">
+            <a href="@Url.Action("Index", "Colores")" class="text-decoration-none fw-bold text-main" style="font-size: 1rem;">
+                <i class="fa-solid fa-arrow-left me-2"></i> Volver al Catálogo
+            </a>
+        </div>
+    }
+
+    <div class="card overflow-hidden editor-header-card mb-4 shadow-sm rounded-4">
+        <div class="card-body p-3 p-md-4 d-flex align-items-center">
+            <div class="editor-icon-wrapper me-3 shadow-sm"><i class="fa-solid fa-fill-drip fa-xl"></i></div>
+            <div>
+                <h3 class="mb-0 fw-bold text-main">@(esEdicion ? "Editar Paleta de Colores" : "Crear combinación de colores")</h3>
+                <p class="mb-0 text-muted" style="font-size: 0.95rem;">Explora, genera y combina colores de forma interactiva.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-4">
+            <div class="card bg-white border-0 shadow-sm rounded-4 p-4 h-100">
+                <h6 class="fw-bold text-main mb-4"><i class="fa-solid fa-gear me-2"></i>Generador Automático</h6>
+
+                <label class="form-label small fw-bold text-muted">1. Pega tu Color Base (HEX)</label>
+                <div class="color-picker-group mb-4">
+                    <i class="fa-solid fa-eye-dropper text-muted ms-2 me-1"></i>
+                    <input type="color" class="color-picker-input" id="baseColorPicker" value="#1E2E47">
+                    <input type="text" class="color-hex-input" id="baseColorText" value="#1E2E47" maxlength="7">
+                </div>
+
+                <div class="row g-2 mb-4">
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-muted">2. Estilo de Armonía</label>
+                        <select class="form-select" id="estiloGeneracion">
+                            <option value="analogo">Análogo (Vecinos)</option>
+                            <option value="monocromatico">Monocromático (Luz)</option>
+                            <option value="complementario">Complementario (2 col)</option>
+                            <option value="triada">Tríada (3 col)</option>
+                            <option value="split">Compl. Dividido (3 col)</option>
+                            <option value="tetrada">Tétrada (4 col)</option>
+                            <option value="arcoiris">Arcoíris (Libre)</option>
+                        </select>
+                    </div>
+                    <div class="col-7 mt-3">
+                        <label class="form-label small fw-bold text-muted">3. Intensidad</label>
+                        <select class="form-select border-primary text-primary fw-bold" id="intensidadGeneracion">
+                            <option value="fiel">Fiel al original</option>
+                            <option value="vibrante">Vibrante (Vivos)</option>
+                            <option value="pastel">Pastel (Suaves)</option>
+                        </select>
+                    </div>
+                    <div class="col-5 mt-3">
+                        <label class="form-label small fw-bold text-muted">4. Cantidad</label>
+                        <input type="number" class="form-control" id="cantidadColores" min="1" max="10" value="5">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary w-100 fw-bold rounded-pill shadow-sm mb-3" onclick="generarCombinaciones()">
+                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Generar Paleta
+                </button>
+                
+                <div class="alert alert-secondary border-0 small text-muted mb-0">
+                    <i class="fa-solid fa-circle-info me-1"></i> La generación reemplazará los colores actuales del lienzo. Las reglas estrictas limitan la cantidad automáticamente.
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8 d-flex flex-column">
+            
+            <div class="card bg-white border-0 shadow-sm rounded-4 p-4 flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-main mb-0"><i class="fa-solid fa-palette me-2"></i>Lienzo Actual</h5>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill fw-bold px-3" onclick="agregarColorVacio()">
+                        <i class="fa-solid fa-plus me-1"></i> Añadir Color
+                    </button>
+                </div>
+
+                <div class="builder-canvas mb-4" id="builderCanvas"></div>
+
+                @if (puedeGestionar)
+                {
+                    <div class="mt-auto bg-light p-4 rounded-4 border">
+                        <form id="formGuardar" action="@Url.Action("GuardarPaleta", "Colores")" method="post">
+                            @Html.AntiForgeryToken()
+                            
+                            <input type="hidden" name="IdPaleta" value="@(Model?.IdPaleta ?? 0)">
+                            <input type="hidden" id="ColoresJson" name="ColoresJson" value="">
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-main">Nombre de la Temática *</label>
+                                    <input type="text" class="form-control bg-white" name="NombreTema" value="@Model?.NombreTema" placeholder="Ej. Tema Oscuro Dashboard" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-main">Descripción</label>
+                                    <input type="text" class="form-control bg-white" name="Descripcion" value="@Model?.Descripcion" placeholder="Opcional">
+                                </div>
+                                <div class="col-12 text-end mt-3">
+                                    <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="prepararGuardado()">
+                                        <i class="fa-solid fa-floppy-disk me-1"></i> @(esEdicion ? "Actualizar Paleta" : "Guardar Paleta")
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="mt-auto bg-light p-3 rounded-4 border text-center">
+                        <p class="text-muted mb-0 small"><i class="fa-solid fa-circle-info me-1"></i> Utiliza esta herramienta libremente para explorar y copiar códigos HEX. La opción de guardado permanente en el catálogo es exclusiva para administradores.</p>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variable global inyectada desde el backend
+    let paletaActual = @Html.Raw(ViewBag.PaletaJson ?? "[]");
+
+    // ==================================================
+    // SINCRONIZAR PICKER Y TEXTO
+    // ==================================================
+    const colorPicker = document.getElementById('baseColorPicker');
+    const colorText = document.getElementById('baseColorText');
+
+    colorPicker.addEventListener('input', (e) => { colorText.value = e.target.value.toUpperCase(); });
+    colorText.addEventListener('input', (e) => {
+        let val = e.target.value;
+        if(val.startsWith('#') && (val.length === 4 || val.length === 7)) {
+            if(/^#([0-9A-F]{3}){1,2}$/i.test(val)) {
+                if(val.length === 4) val = "#" + val[1]+val[1]+val[2]+val[2]+val[3]+val[3];
+                colorPicker.value = val;
+            }
+        }
+    });
+
+    // ==================================================
+    // MATEMÁTICAS HSL
+    // ==================================================
+    function hexToHSL(hex) {
+        let r = parseInt(hex.substr(1,2), 16)/255, g = parseInt(hex.substr(3,2), 16)/255, b = parseInt(hex.substr(5,2), 16)/255;
+        let max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+        if(max == min) { h = s = 0; } else {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch(max) { case r: h = (g - b)/d + (g<b?6:0); break;
+            case g: h = (b - r)/d + 2; break; case b: h = (r - g)/d + 4; break;
+            } h /= 6;
+        }
+        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
+
+    function hslToHex(h, s, l) {
+        l /= 100;
+        const a = s * Math.min(l, 1 - l) / 100;
+        const f = n => {
+            const k = (n + h / 30) % 12;
+            const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return Math.round(255 * color).toString(16).padStart(2, '0');
+        };
+        return `#${f(0)}${f(8)}${f(4)}`;
+    }
+
+    function isDarkColor(hex) {
+        if(!/^#([0-9A-F]{3}){1,2}$/i.test(hex)) return false;
+        let r = parseInt(hex.substr(1,2), 16)/255, g = parseInt(hex.substr(3,2), 16)/255, b = parseInt(hex.substr(5,2), 16)/255;
+        let a = [r, g, b].map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+        let lum = a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+        return lum < 0.179;
+    }
+
+    // ==================================================
+    // GENERADOR AVANZADO (CON FILTRO DE INTENSIDAD)
+    // ==================================================
+    function generarCombinaciones() {
+        let hexBase = colorPicker.value;
+        let [h, s, l] = hexToHSL(hexBase);
+        
+        let inputQty = document.getElementById('cantidadColores');
+        let cantidad = parseInt(inputQty.value);
+        let estilo = document.getElementById('estiloGeneracion').value;
+        let intensidad = document.getElementById('intensidadGeneracion').value;
+        
+        if(cantidad < 1) cantidad = 1; if(cantidad > 10) cantidad = 10;
+        paletaActual = [];
+
+        // === APLICAR EL FILTRO DE INTENSIDAD ===
+        if (intensidad === 'vibrante') {
+            s = 90; // Mucha saturación (Colores vivos)
+            l = 55; // Punto de luz óptimo para colores vibrantes
+        } else if (intensidad === 'pastel') {
+            s = 70; // Saturación suave
+            l = 85; // Alta luminosidad para efecto pastel
+        }
+        
+        let baseModificado = hslToHex(h, s, l);
+        const addHsl = (hOff, sOff = 0, lOff = 0) => hslToHex((h + hOff) % 360, Math.min(100, Math.max(0, s + sOff)), Math.min(100, Math.max(0, l + lOff)));
+
+        // Reglas estrictas de teoría del color
+        if (estilo === 'complementario') {
+            paletaActual = [{hex: baseModificado, nombre: "Base"}, {hex: addHsl(180), nombre: "Complemento"}];
+            cantidad = 2;
+        } else if (estilo === 'triada') {
+            paletaActual = [{hex: baseModificado, nombre: "Base"}, {hex: addHsl(120), nombre: "Triada 1"}, {hex: addHsl(240), nombre: "Triada 2"}];
+            cantidad = 3;
+        } else if (estilo === 'split') {
+            paletaActual = [{hex: baseModificado, nombre: "Base"}, {hex: addHsl(150), nombre: "Split 1"}, {hex: addHsl(210), nombre: "Split 2"}];
+            cantidad = 3;
+        } else if (estilo === 'tetrada') {
+            paletaActual = [{hex: baseModificado, nombre: "Base"}, {hex: addHsl(90), nombre: "Tétrada 1"}, {hex: addHsl(180), nombre: "Tétrada 2"}, {hex: addHsl(270), nombre: "Tétrada 3"}];
+            cantidad = 4;
+        } else {
+            for(let i = 0; i < cantidad; i++) {
+                if (estilo === 'monocromatico') {
+                    let step = (85 - 15) / (cantidad > 1 ? cantidad - 1 : 1);
+                    paletaActual.push({ hex: hslToHex(h, s, 15 + (step * i)), nombre: `Tono ${i+1}` });
+                } 
+                else if (estilo === 'analogo') {
+                    let startHue = h - 40;
+                    let step = 80 / (cantidad > 1 ? cantidad - 1 : 1);
+                    paletaActual.push({ hex: hslToHex((startHue + (step * i) + 360) % 360, s, l), nombre: `Análogo ${i+1}` });
+                }
+                else if (estilo === 'arcoiris') {
+                    let step = 360 / cantidad;
+                    paletaActual.push({ hex: hslToHex((h + (step * i)) % 360, s, l), nombre: `Color ${i+1}` });
+                }
+            }
+        }
+        
+        inputQty.value = cantidad;
+        renderLienzo();
+    }
+
+    // ==================================================
+    // FUNCIONES DEL LIENZO INTERACTIVO
+    // ==================================================
+    function renderLienzo() {
+        const container = document.getElementById('builderCanvas');
+        container.innerHTML = '';
+
+        if(paletaActual.length === 0) {
+            container.innerHTML = '<div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-muted py-5"><p class="mb-0">El lienzo está vacío.</p></div>';
+            return;
+        }
+
+        paletaActual.forEach((item, index) => {
+            let textColor = isDarkColor(item.hex) ? '#ffffff' : '#000000';
+            
+            container.innerHTML += `
+                <div class="color-block" style="background-color: ${item.hex}; color: ${textColor}">
+                    <button type="button" class="btn-remove-color" onclick="eliminarColor(${index})" title="Quitar color"><i class="fa-solid fa-xmark"></i></button>
+                    
+                    <div class="block-controls">
+                        <div style="position:relative; width:100%;">
+                            <input type="color" value="${item.hex}" onchange="actualizarColor(${index}, this.value)" 
+                                   style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;">
+                            <input type="text" class="block-hex-input" value="${item.hex.toUpperCase()}" 
+                                   onchange="actualizarColor(${index}, this.value)" 
+                                   style="color: ${textColor}; position:relative; z-index:1; pointer-events:none;">
+                        </div>
+                        
+                        <input type="text" class="block-name-input" value="${item.nombre}" placeholder="Sin nombre" 
+                               onchange="actualizarNombre(${index}, this.value)" style="color: ${textColor};">
+                    </div>
+                </div>`;
+        });
+    }
+
+    function actualizarColor(index, nuevoHex) {
+        if(/^#([0-9A-F]{3}){1,2}$/i.test(nuevoHex)) {
+            if(nuevoHex.length === 4) nuevoHex = "#" + nuevoHex[1]+nuevoHex[1]+nuevoHex[2]+nuevoHex[2]+nuevoHex[3]+nuevoHex[3];
+            paletaActual[index].hex = nuevoHex.toUpperCase();
+            renderLienzo();
+        }
+    }
+
+    function actualizarNombre(index, nuevoNombre) {
+        paletaActual[index].nombre = nuevoNombre;
+    }
+
+    function eliminarColor(index) {
+        paletaActual.splice(index, 1);
+        renderLienzo();
+    }
+
+    function agregarColorVacio() {
+        if(paletaActual.length >= 10) { alert("Máximo 10 colores permitidos."); return; }
+        paletaActual.push({ hex: "#CCCCCC", nombre: "" });
+        renderLienzo();
+    }
+
+    // ==================================================
+    // ENVÍO AL BACKEND
+    // ==================================================
+    function prepararGuardado() {
+        if(paletaActual.length === 0) {
+            alert("No hay colores en el lienzo. Genera o añade al menos uno.");
+            return;
+        }
+        document.getElementById('ColoresJson').value = JSON.stringify(paletaActual);
+        document.getElementById('formGuardar').submit();
+    }
+
+    // Inicializar Lienzo
+    document.addEventListener("DOMContentLoaded", () => {
+        if(paletaActual.length === 0) generarCombinaciones(); // Solo genera si es nuevo
+        else renderLienzo(); // Si viene de Editar, renderiza lo que hay
+    });
+</script>

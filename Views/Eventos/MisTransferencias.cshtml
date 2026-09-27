@@ -1,0 +1,205 @@
+﻿@model IEnumerable<dynamic>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Mis Transferencias";
+
+    int idEvento = ViewBag.IdEvento ?? 0;
+    string idEventoEncriptado = ViewBag.idEventoEncriptado as string ?? "";
+    string token = ViewBag.Token as string;
+    bool esInvitado = !string.IsNullOrEmpty(token);
+}
+
+<style>
+    .badge-status {
+        font-size: 0.75rem;
+        padding: 0.5em 0.8em;
+        border-radius: 50px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .status-waiting_proof {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+
+    .status-review {
+        background-color: #cce5ff;
+        color: #004085;
+        border: 1px solid #b8daff;
+    }
+
+    .status-approved {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .status-rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0,0,0,0.015);
+        transition: background-color 0.2s;
+    }
+
+    .monto-col {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 700;
+        color: #212529;
+        font-size: 1rem;
+    }
+
+    .folio-text {
+        font-weight: 700;
+        color: #495057;
+    }
+</style>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold text-dark mb-0">Mis Transferencias</h3>
+                    <p class="text-muted small mb-0">
+                        @(esInvitado ? "Historial de este asistente." : "Historial de todos tus registros.")
+                    </p>
+                </div>
+
+                @if (esInvitado)
+                {
+                    <a href="@Url.Action("Pagar", new { token = token })" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+                        <i class="fa-solid fa-arrow-left me-2"></i> Volver a Pagar
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("Registro", new { sid = idEventoEncriptado })" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+                        <i class="fa-solid fa-arrow-left me-2"></i> Volver al Registro
+                    </a>
+                }
+            </div>
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body p-0">
+
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="bg-light text-uppercase small text-muted border-bottom">
+                                    <tr>
+                                        <th class="ps-4 py-3">Folio / Fecha</th>
+                                        <th>Monto</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-center">Comprobante</th>
+                                        <th class="text-end pe-4">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 py-3">
+                                                <div class="folio-text">#@item.Id_Transaccion</div>
+                                                <small class="text-muted"><i class="fa-regular fa-calendar me-1"></i> @item.Fecha_Intento.ToString("dd/MMM/yyyy HH:mm")</small>
+
+                                                @if (item.Estatus_Pago == "rejected" && item.Comentario != null)
+                                                {
+                                                    <div class="text-danger small mt-1 bg-danger bg-opacity-10 p-2 rounded-3 border border-danger border-opacity-25" style="max-width: 250px;">
+                                                        <strong><i class="fa-solid fa-circle-exclamation"></i> Motivo:</strong> @item.Comentario
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td class="monto-col">$@item.Monto_Total.ToString("N2")</td>
+                                            <td class="text-center">
+                                                @switch ((string)item.Estatus_Pago)
+                                                {
+                                                    case "waiting_proof":
+                                                        <span class="badge badge-status status-waiting_proof">Pendiente</span>
+                                                        break;
+                                                    case "review":
+
+                                                        <span class="badge badge-status status-review">En Revisión</span>
+                                                        break;
+                                                    case "approved":
+
+                                                        <span class="badge badge-status status-approved">Aprobado</span>
+                                                        break;
+                                                    case "rejected":
+
+                                                        <span class="badge badge-status status-rejected">Rechazado</span>
+                                                        break;
+                                                    default:
+
+                                                        <span class="badge bg-secondary">@item.Estatus_Pago</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if (item.Id_Archivo_Comprobante > 0)
+                                                {
+                                                    <a href="@Url.Action("DescargarComprobante", new { id = item.Id_Archivo_Comprobante })" class="btn btn-sm btn-light border text-primary rounded-pill px-3 shadow-sm" title="Descargar Archivo">
+                                                        <i class="fa-solid fa-download me-1"></i> Descargar
+                                                    </a>
+                                                }
+                                                else
+                                                {
+
+                                                    <span class="text-muted small opacity-50">-</span>
+                                                }
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                @if ((string)item.Estatus_Pago == "waiting_proof")
+                                                {
+                                                    <a href="@Url.Action("CargarComprobante", new { idTransaccion = item.Id_Transaccion, token = token })" class="btn btn-sm btn-warning fw-bold rounded-pill shadow-sm mb-1">
+                                                        <i class="fa-solid fa-upload me-1"></i> Subir
+                                                    </a>
+                                                }
+
+                                                @if ((string)item.Estatus_Pago == "rejected")
+                                                {
+                                                    <a href="@Url.Action("RetomarTransferencia", new { idTransaccion = item.Id_Transaccion, token = token })"
+                                                       class="btn btn-sm btn-outline-danger fw-bold rounded-pill shadow-sm">
+                                                        <i class="fa-solid fa-rotate-right me-1"></i> Corregir
+                                                    </a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="bg-light rounded-circle d-inline-flex p-4 mb-3"><i class="fa-solid fa-money-bill-transfer fa-3x text-muted opacity-25"></i></div>
+                            <h5 class="fw-bold text-dark">Sin Transferencias</h5>
+                            <p class="text-muted small">No hay operaciones pendientes ni historial reciente.</p>
+
+                            @if (esInvitado)
+                            {
+                                <a href="@Url.Action("Pagar", new { token = token })" class="btn btn-primary rounded-pill px-4 mt-2 shadow-sm fw-bold">
+                                    Ir a Pagar
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("Registro", new { sid = idEventoEncriptado })" class="btn btn-primary rounded-pill px-4 mt-2 shadow-sm fw-bold">
+                                    Ir a Registrar Pagos
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

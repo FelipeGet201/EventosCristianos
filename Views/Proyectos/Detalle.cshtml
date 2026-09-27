@@ -1,0 +1,370 @@
+﻿@model List<dynamic>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Movimientos del Proyecto";
+    var p = ViewBag.Proyecto;
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+    
+    bool esAdmin = ViewBag.EsAdmin ?? false;
+    bool puedeCrear = ViewBag.PuedeCrear ?? false;
+    bool puedeEditar = ViewBag.PuedeEditar ?? false;
+    bool puedeBorrar = ViewBag.PuedeBorrar ?? false;
+    int usuarioActual = ViewBag.UsuarioActual ?? 0;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-caja');
+        }
+    });
+</script>
+<div class="container fade-in py-4 py-md-5">
+    
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start mb-4 gap-3">
+        <div>
+            <a href="@Url.Action("Index", "Proyectos")" class="text-decoration-none small text-uppercase fw-bold text-muted"><i class="fa-solid fa-arrow-left me-1"></i> Regresar a Proyectos</a>
+            <div class="d-flex align-items-center mt-2 gap-3">
+                <h2 class="fw-bold text-dark m-0">@p.Titulo</h2>
+                @if (puedeEditar)
+                {
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill" title="Editar detalles del proyecto"
+                            data-id="@p.Id_Proyecto" 
+                            data-titulo="@p.Titulo" 
+                            data-desc="@p.Descripcion" 
+                            data-fecha="@p.Fecha_Limite.ToString("yyyy-MM-dd")" 
+                            data-perm="@(p.Es_Permanente.ToString().ToLower())"
+                            onclick="abrirModalEditarProyecto(this)">
+                        <i class="fa-solid fa-pen me-1"></i> Editar
+                    </button>
+                }
+            </div>
+            <p class="text-secondary mb-0 mt-2" style="max-width: 700px; text-align: justify;">@p.Descripcion</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            @if (puedeCrear)
+            {
+                <button class="btn btn-success text-white rounded-pill px-4 py-2 fw-bold shadow-sm fs-7" data-bs-toggle="modal" data-bs-target="#modalMovimientoProyecto">
+                    <i class="fa-solid fa-plus me-1"></i> Registrar Movimiento
+                </button>
+            }
+            @if (esAdmin)
+            {
+                <button class="btn btn-dark text-white rounded-pill px-4 py-2 fw-bold shadow-sm fs-7" data-bs-toggle="modal" data-bs-target="#modalTraspasoGeneral">
+                    <i class="fa-solid fa-money-bill-transfer me-1"></i> Retirar a Caja General
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 border-start border-5 border-success bg-white">
+                <h6 class="text-uppercase text-muted fw-bold small ls-1 mb-1">Total Recaudado</h6>
+                <h2 class="fw-bold text-success m-0">@(((decimal)p.Recaudado).ToString("C", cultura))</h2>
+                <small class="text-muted font-italic">Dinero total que ha ingresado a la cuenta.</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 border-start border-5 border-danger bg-white">
+                <h6 class="text-uppercase text-muted fw-bold small ls-1 mb-1">Total Gastado</h6>
+                <h2 class="fw-bold text-danger m-0">@(((decimal)p.Gastado).ToString("C", cultura))</h2>
+                <small class="text-muted font-italic">Egresos registrados de esta cuenta.</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 border-start border-5 border-primary bg-white">
+                <h6 class="text-uppercase text-muted fw-bold small ls-1 mb-1">Saldo Disponible</h6>
+                <h2 class="fw-bold text-primary m-0">@(((decimal)p.Disponible).ToString("C", cultura))</h2>
+                <small class="text-muted font-italic">Fondos líquidos actuales del proyecto.</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        <div class="card-header bg-white border-0 py-3">
+            <h6 class="fw-bold m-0 text-dark"><i class="fa-solid fa-list-check me-2 text-secondary"></i>Historial de Movimientos del Proyecto</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase sticky-top" style="z-index: 1;">
+                        <tr>
+                            <th class="ps-4">Fecha (Contable / Real)</th>
+                            <th>Descripción del Movimiento</th>
+                            <th class="text-center">Folio</th>
+                            <th class="text-center">Responsable</th>
+                            <th class="text-end">Monto</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Count == 0)
+                        {
+                            <tr><td colspan="6" class="text-center py-5 text-muted fst-italic">Aún no hay ingresos ni gastos en este proyecto.</td></tr>
+                        }
+                        @foreach (var item in Model)
+                        {
+                            double totalDias = (DateTime.Now - item.Fecha).TotalDays;
+                            bool esMio = item.Id_Usuario == usuarioActual;
+                            bool bBorrar = (puedeBorrar && esMio && totalDias <= 7) || esAdmin;
+
+                            // VALIDACIÓN: Verificar si el registro está protegido por Stripe o por ser Donación Verificada
+                            bool esRegistroProtegido = false;
+                            try 
+                            {
+                                string folio = item.FolioBancario?.ToString() ?? "";
+                                string concepto = item.Concepto?.ToString() ?? "";
+        
+                                if ((!string.IsNullOrEmpty(folio) && folio.StartsWith("pi_")) || concepto.Contains("Donación Verificada"))
+                                {
+                                    esRegistroProtegido = true;
+                                }
+                            } 
+                            catch { }
+
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="d-block fw-bold text-dark">@item.Fecha.ToString("dd MMM yyyy HH:mm")</span>
+                                    <small class="text-muted" title="Fecha de captura en el sistema">
+                                        <i class="fa-solid fa-clock-rotate-left"></i> Captura: @item.Fecha_Registro.ToString("dd/MM/yy HH:mm")
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="d-block fw-bold text-dark">@item.Concepto</span>
+                                    @if (item.EsTraspasoGeneral)
+                                    {
+                                        <span class="badge bg-warning text-dark small py-1 px-2 mt-1"><i class="fa-solid fa-money-bill-transfer me-1"></i>Retirado a Caja General</span>
+                                    }
+                                </td>
+                                <td class="text-center font-monospace text-secondary small">@item.FolioBancario</td>
+                                <td class="text-center text-muted small"><i class="fa-regular fa-user-circle me-1"></i>@item.Usuario</td>
+                                <td class="text-end fw-bold @(item.Tipo == "Ingreso" ? "text-success" : "text-danger")">
+                                    @(item.Tipo == "Ingreso" ? "+" : "-") @item.Monto.ToString("C", cultura)
+                                </td>
+                                <td class="text-end pe-4">
+                                    @if (esRegistroProtegido)
+                                    {
+                                        <span class="badge bg-light text-muted border py-1" title="Registro protegido por el sistema (Stripe / Donación Verificada)">
+                                            <i class="fa-solid fa-lock text-secondary"></i> Sistema
+                                        </span>
+                                    }
+                                    else if (bBorrar && !item.EsTraspasoGeneral)
+                                    {
+                                        <button class="btn btn-sm btn-light text-danger rounded-circle shadow-sm" onclick="abrirModalBorrarMovProyecto(@item.Id_Movimiento_Proyecto)" title="Eliminar registro">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalProyecto" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-0 py-3 px-4">
+                <h5 class="modal-title fw-bold text-dark" id="modalProyectoTitulo"><i class="fa-solid fa-pen text-primary me-2"></i>Editar Proyecto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="@Url.Action("Guardar", "Proyectos")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="Id_Proyecto" name="Id_Proyecto" value="0">
+
+                <div class="modal-body p-4">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control rounded-3" id="Titulo" name="Titulo" required maxlength="150">
+                        <label>Nombre del Proyecto</label>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <textarea class="form-control rounded-3" id="Descripcion" name="Descripcion" required style="height: 110px;"></textarea>
+                        <label>Descripción pública</label>
+                    </div>
+
+                    <div class="form-check form-switch mb-4 ps-5 bg-light p-3 rounded-3 border">
+                        <input class="form-check-input" type="checkbox" id="Es_Permanente" name="Es_Permanente" value="true" onchange="toggleFechaLimite(this.checked)">
+                        <label class="form-check-label small fw-bold text-primary" for="Es_Permanente">
+                            <i class="fa-solid fa-infinity me-1"></i> Es un proyecto permanente (No caduca)
+                        </label>
+                    </div>
+
+                    <div class="form-floating mb-2" id="divFechaLimite">
+                        <input type="date" class="form-control rounded-3" id="Fecha_Limite" name="Fecha_Limite" required>
+                        <label>Fecha de término</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 p-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow fw-bold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMovimientoProyecto" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-0 py-3 px-4">
+                <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-calculator text-success me-2"></i>Registrar Movimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="@Url.Action("GuardarMovimiento", "Proyectos")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id_Proyecto" value="@p.Id_Proyecto">
+
+                <div class="modal-body p-4">
+                    <div class="mb-4 text-center">
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="Tipo" id="optProjIngreso" value="Ingreso" checked>
+                            <label class="btn btn-outline-success" for="optProjIngreso">Ingresó Dinero</label>
+                            <input type="radio" class="btn-check" name="Tipo" id="optProjEgreso" value="Egreso">
+                            <label class="btn btn-outline-danger" for="optProjEgreso">Salió Dinero (Gasto)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="datetime-local" class="form-control rounded-3" id="Fecha" name="Fecha" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" max="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required>
+                        <label>Fecha y hora de la transacción contable</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="number" step="0.01" class="form-control rounded-3 text-primary fw-bold fs-5" id="Monto" name="Monto" required placeholder="0.00" min="0.01">
+                        <label>Cantidad ($)</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control rounded-3" id="Concepto" name="Concepto" required placeholder="Concepto" maxlength="255">
+                        <label>Descripción del movimiento</label>
+                    </div>
+
+                    <div class="form-floating mb-1">
+                        <input type="text" class="form-control rounded-3" id="Folio_Bancario" name="Folio_Bancario" placeholder="Folio" maxlength="100" required>
+                        <label>Folio Bancario / Rastreo <span class="text-danger fw-bold">*</span></label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 p-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success text-white rounded-pill px-4 shadow fw-bold">Guardar Movimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalTraspasoGeneral" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3 px-4">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-money-bill-transfer me-2"></i>Retirar a Caja General</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="@Url.Action("TransferirACajaGeneral", "Proyectos")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id_Proyecto_Transferir" value="@p.Id_Proyecto">
+
+                <div class="modal-body p-4">
+                    <p class="text-secondary small mb-4">Esta opción saca dinero exclusivo de la cuenta de banco del proyecto y lo pasa a la cuenta de Banco de la Tesorería General.</p>
+                    
+                    <div class="p-3 bg-light rounded-4 mb-4 text-center border">
+                        <small class="text-muted text-uppercase tracking-wider d-block small fw-bold">Saldo Disponible:</small>
+                        <span class="fw-bold text-primary fs-3">@(((decimal)p.Disponible).ToString("C", cultura))</span>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="number" step="0.01" class="form-control rounded-3 text-dark fw-bold fs-4" id="MontoTransferir" name="MontoTransferir" required placeholder="0.00" min="0.01">
+                        <label>Cantidad a retirar ($)</label>
+                    </div>
+
+                    <div class="form-floating mb-1">
+                        <input type="text" class="form-control rounded-3" id="ComentariosTransferencia" name="ComentariosTransferencia" required placeholder="Notas" maxlength="255">
+                        <label>Motivo del retiro</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 p-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4 shadow fw-bold text-white">Confirmar Retiro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalBorrarMovProyecto" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-danger text-white border-0 py-3">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Eliminar Registro</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("EliminarMovimiento", "Proyectos")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="idEliminar" name="idEliminar" value="0" />
+                <input type="hidden" name="idProyecto" value="@p.Id_Proyecto" />
+                
+                <div class="modal-body p-4 text-center">
+                    <p class="mb-0 text-muted">¿Estás seguro de que deseas eliminar este movimiento?</p>
+                </div>
+                <div class="modal-footer border-0 pt-0 justify-content-center">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm fw-bold">Sí, eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ls-1 { letter-spacing: 0.5px; }
+    .fs-7 { font-size: 0.88rem !important; }
+    .font-monospace { font-family: SFMono-Regular, Consolas, monospace !important; }
+    .shadow-inner { box-shadow: inset 0 2px 4px rgba(0,0,0,0.04) !important; }
+</style>
+
+<script>
+    function abrirModalBorrarMovProyecto(idMovimiento) {
+        document.getElementById('idEliminar').value = idMovimiento;
+        new bootstrap.Modal(document.getElementById('modalBorrarMovProyecto')).show();
+    }
+
+    function abrirModalEditarProyecto(btn) {
+        document.getElementById('modalProyectoTitulo').innerHTML = '<i class="fa-solid fa-pen text-primary me-2"></i> Editar Proyecto';
+        document.getElementById('Id_Proyecto').value = btn.getAttribute('data-id');
+        document.getElementById('Titulo').value = btn.getAttribute('data-titulo');
+        document.getElementById('Descripcion').value = btn.getAttribute('data-desc');
+        
+        let esPerm = btn.getAttribute('data-perm') === 'true';
+        document.getElementById('Es_Permanente').checked = esPerm;
+        document.getElementById('Fecha_Limite').value = btn.getAttribute('data-fecha');
+        
+        toggleFechaLimite(esPerm);
+        new bootstrap.Modal(document.getElementById('modalProyecto')).show();
+    }
+
+    function toggleFechaLimite(esPermanente) {
+        var inputFecha = document.getElementById('Fecha_Limite');
+        var container = document.getElementById('divFechaLimite');
+        if (esPermanente) {
+            container.classList.add('d-none');
+            inputFecha.required = false;
+            inputFecha.value = "";
+        } else {
+            container.classList.remove('d-none');
+            inputFecha.required = true;
+            if (!inputFecha.value) {
+                inputFecha.value = new Date().toISOString().split('T')[0];
+            }
+        }
+    }
+</script>

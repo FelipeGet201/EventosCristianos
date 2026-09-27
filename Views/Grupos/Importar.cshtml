@@ -1,0 +1,379 @@
+﻿@model RedAJP.Models.ImportacionMiembrosViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Agregar Miembros";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-grupos');
+        }
+    });
+</script>
+
+<style>
+    /* Colores personalizados solo cuando el switch está activo (checked) */
+    #chkReemplazar:checked {
+        background-color: var(--bs-danger);
+        border-color: var(--bs-danger);
+    }
+
+        #chkReemplazar:checked ~ .form-text {
+            color: var(--bs-danger) !important;
+        }
+
+    #chkExistentes:checked {
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+    }
+
+        #chkExistentes:checked ~ .form-text {
+            color: var(--bs-primary) !important;
+        }
+
+    /* Ajuste para que Select2 se vea mejor con Bootstrap */
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px;
+        padding-left: 12px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+</style>
+
+<div class="container py-3 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+                <div class="card-header bg-white p-4 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark">Agregar Miembros</h5>
+                            <small class="text-muted">Grupo: @Model.NombreGrupo</small>
+                        </div>
+                        <a href="@Url.Action("Detalle", new { id = Model.Id_Grupo })" class="btn btn-outline-secondary btn-sm rounded-pill">
+                            <i class="fa-solid fa-arrow-left me-2"></i> Cancelar
+                        </a>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 border d-flex justify-content-center align-items-center">
+                        <span class="fw-bold text-secondary me-3" id="lblModoManual">Carga Manual / Sistema</span>
+                        <div class="form-check form-switch m-0" style="font-size: 1.5rem;">
+                            <input class="form-check-input shadow-none" type="checkbox" role="switch" id="chkModoCarga" onchange="toggleModoCarga()">
+                        </div>
+                        <span class="fw-bold text-success ms-3 opacity-50" id="lblModoExcel"><i class="fa-solid fa-file-excel me-1"></i> Archivo Excel</span>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+
+                    <div id="seccion-manual">
+                        <ul class="nav nav-tabs nav-justified bg-light" id="tabsImportar" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active py-3 fw-bold rounded-0 text-dark" id="tab-sistema" data-bs-toggle="tab" data-bs-target="#panel-sistema" type="button">
+                                    <i class="fa-solid fa-user-check me-2 text-primary"></i> Existente
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link py-3 fw-bold rounded-0 text-dark" id="tab-manual" data-bs-toggle="tab" data-bs-target="#panel-manual" type="button">
+                                    <i class="fa-solid fa-pen-to-square me-2 text-secondary"></i> Manual
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="p-4 bg-white border-bottom">
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="panel-sistema">
+                                    <label class="form-label small fw-bold text-uppercase text-muted">Buscar Usuario</label>
+                                    <div class="input-group">
+                                        <select class="form-control" id="cboUsuarios" style="width: 100%;">
+                                            <option value=""></option>
+                                            @foreach (var u in Model.ListaUsuariosSistema)
+                                            {
+                                                string marcador = u.Verificado ? "✅" : "⚠️";
+                                                <option value="@u.Id" data-tel="@u.Telefono" data-nom="@u.Nombre">
+                                                    @u.Nombre (@u.Telefono) @marcador
+                                                </option>
+                                            }
+                                        </select>
+                                        <button class="btn btn-primary mt-2 w-100" type="button" onclick="agregarDeSistema()">
+                                            <i class="fa-solid fa-plus me-2"></i> Agregar a la lista
+                                        </button>
+                                    </div>
+                                    <div class="form-text small mt-2">
+                                        ✅ = Verificado, ⚠️ = Pendiente. <br>
+                                        Solo aparecen usuarios activos con teléfono.
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="panel-manual">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label small fw-bold text-muted">Teléfono</label>
+                                            <input type="tel" class="form-control" id="txtTelManual" placeholder="Ej. +52 1 55 1234 5678">
+                                            <div class="form-text small">Puedes pegar el número con espacios o guiones.</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small fw-bold text-muted">Nombre</label>
+                                            <input type="text" class="form-control" id="txtNomManual" placeholder="Ej. Invitado Externo">
+                                        </div>
+                                        <div class="col-12 mt-3">
+                                            <button class="btn btn-secondary w-100 py-2" type="button" onclick="agregarManual()">
+                                                <i class="fa-solid fa-plus me-2"></i> Agregar Manualmente
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form action="@Url.Action("ProcesarImportacion")" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id_Grupo" value="@Model.Id_Grupo" />
+
+                            <div class="bg-light px-4 py-2 small fw-bold text-uppercase border-bottom text-muted d-flex justify-content-between">
+                                <span>Lista por Guardar</span>
+                                <span class="badge bg-secondary" id="lblContador">0</span>
+                            </div>
+
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <tbody id="tbodyMiembros">
+                                    </tbody>
+                                </table>
+                                <div id="emptyState" class="text-center py-5 text-muted">
+                                    <i class="fa-solid fa-user-group fa-2x mb-3 opacity-25"></i>
+                                    <p class="small m-0">Selecciona usuarios arriba para agregarlos.</p>
+                                </div>
+                            </div>
+
+                            <div class="card-footer bg-white p-4 border-top">
+                                <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm" id="btnGuardar" disabled>
+                                    <i class="fa-solid fa-save me-2"></i> GUARDAR LISTA
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="seccion-excel" style="display: none;">
+                        <form action="@Url.Action("ProcesarImportacionExcel")" method="post" enctype="multipart/form-data">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id_Grupo" value="@Model.Id_Grupo" />
+
+                            <div class="p-4 bg-white">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label small fw-bold text-muted">Archivo Excel (.xlsx)</label>
+                                        <input class="form-control form-control-lg border-success" type="file" name="ArchivoExcel" accept=".xlsx" required>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-muted">Fila Inicio</label>
+                                        <input type="number" class="form-control" name="FilaInicio" value="2" min="1" required>
+                                        <div class="form-text small">Ignora encabezados</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-muted">Col. Nombre</label>
+                                        <input type="text" class="form-control text-uppercase" name="ColumnaNombre" value="A" placeholder="(Opcional)">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-muted">Col. Teléfono</label>
+                                        <input type="text" class="form-control text-uppercase" name="ColumnaTelefono" value="B" placeholder="A, B, C..." required>
+                                    </div>
+
+                                    <div class="col-12 mt-4">
+                                        <div class="card bg-light border-0">
+                                            <div class="card-body">
+                                                <h6 class="fw-bold mb-3"><i class="fa-solid fa-sliders me-2"></i>Opciones de Carga</h6>
+
+                                                <div class="form-check form-switch mb-3">
+                                                    <input class="form-check-input shadow-none" type="checkbox" role="switch" name="ReemplazarDatos" id="chkReemplazar" value="true">
+                                                    <label class="form-check-label fw-bold text-dark" for="chkReemplazar">Reemplazar Datos Completamente</label>
+                                                    <div class="form-text text-muted mt-0 transition-color">Borrará todos los miembros actuales del grupo antes de cargar el Excel.</div>
+                                                </div>
+
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input shadow-none" type="checkbox" role="switch" name="SoloExistentes" id="chkExistentes" value="true">
+                                                    <label class="form-check-label fw-bold text-dark" for="chkExistentes">Solo Usuarios Registrados</label>
+                                                    <div class="form-text text-muted mt-0 transition-color">Ignorará teléfonos que no estén registrados actualmente en el catálogo de usuarios del sistema, si está desactivado se incluirán automáticamente al registrarse en la página.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-footer bg-white p-4 border-top">
+                                <button type="submit" class="btn btn-success w-100 py-3 fw-bold shadow-sm rounded-pill">
+                                    <i class="fa-solid fa-file-import me-2"></i> LEER EXCEL Y GUARDAR
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="tplFila">
+    <tr class="fila-miembro">
+        <td class="ps-4">
+            <input type="hidden" name="MiembrosNuevos[IDX].IdUsuario" class="inp-uid" />
+            <input type="hidden" name="MiembrosNuevos[IDX].Nombre" class="inp-nom" />
+            <input type="hidden" name="MiembrosNuevos[IDX].Telefono" class="inp-tel" />
+
+            <div class="fw-bold text-dark nom-visual"></div>
+            <div class="small badge bg-light text-secondary border tipo-visual"></div>
+        </td>
+        <td class="font-monospace text-primary tel-visual text-break"></td>
+        <td class="text-end pe-4">
+            <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="eliminarFila(this)">
+                <i class="fa-solid fa-xmark fa-lg"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        // Como ya estamos en la sección de scripts, es seguro usar jQuery directamente
+        $(document).ready(function() {
+            $('#cboUsuarios').select2({
+                placeholder: "-- Buscar usuario por nombre o teléfono --",
+                allowClear: true,
+                language: {
+                    noResults: function() {
+                        return "No se encontraron usuarios";
+                    }
+                }
+            });
+        });
+
+        // Función actualizada para soportar Select2
+        function agregarDeSistema() {
+            var cbo = document.getElementById("cboUsuarios");
+            var id = cbo.value;
+
+            if(!id) {
+                alert("Por favor selecciona un usuario de la lista.");
+                return;
+            }
+
+            var opt = cbo.options[cbo.selectedIndex];
+            var nombre = opt.getAttribute("data-nom");
+            var tel = opt.getAttribute("data-tel");
+
+            agregarFila(id, nombre, tel, "Sistema");
+
+            // Limpiar el Select2 correctamente después de agregar
+            $('#cboUsuarios').val(null).trigger('change');
+        }
+
+        // CONTROL DEL SWITCH (MANUAL VS EXCEL)
+        function toggleModoCarga() {
+            var isExcel = document.getElementById("chkModoCarga").checked;
+            var secManual = document.getElementById("seccion-manual");
+            var secExcel = document.getElementById("seccion-excel");
+            var lblManual = document.getElementById("lblModoManual");
+            var lblExcel = document.getElementById("lblModoExcel");
+
+            if (isExcel) {
+                secManual.style.display = "none";
+                secExcel.style.display = "block";
+                lblManual.classList.add("opacity-50");
+                lblExcel.classList.remove("opacity-50");
+            } else {
+                secManual.style.display = "block";
+                secExcel.style.display = "none";
+                lblManual.classList.remove("opacity-50");
+                lblExcel.classList.add("opacity-50");
+            }
+        }
+
+        function agregarManual() {
+            var txtTel = document.getElementById("txtTelManual");
+            var txtNom = document.getElementById("txtNomManual");
+            var telRaw = txtTel.value;
+
+            var telSoloNumeros = telRaw.replace(/[^0-9]/g, '');
+            if(telSoloNumeros.length < 10) {
+                alert("El teléfono parece incompleto (mínimo 10 dígitos).");
+                return;
+            }
+
+            var nombre = txtNom.value.trim() || "Invitado";
+            agregarFila("", nombre, telRaw, "Manual");
+            txtTel.value = "";
+            txtNom.value = "";
+        }
+
+        function agregarFila(id, nombre, tel, tipo) {
+            var inputsTel = document.querySelectorAll(".inp-tel");
+            for(var i=0; i<inputsTel.length; i++) {
+                if(inputsTel[i].value === tel) {
+                    alert("Este número ya está en la lista de espera.");
+                    return;
+                }
+            }
+
+            var tbody = document.getElementById("tbodyMiembros");
+            var tpl = document.getElementById("tplFila");
+            var index = tbody.children.length;
+
+            var html = tpl.innerHTML.replace(/IDX/g, index);
+            var tr = document.createElement("tr");
+            tr.innerHTML = html;
+            tr.querySelector(".inp-uid").value = id;
+            tr.querySelector(".inp-nom").value = nombre;
+            tr.querySelector(".inp-tel").value = tel;
+
+            tr.querySelector(".nom-visual").textContent = nombre;
+            tr.querySelector(".tel-visual").textContent = tel;
+            tr.querySelector(".tipo-visual").textContent = tipo;
+            if(tipo === "Sistema") {
+                tr.querySelector(".tipo-visual").className = "badge bg-primary-subtle text-primary border border-primary-subtle";
+            }
+
+            tbody.appendChild(tr);
+            actualizarUI();
+        }
+
+        function eliminarFila(btn) {
+            btn.closest("tr").remove();
+            renumerarIndices();
+            actualizarUI();
+        }
+
+        function renumerarIndices() {
+            var filas = document.querySelectorAll("#tbodyMiembros tr");
+            filas.forEach((tr, i) => {
+                tr.querySelectorAll("input").forEach(inp => {
+                    var name = inp.getAttribute("name");
+                    inp.setAttribute("name", name.replace(/\[\d+\]/, `[${i}]`));
+                });
+            });
+        }
+
+        function actualizarUI() {
+            var count = document.getElementById("tbodyMiembros").children.length;
+            document.getElementById("lblContador").textContent = count;
+            document.getElementById("btnGuardar").disabled = (count === 0);
+            document.getElementById("emptyState").style.display = (count === 0) ? "block" : "none";
+        }
+    </script>
+}

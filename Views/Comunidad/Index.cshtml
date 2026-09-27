@@ -1,0 +1,235 @@
+﻿@model IEnumerable<RedAJP.Models.ComunidadIndexViewModel>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Buzón Comunitario";
+    bool puedeCrear = ViewBag.PuedeCrear ?? false;
+    bool esAdmin = ViewBag.EsAdmin ?? false;
+    bool esDirectivo = ViewBag.EsDirectivo ?? false;
+    var tiposExistentes = ViewBag.TiposExistentes as List<string> ?? new List<string>();
+    string filtroActivo = ViewBag.FiltroActual ?? "Todos";
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') { activarMenu('menu-comunidad'); }
+    });
+</script>
+
+<style>
+    .indicator-unread { position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; font-size: 0.65rem; padding: 4px 8px; border-radius: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: pulse 2s infinite; }
+    
+    /* Claves de diseño para las tarjetas */
+    .card-pending { border: 2px dashed #ffc107 !important; background-color: #fffdf5 !important; }
+    .card-privado { border: 2px solid #e0cffc !important; background-color: #fbf9ff !important; }
+    .badge-privado { background-color: #6f42c1; color: white; }
+    
+    @@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    
+    /* Ocultar barra de scroll en el contenedor de botones de escritorio */
+    .filtros-scroll::-webkit-scrollbar { display: none; }
+</style>
+
+<div class="container-fluid py-4 fade-in">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6 mb-3 mb-md-0">
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-people-group me-2 text-primary"></i> Comunidad</h2>
+            <p class="text-muted small mb-0">Buzón de peticiones, sugerencias y comunicados.</p>
+        </div>
+        <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2">
+            @if(esAdmin)
+            {
+                <a href="@Url.Action("Configuracion")" class="btn btn-light border shadow-sm rounded-pill px-3 text-secondary" title="Configurar Directiva">
+                    <i class="fa-solid fa-gear"></i>
+                </a>
+            }
+            @if (puedeCrear)
+            {
+                <a href="@Url.Action("Nuevo")" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold">
+                    <i class="fa-solid fa-pen-to-square me-2"></i> Redactar Mensaje
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="bg-white p-3 rounded-4 shadow-sm mb-4">
+        
+        <div class="d-none d-md-flex gap-2 overflow-auto filtros-scroll" style="white-space: nowrap; scrollbar-width: none;">
+            <a href="@Url.Action("Index", new { filtroTipo = "Todos" })" class="btn rounded-pill px-4 @(filtroActivo == "Todos" ? "btn-primary shadow-sm" : "btn-light text-secondary border")">
+                <i class="fa-solid fa-layer-group me-2"></i> Todos
+            </a>
+            
+            @if(tiposExistentes.Contains("General")) {
+                <a href="@Url.Action("Index", new { filtroTipo = "General" })" class="btn rounded-pill px-4 @(filtroActivo == "General" ? "btn-primary" : "btn-light border")"><i class="fa-solid fa-envelope me-2"></i> General</a>
+            }
+            @if(tiposExistentes.Contains("Oracion")) {
+                <a href="@Url.Action("Index", new { filtroTipo = "Oracion" })" class="btn rounded-pill px-4 @(filtroActivo == "Oracion" ? "btn-primary" : "btn-light border")"><i class="fa-solid fa-person-praying me-2"></i> Oración</a>
+            }
+            @if(esAdmin && tiposExistentes.Contains("Sugerencia")) {
+                <a href="@Url.Action("Index", new { filtroTipo = "Sugerencia" })" class="btn rounded-pill px-4 @(filtroActivo == "Sugerencia" ? "btn-primary" : "btn-light border")"><i class="fa-solid fa-lightbulb me-2"></i> Sugerencias</a>
+            }
+            @if(esAdmin && tiposExistentes.Contains("Queja")) {
+                <a href="@Url.Action("Index", new { filtroTipo = "Queja" })" class="btn rounded-pill px-4 @(filtroActivo == "Queja" ? "btn-primary" : "btn-light border")"><i class="fa-solid fa-triangle-exclamation me-2"></i> Quejas</a>
+            }
+            @if(esAdmin && tiposExistentes.Contains("Visita")) {
+                <a href="@Url.Action("Index", new { filtroTipo = "Visita" })" class="btn rounded-pill px-4 @(filtroActivo == "Visita" ? "btn-primary" : "btn-light border")"><i class="fa-solid fa-house-chimney-user me-2"></i> Visitas</a>
+            }
+        </div>
+
+        <div class="d-md-none">
+            <select class="form-select form-select-lg rounded-pill shadow-sm text-secondary" onchange="window.location.href=this.value;">
+                <option value="@Url.Action("Index", new { filtroTipo = "Todos" })" @(filtroActivo == "Todos" ? "selected" : "")>Mostrar: Todos</option>
+                
+                @if(tiposExistentes.Contains("General")) {
+                    <option value="@Url.Action("Index", new { filtroTipo = "General" })" @(filtroActivo == "General" ? "selected" : "")>Mostrar: General</option>
+                }
+                @if(tiposExistentes.Contains("Oracion")) {
+                    <option value="@Url.Action("Index", new { filtroTipo = "Oracion" })" @(filtroActivo == "Oracion" ? "selected" : "")>Mostrar: Oración</option>
+                }
+                @if(esAdmin && tiposExistentes.Contains("Sugerencia")) {
+                    <option value="@Url.Action("Index", new { filtroTipo = "Sugerencia" })" @(filtroActivo == "Sugerencia" ? "selected" : "")>Mostrar: Sugerencias</option>
+                }
+                @if(esAdmin && tiposExistentes.Contains("Queja")) {
+                    <option value="@Url.Action("Index", new { filtroTipo = "Queja" })" @(filtroActivo == "Queja" ? "selected" : "")>Mostrar: Quejas</option>
+                }
+                @if(esAdmin && tiposExistentes.Contains("Visita")) {
+                    <option value="@Url.Action("Index", new { filtroTipo = "Visita" })" @(filtroActivo == "Visita" ? "selected" : "")>Mostrar: Visitas</option>
+                }
+            </select>
+        </div>
+
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                string icono = "fa-envelope"; string colorBorde = "border-secondary";
+                if (item.Tipo_Mensaje == "Oracion") { icono = "fa-person-praying"; colorBorde = "border-info"; }
+                else if (item.Tipo_Mensaje == "Sugerencia") { icono = "fa-lightbulb"; colorBorde = "border-warning"; }
+                else if (item.Tipo_Mensaje == "Queja") { icono = "fa-triangle-exclamation"; colorBorde = "border-danger"; }
+                else if (item.Tipo_Mensaje == "Visita") { icono = "fa-house-chimney-user"; colorBorde = "border-success"; }
+
+                bool esInstitucional = item.NombreAutor == "Directiva AJP";
+                bool esPendiente = item.Estado == "PEN";
+                bool esPrivado = item.Destinatario == "Especificos";
+                bool resaltarNoLeido = !item.EsLeido && !esPendiente;
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card h-100 shadow-sm rounded-4 position-relative @(esPendiente ? "card-pending" : (esPrivado ? "card-privado" : (esInstitucional ? "border-primary border-2 bg-light" : $"border-0 border-start border-4 {colorBorde}")))">
+                        @if (resaltarNoLeido) { <span class="indicator-unread">NUEVO</span> }
+
+                        <div class="card-body d-flex flex-column p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-white rounded-circle p-2 shadow-sm me-3 text-center d-flex justify-content-center align-items-center" style="width:45px; height:45px;">
+                                        <i class="fa-solid @icono fs-5 @(esInstitucional ? "text-primary" : (esPendiente ? "text-warning" : (esPrivado ? "text-purple" : "text-muted")))" @(esPrivado ? "style='color: #6f42c1;'" : "")></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 text-truncate @(resaltarNoLeido || esPendiente ? "fw-bolder text-dark" : "fw-bold text-secondary")" style="max-width: 150px;">
+                                            @if(esInstitucional) { <i class="fa-solid fa-building-columns text-primary me-1"></i> } @item.NombreAutor
+                                        </h6>
+                                        <small class="text-muted" style="font-size: 0.75rem;">@item.Fecha_Creacion.ToString("dd MMM yy hh:mm tt", cultura)</small>
+                                    </div>
+                                </div>
+                                
+                                @if (esPendiente) {
+                                    <span class="badge bg-warning text-dark shadow-sm border border-warning rounded-pill px-3 py-2"><i class="fa-solid fa-clock me-1"></i> Pendiente</span>
+                                } else if (item.Estado == "REC") {
+                                    <span class="badge bg-danger rounded-pill px-3 py-2"><i class="fa-solid fa-ban me-1"></i> Rechazado</span>
+                                }
+                            </div>
+
+                            <div class="mb-3 flex-grow-1">
+                                <div class="mb-2 d-flex flex-wrap align-items-center gap-1">
+                                    <span class="badge bg-secondary rounded-pill px-3">@item.Tipo_Mensaje</span>
+                                    
+                                    @if(item.Destinatario == "Directiva") { 
+                                        <span class="badge bg-dark rounded-pill px-3"><i class="fa-solid fa-lock me-1"></i> A Directiva</span> 
+                                    } else if (item.Destinatario == "Especificos") {
+                                        <span class="badge badge-privado rounded-pill px-3 shadow-sm"><i class="fa-solid fa-envelope-open-text me-1"></i> Mensaje Privado</span>
+                                        @if(esDirectivo || esAdmin) {
+                                            <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-1 opacity-50 pe-auto" onclick="auditarDestinatarios(@item.Id_Mensaje)" title="Auditar Destinatarios">
+                                                <i class="fa-regular fa-eye"></i>
+                                            </button>
+                                        }
+                                    }
+                                    
+                                    <span class="badge bg-light text-muted border rounded-pill px-3" title="Fecha de expiración">
+                                        <i class="fa-solid fa-hourglass-end me-1"></i> Expira: @item.Fecha_Expiracion.ToString("dd MMM yyyy", cultura)
+                                    </span>
+                                </div>
+                                <p class="@(resaltarNoLeido ? "fw-semibold text-dark" : "text-muted") small mb-0 mt-2" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">@item.Contenido</p>
+                            </div>
+
+                            <div class="d-flex justify-content-end align-items-center mt-3 pt-3 border-top">
+                                <a href="@Url.Action("Detalle", new { id = item.Id_Mensaje })" class="btn btn-sm @(esPendiente ? "btn-warning fw-bold text-dark" : (resaltarNoLeido ? "btn-primary fw-bold" : "btn-light border text-secondary fw-bold")) rounded-pill px-4">
+                                    @(esPendiente && esAdmin ? "Revisar" : "Ver Detalle") <i class="fa-solid fa-chevron-right ms-1" style="font-size: 0.7rem;"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+            <i class="fa-regular fa-folder-open fa-4x text-muted mb-3 opacity-50"></i>
+            <h5 class="text-muted fw-bold">El buzón está vacío.</h5>
+        </div>
+    }
+</div>
+
+@if(esDirectivo || esAdmin)
+{
+    <div class="modal fade" id="modalAuditoriaDestinatarios" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h6 class="modal-title fw-bold text-dark"><i class="fa-solid fa-users-viewfinder text-primary me-2"></i> Destinatarios del Mensaje</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-2 pb-4">
+                    <div id="loadingAuditoria" class="text-center py-3 text-muted">
+                        <i class="fa-solid fa-circle-notch fa-spin fs-4"></i>
+                    </div>
+                    <ul id="listaAuditoriaUi" class="list-group list-group-flush small overflow-auto" style="max-height: 250px; display: none;">
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function auditarDestinatarios(idMensaje) {
+            var modal = new bootstrap.Modal(document.getElementById('modalAuditoriaDestinatarios'));
+            $('#listaAuditoriaUi').hide().empty();
+            $('#loadingAuditoria').show();
+            modal.show();
+
+            $.get('@Url.Action("ObtenerDestinatarios", "Comunidad")', { idMensaje: idMensaje })
+                .done(function(res) {
+                    $('#loadingAuditoria').hide();
+                    if(res.exito) {
+                        if(res.data.length === 0) {
+                            $('#listaAuditoriaUi').append('<li class="list-group-item text-center text-muted fst-italic border-0">Sin destinatarios registrados</li>');
+                        } else {
+                            res.data.forEach(function(nombre) {
+                                $('#listaAuditoriaUi').append('<li class="list-group-item py-2 px-0 border-bottom"><i class="fa-solid fa-user-check text-success me-2"></i>' + nombre + '</li>');
+                            });
+                        }
+                        $('#listaAuditoriaUi').fadeIn();
+                    } else {
+                        $('#listaAuditoriaUi').append('<li class="list-group-item text-danger border-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>' + res.mensaje + '</li>').fadeIn();
+                    }
+                })
+                .fail(function() {
+                    $('#loadingAuditoria').hide();
+                    $('#listaAuditoriaUi').append('<li class="list-group-item text-danger border-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error de conexión</li>').fadeIn();
+                });
+        }
+    </script>
+}

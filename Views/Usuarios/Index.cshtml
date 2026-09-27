@@ -1,0 +1,544 @@
+﻿@using RedAJP.Globales
+@model List<RedAJP.Models.EditaUsuario>
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Gestión de Usuarios";
+
+    bool p_Leer = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Leer);
+    bool p_Crear = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Crear);
+    bool p_Editar = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Editar);
+    bool p_Borrar = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Borrar);
+    bool p_Admin = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Admin);
+    var listaRoles = ViewBag.Roles as IEnumerable<dynamic>;
+
+    // CONTEOS
+    int totalUsuarios = Model.Count;
+    int pendientes = Model.Count(u => !u.Email_Verificado);
+}
+
+<style>
+    /* --- ESTILOS PARA EL SWITCH CHECKBOX --- */
+    .form-check {
+        padding-left: 0; /* Necesario para que el switch no se despegue del borde en Bootstrap */
+    }
+
+    /* --- ESTILOS PARA EL SWITCH CHECKBOX --- */
+    .custom-switch {
+        width: 2.8em !important;
+        height: 1.4em !important;
+    }
+
+    .form-check-input.custom-switch:checked {
+        background-color: #ffb74d;
+        border-color: #ffb74d;
+    }
+</style>
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-usuarios');
+        }
+    });
+
+    // --- SCRIPT DEL BUSCADOR MEJORADO (TEXTO + CHECKBOX) ---
+    function filtrarTabla() {
+        let input = document.getElementById("buscadorUsuarios").value.toLowerCase();
+        let checkPendientes = document.getElementById("checkPendientes").checked;
+        let filas = document.querySelectorAll("#tablaUsuarios tbody tr");
+
+        filas.forEach(fila => {
+            // Lee texto y atributo de estado
+            let textoFila = fila.innerText.toLowerCase();
+            let esPendiente = fila.getAttribute("data-pendiente") === "true";
+
+            // Evaluamos ambas condiciones
+            let cumpleTexto = textoFila.includes(input);
+            let cumpleFiltroPendiente = !checkPendientes || esPendiente;
+
+            // Mostrar u ocultar fila
+            if (cumpleTexto && cumpleFiltroPendiente) {
+                fila.style.display = "";
+            } else {
+                fila.style.display = "none";
+            }
+        });
+    }
+</script>
+
+<div class="container py-4 fade-in">
+
+    <div class="mb-4 fade-in">
+
+        <div class="row align-items-center mb-3 g-3">
+            <div class="col-12 col-md-6">
+                <h2 class="fw-bold mb-0" style="color: #002b36;">
+                    <i class="fa-solid fa-users me-2 text-warning"></i>Usuarios
+                </h2>
+                <span class="text-dark opacity-75 small fw-semibold">Administración de sistema</span>
+            </div>
+
+            <div class="col-12 col-md-6 d-flex justify-content-between justify-content-md-end gap-2">
+                <span class="badge bg-white text-dark shadow-sm rounded-pill px-3 py-2 d-flex align-items-center" style="font-size: 0.9rem;">
+                    <i class="fa-solid fa-users me-2 text-primary"></i> Total: @totalUsuarios
+                </span>
+                @if (pendientes > 0)
+                {
+                    <span class="badge bg-warning text-dark shadow-sm rounded-pill px-3 py-2 d-flex align-items-center" style="font-size: 0.9rem;">
+                        <i class="fa-solid fa-clock me-2 text-danger"></i> Pendientes: @pendientes
+                    </span>
+                }
+            </div>
+        </div>
+
+        <div class="d-flex flex-row flex-nowrap align-items-center gap-2">
+
+            <div class="input-group shadow-sm bg-white rounded-pill overflow-hidden flex-grow-1" style="max-width: 380px;">
+                <span class="input-group-text bg-white border-0 text-muted ps-3 pe-2">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" id="buscadorUsuarios" class="form-control border-0 shadow-none bg-white py-2 ps-0" placeholder="Buscar usuario..." onkeyup="filtrarTabla()">
+            </div>
+
+            <div class="badge shadow-sm px-3 py-2 d-none d-md-flex align-items-center rounded-pill me-auto" style="background-color: #d8f4f9; color: #005a66; font-size: 0.85rem;">
+                <i class="fa-solid fa-circle-info me-2"></i>Registros nuevos vía Login
+            </div>
+
+            <div class="d-md-none me-auto"></div>
+
+            <div class="form-check form-switch m-0 d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-white shadow-sm flex-shrink-0 ps-0" title="Mostrar únicamente usuarios sin verificar">
+                <input class="form-check-input ms-0 mt-0 custom-switch" type="checkbox" role="switch" id="checkPendientes" onchange="filtrarTabla()" style="cursor: pointer;">
+                <label class="form-check-label fw-bold text-dark small mb-0 mt-1 d-none d-sm-block" for="checkPendientes" style="cursor: pointer;">
+                    Solo Pendientes
+                </label>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablaUsuarios">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Usuario</th>
+                            <th class="d-none d-md-table-cell">Rol</th>
+                            <th class="d-none d-lg-table-cell">Estado</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr data-pendiente="@(!item.Email_Verificado ? "true" : "false")">
+                                <td class="ps-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded-circle p-2 me-3 text-secondary d-none d-sm-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                        <div style="min-width: 0;">
+                                            <span class="fw-bold d-block text-dark text-wrap text-break">
+                                                @item.NombreCompleto
+                                            </span>
+                                            <div class="small text-primary text-wrap text-break mb-1">@@@item.Nombre_Usuario</div>
+
+                                            <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                                                <span class="d-md-none badge bg-light text-dark border">
+                                                    @item.Nombre_Rol
+                                                </span>
+
+                                                <div class="d-lg-none d-flex align-items-center">
+                                                    @if (item.Activo)
+                                                    {
+                                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Activo</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">Inactivo</span>
+                                                    }
+
+                                                    @if (item.Email_Verificado)
+                                                    {
+                                                        <i class="fa-solid fa-check-circle text-success ms-1" title="Verificado"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fa-solid fa-clock text-warning ms-1" title="Pendiente verificación"></i>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="d-none d-md-table-cell">
+                                    <span class="badge bg-light text-dark border">
+                                        @item.Nombre_Rol
+                                    </span>
+                                </td>
+
+                                <td class="d-none d-lg-table-cell">
+                                    @if (item.Activo)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">Inactivo</span>
+                                    }
+
+                                    @if (item.Email_Verificado)
+                                    {
+                                        <i class="fa-solid fa-check-circle text-success ms-2" title="Verificado"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa-solid fa-clock text-warning ms-2" title="Pendiente verificación"></i>
+                                    }
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end flex-wrap gap-1">
+                                        <button class="btn btn-light btn-sm text-secondary shadow-sm" title="Ver Detalles"
+                                                onclick="abrirModalDetalles('@item.NombreCompleto', '@item.Nombre_Usuario', '@item.Email', '@item.Telefono', '@item.Nombre_Rol', @item.Activo.ToString().ToLower(), @item.Email_Verificado.ToString().ToLower())">
+                                            <i class="fa-solid fa-address-card"></i>
+                                        </button>
+                                        @if (p_Editar)
+                                        {
+                                            @if (!item.Email_Verificado)
+                                            {
+                                                <button class="btn btn-light btn-sm text-info shadow-sm" title="Reenviar Verificación"
+                                                        onclick="abrirModalReenviar(@item.Id_Usuario, '@item.Email', '@item.NombreCompleto', '@item.Nombre_Usuario', '@item.Telefono')">
+                                                    <i class="fa-solid fa-paper-plane"></i>
+                                                </button>
+                                            }
+
+                                            <button class="btn btn-light btn-sm text-primary shadow-sm" title="Editar"
+                                                    onclick="abrirModalEditar(@item.Id_Usuario, '@item.NombreCompleto', '@item.Email', '@item.Nombre_Usuario', @item.Id_Rol)">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+
+                                            @if (p_Admin)
+                                            {
+                                                <button class="btn btn-light btn-sm text-warning shadow-sm" title="Cambiar Contraseña"
+                                                        onclick="abrirModalPass(@item.Id_Usuario, '@item.Nombre_Usuario')">
+                                                    <i class="fa-solid fa-key"></i>
+                                                </button>
+                                            }
+
+                                            <form method="post" action="@Url.Action("ToggleEstado", "Usuarios")" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.Id_Usuario" />
+                                                <input type="hidden" name="estadoActual" value="@item.Activo.ToString()" />
+
+                                                <button type="submit" class="btn btn-light btn-sm shadow-sm @(item.Activo ? "text-success" : "text-secondary")"
+                                                        title="@(item.Activo ? "Desactivar" : "Activar")">
+                                                    <i class="fa-solid @(item.Activo ? "fa-toggle-on fa-lg" : "fa-toggle-off fa-lg")"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (p_Borrar)
+                                        {
+                                            if (!item.TieneHistorial)
+                                            {
+                                                <form method="post" action="@Url.Action("Eliminar", "Usuarios")" class="d-inline" onsubmit="return confirm('¿Eliminar definitivamente a @item.Nombre_Usuario?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="idEliminar" value="@item.Id_Usuario" />
+                                                    <button type="submit" class="btn btn-light btn-sm text-danger shadow-sm" title="Eliminar">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="No se puede borrar (Tiene historial)">
+                                                    <button class="btn btn-light btn-sm text-muted opacity-25 shadow-sm" disabled>
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </span>
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalDetalles" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-muted">
+                    <i class="fa-solid fa-address-card me-2"></i>Detalles del Usuario
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-12 text-center mb-2">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center text-secondary mb-3 shadow-sm" style="width: 70px; height: 70px; font-size: 2rem;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0 text-dark" id="Detalle_Nombre"></h5>
+                        <span class="badge bg-light text-dark border mt-2" id="Detalle_Rol"></span>
+                    </div>
+
+                    <hr class="text-muted opacity-25">
+
+                    <div class="col-sm-6">
+                        <label class="small fw-bold text-muted d-block mb-1">Usuario</label>
+                        <span id="Detalle_Usuario" class="text-primary fw-semibold"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="small fw-bold text-muted d-block mb-1">Teléfono</label>
+                        <span id="Detalle_Telefono" class="text-dark"></span>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="small fw-bold text-muted d-block mb-1">Correo Electrónico</label>
+                        <span id="Detalle_Email" class="text-dark"></span>
+                    </div>
+
+                    <div class="col-sm-6 mt-3">
+                        <label class="small fw-bold text-muted d-block mb-1">Estado de Cuenta</label>
+                        <span id="Detalle_Estado"></span>
+                    </div>
+                    <div class="col-sm-6 mt-3">
+                        <label class="small fw-bold text-muted d-block mb-1">Verificación de Correo</label>
+                        <span id="Detalle_Verificado"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer border-0 pt-0 justify-content-center">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold text-muted">Editar Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("Editar", "Usuarios")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <input type="hidden" id="Edit_Id" name="Id_Usuario" />
+                    <div class="mb-3"><label class="small fw-bold text-muted">Nombre</label><input type="text" class="form-control" id="Edit_Nombre" name="NombreCompleto" required /></div>
+                    <div class="mb-3"><label class="small fw-bold text-muted">Usuario</label><input type="text" class="form-control" id="Edit_User" name="Nombre_Usuario" required /></div>
+                    <div class="mb-3"><label class="small fw-bold text-muted">Email</label><input type="email" class="form-control" id="Edit_Email" name="Email" required /></div>
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted">Rol</label>
+                        <select class="form-select" id="Edit_Rol" name="Id_Rol">
+                            @if (listaRoles != null)
+                            {
+                                foreach (dynamic r in listaRoles)
+                                {
+                                    <option value="@r.Id">@r.Nombre</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-nautico rounded-pill px-4">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPass" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-warning bg-opacity-10 border-0">
+                <h5 class="modal-title fw-bold text-warning-dark">Contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("CambiarPassword", "Usuarios")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 text-center">
+                    <input type="hidden" id="Pass_Id" name="idUserPass" />
+                    <p class="text-muted small mb-3">Usuario: <strong id="Pass_UserDisplay"></strong></p>
+                    <div class="form-floating mb-2">
+                        <input type="password" class="form-control" name="nuevaPass" placeholder="Nueva" required />
+                        <label>Nueva Contraseña</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pt-0">
+                    <button type="submit" class="btn btn-warning text-white rounded-pill px-4 fw-bold">Cambiar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalReenviar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-info bg-opacity-10 border-0">
+                <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-envelope-circle-check me-2"></i>Reenviar Verificación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="@Url.Action("ReenviarVerificacion", "Usuarios")">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 text-center">
+                    <input type="hidden" id="Reenviar_Id" name="idUsuario" />
+
+                    <p class="text-muted mb-2">Se enviará un nuevo enlace de activación a:</p>
+                    <h5 class="fw-bold mb-3" id="Reenviar_EmailDisplay"></h5>
+
+                    <div class="text-start text-muted small mb-4 bg-light p-3 border rounded shadow-sm d-inline-block w-100">
+                        <div class="mb-1"><i class="fa-solid fa-user me-2 text-secondary"></i><strong id="Reenviar_NombreDisplay"></strong></div>
+                        <div class="mb-1"><i class="fa-solid fa-at me-2 text-secondary"></i><span id="Reenviar_UsuarioDisplay"></span></div>
+                        <div><i class="fa-solid fa-phone me-2 text-secondary"></i><span id="Reenviar_TelefonoDisplay"></span></div>
+                    </div>
+                    <div id="Reenviar_IntentosInfo" class="alert alert-light border small text-start">
+                        <div class="d-flex align-items-center justify-content-center text-muted">
+                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                            <span>Consultando bitácora...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm">Enviar Ahora</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalDetalles(nombre, usuario, email, telefono, rol, activo, verificado) {
+        // 1. Llenar textos básicos
+        document.getElementById('Detalle_Nombre').innerText = nombre;
+        document.getElementById('Detalle_Usuario').innerText = '@@' + usuario;
+        document.getElementById('Detalle_Email').innerText = email;
+        document.getElementById('Detalle_Telefono').innerText = telefono ? telefono : 'No registrado';
+        document.getElementById('Detalle_Rol').innerText = rol;
+
+        // 2. Configurar el badge de Estado (Activo/Inactivo)
+        let spanEstado = document.getElementById('Detalle_Estado');
+        if(activo) {
+            spanEstado.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill">Activo</span>';
+        } else {
+            spanEstado.innerHTML = '<span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">Inactivo</span>';
+        }
+
+        // 3. Configurar el ícono de Verificación
+        let spanVerificado = document.getElementById('Detalle_Verificado');
+        if(verificado) {
+            spanVerificado.innerHTML = '<span class="text-success"><i class="fa-solid fa-check-circle me-1"></i> Verificado</span>';
+        } else {
+            spanVerificado.innerHTML = '<span class="text-warning"><i class="fa-solid fa-clock me-1"></i> Pendiente</span>';
+        }
+
+        // 4. Mostrar el modal
+        new bootstrap.Modal(document.getElementById('modalDetalles')).show();
+    }
+    function abrirModalEditar(id, nombre, email, user, idRol) {
+        document.getElementById('Edit_Id').value = id;
+        document.getElementById('Edit_Nombre').value = nombre;
+        document.getElementById('Edit_Email').value = email;
+        document.getElementById('Edit_User').value = user;
+        document.getElementById('Edit_Rol').value = idRol;
+        new bootstrap.Modal(document.getElementById('modalEditar')).show();
+    }
+
+    function abrirModalPass(id, user) {
+        document.getElementById('Pass_Id').value = id;
+        document.getElementById('Pass_UserDisplay').innerText = user;
+        new bootstrap.Modal(document.getElementById('modalPass')).show();
+    }
+
+    function abrirModalReenviar(id, email, nombre, usuario, telefono) {
+        document.getElementById('Reenviar_Id').value = id;
+        document.getElementById('Reenviar_EmailDisplay').innerText = email;
+
+        // Llenamos los nuevos campos
+        document.getElementById('Reenviar_NombreDisplay').innerText = nombre;
+        document.getElementById('Reenviar_UsuarioDisplay').innerText = usuario;
+        document.getElementById('Reenviar_TelefonoDisplay').innerText = telefono ? telefono : 'No registrado';
+
+        let infoDiv = document.getElementById('Reenviar_IntentosInfo');
+        infoDiv.innerHTML = '<div class="d-flex align-items-center justify-content-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div><span>Consultando bitácora...</span></div>';
+
+        new bootstrap.Modal(document.getElementById('modalReenviar')).show();
+
+        // Consulta de intentos (el fetch se queda exactamente igual)
+        fetch(`@Url.Action("ConsultarIntentosCorreo", "Usuarios")?idUsuario=${id}`)
+            .then(res => res.json())
+            .then(data => {
+                let html = `<div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted"><i class="fa-solid fa-clock-rotate-left me-1"></i>Envíos previos:</span>
+                                <strong class="text-dark">${data.totalIntentos}</strong>
+                            </div>`;
+                if(data.totalIntentos > 0) {
+                    html += `<div class="d-flex justify-content-between text-muted" style="font-size:0.8rem;">
+                                <span>Último intento:</span> <span>${data.fechaUltimo}</span>
+                             </div>`;
+                }
+                infoDiv.innerHTML = html;
+            })
+            .catch(err => {
+                infoDiv.innerHTML = '<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> No se pudo cargar el historial.</span>';
+            });
+    }
+</script>
+
+<style>
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul);
+            color: white;
+        }
+
+    .text-warning-dark {
+        color: #d97706;
+    }
+
+    /* ESTILOS PARA EL SWITCH CHECKBOX */
+    .custom-switch {
+        width: 2.8em !important;
+        height: 1.4em !important;
+    }
+
+    .form-switch .custom-switch:checked {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

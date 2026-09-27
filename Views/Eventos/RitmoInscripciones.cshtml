@@ -1,0 +1,291 @@
+﻿@model RedAJP.Models.RitmoInscripcionesViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Ritmo de Inscripciones";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') activarMenu('menu-eventos');
+    });
+</script>
+<div class="container-fluid py-4 fade-in">
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="display-6 fw-bold text-dark mb-0">
+                <i class="fa-solid fa-chart-line text-warning me-2"></i>Ritmo de Inscripciones
+            </h2>
+            <p class="text-muted mb-0 mt-1">@Model.TituloEvento | Análisis de cumplimiento en el tiempo</p>
+        </div>
+        <a href="@Url.Action("PanelControl", "Eventos", new { sid = Model.IdEventoEncriptado })" class="btn btn-white border shadow-sm rounded-pill fw-bold px-4 py-2 ms-auto">
+            <i class="fa-solid fa-arrow-left me-2"></i> Volver al Panel
+        </a>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #3498db;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Asistentes Evaluados</h6>
+                    <h2 class="fw-bold text-dark mb-0">@Model.TotalEvaluados</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #2ecc71;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Cumplieron Meta (>= @Model.PorcentajeMeta%)</h6>
+                    <h2 class="fw-bold text-success mb-0">@Model.TotalCumplieron</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #9b59b6;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Recaudado (Al Corte)</h6>
+                    <h2 class="fw-bold text-dark mb-0">@Model.TotalRecaudadoAlCorte.ToString("C2")</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body bg-light rounded-4">
+            <form method="get" action="@Url.Action("RitmoInscripciones", "Eventos", new { sid = Model.IdEventoEncriptado })" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small mb-1">Filtrar por Modalidad</label>
+                    <select name="idSubtipo" class="form-select rounded-pill shadow-sm border-0">
+                        <option value="">-- TODAS LAS MODALIDADES --</option>
+                        @foreach (var sub in Model.SubtiposDisponibles)
+                        {
+                            if (Model.IdSubtipoFiltro == sub.Id_Subtipo)
+                            {
+                                <option value="@sub.Id_Subtipo" selected>@sub.Nombre</option>
+                            }
+                            else
+                            {
+                                <option value="@sub.Id_Subtipo">@sub.Nombre</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="fw-bold text-muted small mb-1">Fecha Límite (Corte)</label>
+                    <input type="date" name="fechaCorte" class="form-control rounded-pill shadow-sm border-0" value="@Model.FechaCorte.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="fw-bold text-muted small mb-1">Porcentaje Meta (%)</label>
+                    <input type="number" name="porcentajeMeta" class="form-control rounded-pill shadow-sm border-0" value="@Model.PorcentajeMeta" min="1" max="100" required />
+                </div>
+                <div class="col-md-5 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold flex-grow-1 shadow-sm py-2">
+                        <i class="fa-solid fa-search me-2"></i>Consultar
+                    </button>
+                    <a href="@Url.Action("DescargarRitmoInscripcionesExcel", "Eventos", new { sid = Model.IdEventoEncriptado, idSubtipo = Model.IdSubtipoFiltro, fechaCorte = Model.FechaCorte.ToString("yyyy-MM-dd"), porcentajeMeta = Model.PorcentajeMeta })"
+                       class="btn btn-success rounded-pill fw-bold flex-grow-1 shadow-sm py-2 text-center">
+                        <i class="fa-solid fa-file-excel me-2"></i>Exportar Consulta
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-0 overflow-hidden rounded-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-sm">
+                    <thead class="bg-light text-center">
+                        <tr>
+                            <th class="ps-4 text-start">Asistente</th>
+                            <th>Inscrito por</th>
+                            <th>Modalidad</th>
+                            <th class="text-end">Costo Total</th>
+                            <th class="text-end">Pagado (Al Corte)</th>
+                            <th width="20%">Avance</th>
+                            <th>Estado</th>
+                            <th class="pe-4 text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Resultados)
+                        {
+                            bool cumplio = item.PorcentajeAlcanzado >= Model.PorcentajeMeta;
+                            string colorBarra = cumplio ? "bg-success" : "bg-danger";
+
+                            <tr>
+                                <td class="ps-4 fw-bold text-dark text-start">@item.Asistente</td>
+                                <td class="text-muted text-center">@item.Inscriptor</td>
+                                <td class="text-center"><span class="badge bg-secondary rounded-pill fw-normal">@item.Modalidad</span></td>
+                                <td class="text-end fw-bold">@item.CostoOficial.ToString("C2")</td>
+                                <td class="text-end fw-bold text-success">@item.MontoPagadoAlCorte.ToString("C2")</td>
+                                <td>
+                                    <div class="d-flex justify-content-between mb-1 small">
+                                        <span class="fw-bold text-muted">@item.PorcentajeAlcanzado%</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar @colorBarra" role="progressbar" style="width: @item.PorcentajeAlcanzado%" aria-valuenow="@item.PorcentajeAlcanzado" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    @if (cumplio)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Meta Cumplida</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Insuficiente</span>
+                                    }
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <button class="btn btn-sm btn-info rounded-pill fw-bold shadow-sm text-white" onclick="abrirModalPagos(@item.IdAsistente, '@item.Asistente')">
+                                        <i class="fa-solid fa-eye me-1"></i> Desglose
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Resultados.Any())
+                        {
+                            <tr><td colspan="8" class="text-center text-muted p-5">No se encontraron registros bajo estos criterios.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPagos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4 border-0">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-list-check me-2 text-warning"></i>Desglose de Pagos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <h6 class="text-muted fw-bold mb-3">Asistente: <span id="modalAsistenteNombre" class="text-primary fs-5"></span></h6>
+
+                <div class="table-responsive rounded-4 shadow-sm border border-light bg-white mb-3" style="max-height: 300px;">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light text-center sticky-top">
+                            <tr>
+                                <th class="ps-3 text-start">Fecha</th>
+                                <th>Concepto</th>
+                                <th>Método</th>
+                                <th>Referencia</th>
+                                <th class="pe-3 text-end">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalPagosBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center bg-white rounded-4 shadow-sm p-3 border border-light">
+                    <div class="mb-2 mb-md-0">
+                        <span class="text-muted fw-bold small text-uppercase">Avance General del Usuario</span>
+                        <div class="progress mt-2" style="height: 12px; width: 220px;">
+                            <div id="modalProgressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small id="modalProgressText" class="text-dark fw-bold mt-1 d-block">0% Cubierto</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="text-muted fw-bold small text-uppercase">Total Validado</span>
+                        <h3 id="modalPagosTotal" class="text-success fw-bold mb-0">$0.00</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 d-flex justify-content-between">
+                <a id="btnExportarModalExcel" href="#" class="btn btn-success rounded-pill fw-bold px-4" style="display:none;">
+                    <i class="fa-solid fa-file-excel me-2"></i>Exportar Historial
+                </a>
+                <button type="button" class="btn btn-secondary rounded-pill fw-bold px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function abrirModalPagos(idAsistente, nombre) {
+            $('#modalAsistenteNombre').text(nombre);
+            $('#modalPagosBody').html('<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-spinner fa-spin fa-2x mb-2 d-block"></i>Cargando historial contable...</td></tr>');
+            $('#modalPagosTotal').text('$0.00');
+            $('#modalProgressBar').css('width', '0%').removeClass('bg-success bg-danger bg-warning');
+            $('#modalProgressText').text('0% Cubierto');
+
+            // Ocultar botón de excel del modal mientras carga
+            $('#btnExportarModalExcel').hide();
+
+            var myModal = new bootstrap.Modal(document.getElementById('modalPagos'));
+            myModal.show();
+
+            $.get('@Url.Action("ApiObtenerDesglosePagos", "Eventos")', { idAsistente: idAsistente, sid: '@Model.IdEventoEncriptado' }, function(res) {
+                if(res.exito) {
+                    var html = '';
+
+                    if(res.datos.length === 0) {
+                        html = '<tr><td colspan="5" class="text-center text-danger py-4">No se encontraron cobros registrados para este asistente.</td></tr>';
+                    } else {
+                        res.datos.forEach(function(p) {
+                            let icono = 'fa-credit-card';
+                            let colorBadge = 'bg-success';
+
+                            if(p.metodo.includes('Efectivo')) {
+                                icono = 'fa-money-bill-wave';
+                                colorBadge = 'bg-warning text-dark';
+                            } else if(p.metodo.includes('Transferencia')) {
+                                icono = 'fa-building-columns';
+                                colorBadge = 'bg-primary';
+                            }
+
+                            html += `<tr>
+                                        <td class="ps-3 text-start text-muted">${p.fechaPago}</td>
+                                        <td class="text-center fw-bold text-dark">${p.concepto}</td>
+                                        <td class="text-center"><span class="badge ${colorBadge} rounded-pill"><i class="fa-solid ${icono} me-1"></i>${p.metodo}</span></td>
+                                        <td class="text-center"><code class="text-dark bg-light px-2 py-1 rounded border">${p.referencia}</code></td>
+                                        <td class="text-end pe-3 fw-bold text-success">$${p.montoPagado.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                                     </tr>`;
+                        });
+
+                        // Configurar y habilitar dinámicamente el enlace de descarga de Excel para esta persona
+                        let urlExcel = '@Url.Action("DescargarDesgloseAsistenteExcel", "Eventos")' + '?idAsistente=' + idAsistente + '&sid=@Model.IdEventoEncriptado';
+                        $('#btnExportarModalExcel').attr('href', urlExcel).show();
+                    }
+
+                    $('#modalPagosBody').html(html);
+                    $('#modalPagosTotal').text('$' + res.totalPagado.toLocaleString('es-MX', {minimumFractionDigits: 2}));
+
+                    $('#modalProgressBar').css('width', res.porcentaje + '%');
+                    $('#modalProgressText').text(res.porcentaje + '% Cubierto de $' + res.costoTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}));
+
+                    if(res.porcentaje >= 100) $('#modalProgressBar').addClass('bg-success');
+                    else if(res.porcentaje >= 50) $('#modalProgressBar').addClass('bg-warning');
+                    else $('#modalProgressBar').addClass('bg-danger');
+
+                } else {
+                    $('#modalPagosBody').html(`<tr><td colspan="5" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error: ${res.mensaje}</td></tr>`);
+                }
+            }).fail(function() {
+                $('#modalPagosBody').html('<tr><td colspan="5" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error de conexión al servidor.</td></tr>');
+            });
+        }
+    </script>
+}

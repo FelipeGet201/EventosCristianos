@@ -1,0 +1,80 @@
+﻿@model IEnumerable<RedAJP.Models.GrupoIndexViewModel>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Grupos de Usuarios";
+    bool puedeCrear = ViewBag.PuedeCrear ?? false;
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-grupos');
+        }
+    });
+</script>
+
+<div class="container-fluid py-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">Grupos de Usuarios</h2>
+            <p class="text-muted small mb-0">Listas de distribución y vinculación de contactos.</p>
+        </div>
+        @if (puedeCrear)
+        {
+            <a href="@Url.Action("Nuevo")" class="btn btn-primary shadow-sm">
+                <i class="fa-solid fa-plus me-2"></i> Nuevo
+            </a>
+        }
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-6 col-xl-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="fw-bold text-dark text-truncate mb-0" title="@item.Nombre">@item.Nombre</h5>
+                                <span class="badge bg-light text-secondary border">@item.FechaCreacion.ToString("dd MMM yy", cultura)</span>
+                            </div>
+
+                            <p class="text-muted small mb-3 text-truncate">
+                                @(string.IsNullOrEmpty(item.Descripcion) ? "Sin descripción" : item.Descripcion)
+                            </p>
+
+                            <div class="bg-light rounded p-3 mb-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1">
+                                    <span class="text-success"><i class="fa-solid fa-user-check me-1"></i> @item.Vinculados</span>
+                                    <span class="text-secondary"><i class="fa-regular fa-clock me-1"></i> @item.Pendientes</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    @{
+                                        int pct = item.TotalMiembros > 0 ? (item.Vinculados * 100) / item.TotalMiembros : 0;
+                                    }
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: @pct%"></div>
+                                </div>
+                                <div class="text-end mt-1">
+                                    <small class="text-muted" style="font-size: 0.7rem;">TOTAL: @item.TotalMiembros MIEMBROS</small>
+                                </div>
+                            </div>
+
+                            <a href="@Url.Action("Detalle", new { id = item.Id_Grupo })" class="btn btn-outline-primary w-100 btn-sm">
+                                Gestionar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <p class="text-muted">No hay grupos creados.</p>
+        </div>
+    }
+</div>

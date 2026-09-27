@@ -1,0 +1,219 @@
+﻿@model IEnumerable<RedAJP.Models.EncuestaIndexViewModel>
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Gestión de Encuestas";
+    bool verCerradas = ViewBag.VerCerradas ?? false;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-encuestas');
+        }
+    });
+</script>
+<style>
+    .btn-copy-link {
+        color: var(--pez-azul);
+        border-color: var(--pez-azul);
+    }
+
+        .btn-copy-link:hover {
+            background-color: var(--pez-azul) !important;
+            color: white !important;
+        }
+
+    .filter-switch .form-check-input:checked {
+        background-color: var(--acento-coral);
+        border-color: var(--acento-coral);
+    }
+
+    /* Ajuste para botones en pantallas pequeñas */
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .action-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+</style>
+
+<div class="container-fluid py-4 fade-in">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div><h2 class="fw-bold text-dark mb-0">Encuestas</h2><p class="text-muted small mb-0">Gestión de formularios y evaluaciones.</p></div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="form-check form-switch filter-switch m-0 bg-white px-3 py-2 rounded-pill shadow-sm border">
+                <input class="form-check-input ms-0 me-2" type="checkbox" id="chkCerradas" onchange="filtrarCerradas(this)" @(verCerradas ? "checked" : "") style="cursor: pointer;">
+                <label class="form-check-label small fw-bold text-muted cursor-pointer" for="chkCerradas">Ver Inactivas</label>
+            </div>
+            <a href="@Url.Action("Editor")" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold hover-scale"><i class="fa-solid fa-plus me-2"></i> Crear</a>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                string colorEstado = item.Estado == "Activa" ? "success" : "secondary";
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 position-relative overflow-hidden hover-scale-sm transition-fast">
+                        <div class="position-absolute top-0 start-0 w-100 bg-@colorEstado" style="height: 6px;"></div>
+
+                        <div class="card-body p-4 pt-5">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="fw-bold text-dark mb-0 text-truncate" title="@item.Titulo">@item.Titulo</h5>
+                                <span class="badge bg-@colorEstado-subtle text-@colorEstado border border-@colorEstado-subtle rounded-pill">@item.Estado</span>
+                            </div>
+                            <div class="text-muted small mb-3 font-monospace text-truncate"><i class="fa-solid fa-link me-1"></i> .../E/@item.ClaveUrl</div>
+
+                            <div class="d-flex gap-2 mb-4 flex-wrap">
+                                @if (item.EsPrivada)
+                                {
+                                    <span class="badge bg-light text-dark border" title="@(item.GrupoAcceso ?? "Solo Usuarios Logueados")"><i class="fa-solid fa-lock me-1"></i> @(string.IsNullOrEmpty(item.GrupoAcceso) ? "Privada" : item.GrupoAcceso)</span>
+                                }
+                                else
+                                {
+
+                                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-globe me-1"></i> Pública</span>
+                                }
+                                @if (item.EsAnonima)
+                                {
+                                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-user-secret me-1"></i> Anónima</span>
+                                }
+                            </div>
+
+                            <div class="bg-light rounded-3 p-3 d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center me-3" style="width:40px;height:40px;"><i class="fa-solid fa-poll text-primary"></i></div>
+                                    <div><div class="h5 fw-bold mb-0">@item.TotalRespuestas</div><div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Respuestas</div></div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill bg-white btn-copy-link" onclick="copiarLink('@item.ClaveUrl')"><i class="fa-regular fa-copy me-1"></i> Link</button>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-top-0 pb-4 pt-0 card-actions">
+                            <div class="action-group">
+                                <button type="button" class="btn btn-light rounded-circle text-muted hover-scale" onclick="abrirModalDuplicar(@item.Id, '@item.Titulo')" title="Duplicar"><i class="fa-regular fa-clone"></i></button>
+
+                                @if (item.TotalRespuestas == 0)
+                                {
+                                    <form action="@Url.Action("Eliminar")" method="post" class="d-inline" onsubmit="return confirm('¿Borrar definitivamente?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-light rounded-circle text-danger hover-scale" title="Eliminar"><i class="fa-regular fa-trash-can"></i></button>
+                                    </form>
+                                }
+
+                                @if (item.Estado == "Activa")
+                                {
+                                    <button type="button" class="btn btn-light rounded-circle text-warning hover-scale" title="Desactivar" onclick="confirmarDesactivar(@item.Id, '@item.Titulo')">
+                                        <i class="fa-solid fa-power-off"></i>
+                                    </button>
+                                }
+                            </div>
+
+                            <div class="action-group">
+                                <a href="@Url.Action("Resultados", new { id = item.Id })" class="btn btn-outline-primary rounded-pill btn-sm fw-bold px-3" title="Resultados"><i class="fa-solid fa-chart-pie"></i></a>
+                                <a href="@Url.Action("Editor", new { id = item.Id })" class="btn btn-light rounded-pill btn-sm fw-bold px-3">Editar</a>
+                                <a href="/E/@item.ClaveUrl" target="_blank" class="btn btn-dark rounded-pill btn-sm fw-bold px-3">Ver</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+
+        <div class="text-center py-5"><i class="fa-solid fa-folder-open fa-3x text-muted opacity-25 mb-3"></i><p class="text-muted">No hay encuestas visibles.</p></div>
+    }
+</div>
+
+<div class="modal fade" id="modalDesactivar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow-lg p-3 text-center">
+            <div class="mb-3 text-warning animate__animated animate__headShake"><i class="fa-solid fa-power-off fa-3x"></i></div>
+            <h5 class="fw-bold text-dark">¿Desactivar Encuesta?</h5>
+            <p class="small text-muted mb-4">La encuesta "<span id="lblTituloDesactivar" class="fw-bold"></span>" dejará de aceptar respuestas inmediatamente.</p>
+            <form action="@Url.Action("Cerrar")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="valIdDesactivar" />
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-warning rounded-pill fw-bold shadow-sm">Sí, Desactivar</button>
+                    <button type="button" class="btn btn-light rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDuplicar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header border-0 bg-light pb-0">
+                <h5 class="modal-title fw-bold text-primary">Duplicar Encuesta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="mb-3 text-primary bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3"><i class="fa-regular fa-clone fa-2x"></i></div>
+                <p class="mb-1 text-muted">¿Usar como plantilla?</p>
+                <h5 class="fw-bold text-dark" id="lblTituloDuplicar">...</h5>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow" onclick="ejecutarDuplicacion()">Sí, Duplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalLink" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow-lg text-center p-3" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+            <div class="modal-body">
+                <div class="mb-3 text-success animate__animated animate__bounceIn"><i class="fa-solid fa-circle-check fa-4x"></i></div>
+                <h5 class="fw-bold text-dark">¡Enlace Copiado!</h5>
+                <div class="bg-light p-2 rounded border border-light text-break font-monospace small text-primary mb-3" id="lblLinkCopiado">...</div>
+                <button type="button" class="btn btn-dark rounded-pill w-100 btn-sm" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var idParaDuplicar = 0;
+
+    function filtrarCerradas(chk) { window.location.href = '@Url.Action("Index")?verCerradas=' + chk.checked; }
+
+    function copiarLink(clave) {
+        var urlCompleta = window.location.origin + '/E/' + clave;
+        navigator.clipboard.writeText(urlCompleta).then(() => {
+            document.getElementById('lblLinkCopiado').innerText = urlCompleta;
+            new bootstrap.Modal(document.getElementById('modalLink')).show();
+        });
+    }
+
+    function abrirModalDuplicar(id, titulo) {
+        idParaDuplicar = id;
+        document.getElementById('lblTituloDuplicar').innerText = titulo;
+        new bootstrap.Modal(document.getElementById('modalDuplicar')).show();
+    }
+
+    function ejecutarDuplicacion() { if(idParaDuplicar > 0) window.location.href = '@Url.Action("Editor")?idCopiar=' + idParaDuplicar; }
+
+    // NUEVA FUNCIÓN PARA MODAL DESACTIVAR
+    function confirmarDesactivar(id, titulo) {
+        document.getElementById('valIdDesactivar').value = id;
+        document.getElementById('lblTituloDesactivar').innerText = titulo;
+        new bootstrap.Modal(document.getElementById('modalDesactivar')).show();
+    }
+</script>

@@ -1,0 +1,315 @@
+﻿@{
+    Layout = "Principal";
+    ViewData["Title"] = "Entrar";
+    string usuarioPrevio = ViewBag.UsuarioIntentado as string;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-miembros');
+        }
+    });
+</script>
+
+<style>
+    /* =========================================
+           REDISEÑO LOGIN: ISLA FLOTANTE DE CRISTAL
+           ========================================= */
+
+    /* 1. Tarjeta Principal (La Isla) */
+    .login-card-modern {
+        background: rgba(255, 255, 255, 0.75); /* Base blanca semitransparente */
+        backdrop-filter: blur(20px) saturate(180%); /* Efecto vidrio esmerilado premium */
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.6); /* Borde sutil brillante */
+        border-radius: 24px; /* Bordes redondeados modernos */
+        box-shadow: 0 20px 50px rgba(0, 43, 54, 0.15), /* Sombra profunda difusa */
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset; /* Brillo interior */
+        overflow: hidden;
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s ease;
+        position: relative;
+    }
+
+        .login-card-modern:hover {
+            transform: translateY(-5px); /* Flotación suave al hover */
+            box-shadow: 0 30px 60px rgba(0, 43, 54, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+        }
+
+    /* 2. Encabezado Decorativo */
+    .login-header-modern {
+        position: relative;
+        padding: 40px 30px 20px;
+        text-align: center;
+        /* Fondo sutil degradado para separar el header */
+        background: linear-gradient(to bottom, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+    }
+
+    /* Icono de Ancla Decorativo (Marca de Agua) */
+    .login-anchor-icon {
+        font-size: 3rem;
+        color: var(--acento-dorado);
+        opacity: 0.9;
+        margin-bottom: 15px;
+        display: inline-block;
+        filter: drop-shadow(0 4px 6px rgba(255, 183, 77, 0.3));
+        animation: floatIcon 4s ease-in-out infinite;
+    }
+
+    @@keyframes floatIcon {
+        0%, 100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-8px);
+        }
+    }
+
+    .login-title {
+        color: #00334e;
+        font-weight: 800;
+        font-size: 1.75rem;
+        margin-bottom: 5px;
+        letter-spacing: -0.5px;
+    }
+
+    .login-subtitle {
+        color: #546e7a;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    /* 3. Cuerpo del Formulario */
+    .login-body {
+        padding: 10px 35px 40px;
+    }
+
+    /* Inputs Modernos */
+    .form-floating > .form-control {
+        background-color: rgba(255, 255, 255, 0.6) !important;
+        border: 2px solid transparent !important; /* Borde transparente por defecto */
+        border-radius: 12px;
+        color: #00334e;
+        font-weight: 600;
+        backdrop-filter: blur(5px);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03); /* Sombra muy sutil */
+    }
+
+        .form-floating > .form-control:focus {
+            background-color: #ffffff !important;
+            border-color: #ffb74d !important; /* Borde dorado al foco */
+            box-shadow: 0 8px 20px rgba(255, 183, 77, 0.15); /* Resplandor dorado */
+            transform: translateY(-2px); /* Pequeña elevación al escribir */
+        }
+
+    .form-floating > label {
+        color: #607d8b;
+        font-weight: 600;
+        opacity: 0.8;
+        padding-left: 15px; /* Ajuste de alineación */
+    }
+
+        .form-floating > label > i {
+            color: var(--alga-verde); /* Color temático para iconos */
+            transition: color 0.3s;
+        }
+
+    .form-floating > .form-control:focus ~ label > i {
+        color: var(--acento-dorado); /* Icono cambia a dorado al enfocar */
+    }
+
+    /* Botón de Acción Principal */
+    .btn-login-action {
+        background: linear-gradient(135deg, #00334e 0%, #005073 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 12px; /* Coincide con los inputs */
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 14px;
+        width: 100%;
+        box-shadow: 0 8px 20px rgba(0, 51, 78, 0.25);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        font-size: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .btn-login-action::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn-login-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 51, 78, 0.35);
+            background: linear-gradient(135deg, #004060 0%, #006080 100%); /* Ligeramente más claro */
+            color: #ffffff;
+        }
+
+            .btn-login-action:hover::before {
+                opacity: 1;
+            }
+
+        .btn-login-action:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 10px rgba(0, 51, 78, 0.2);
+        }
+
+    /* Links y Extras */
+    .link-forgot {
+        color: #006064;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: color 0.2s;
+        opacity: 0.8;
+    }
+
+        .link-forgot:hover {
+            color: #00334e;
+            opacity: 1;
+            text-decoration: none;
+        }
+
+    .footer-register {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(0, 43, 54, 0.08);
+        text-align: center;
+    }
+
+    .link-register {
+        color: #004d40;
+        font-weight: 700;
+        text-decoration: none;
+        position: relative;
+        transition: color 0.3s;
+    }
+
+        .link-register::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: var(--acento-dorado);
+            transform: scaleX(0);
+            transform-origin: bottom right;
+            transition: transform 0.3s ease-out;
+        }
+
+        .link-register:hover {
+            color: #002b36;
+        }
+
+            .link-register:hover::after {
+                transform: scaleX(1);
+                transform-origin: bottom left;
+            }
+
+    /* Ajustes Responsivos */
+    @@media (max-width: 576px) {
+        .login-card-modern {
+            border-radius: 20px;
+        }
+
+        .login-header-modern {
+            padding: 30px 20px 15px;
+        }
+
+        .login-body {
+            padding: 10px 20px 30px;
+        }
+
+        .login-anchor-icon {
+            font-size: 2.5rem; /* Ajuste tamaño icono móvil */
+            margin-bottom: 10px;
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 85vh;">
+    <div class="col-12 col-sm-9 col-md-7 col-lg-5 col-xl-4">
+
+        <div class="login-card-modern fade-in-up">
+
+            <div class="login-header-modern">
+                <i class="fa-solid fa-anchor login-anchor-icon"></i>
+                <h2 class="login-title">¡Hola Pescador!</h2>
+                <p class="login-subtitle">Bienvenido, ingresa tus datos.</p>
+            </div>
+
+            <div class="login-body">
+                <form method="post" action="@Url.Action("Index", "Login")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="floatingUser" placeholder="Usuario / Correo" name="user" value="@usuarioPrevio" required>
+                        <label for="floatingUser">
+                            <i class="fa-solid fa-user me-2"></i>Usuario / Correo
+                        </label>
+                    </div>
+
+                    <div class="form-floating mb-2">
+                        <input type="password" class="form-control" id="floatingPass" placeholder="Contraseña" name="password" required>
+                        <label for="floatingPass">
+                            <i class="fa-solid fa-key me-2"></i>Contraseña
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-end mb-4">
+                        <a href="@Url.Action("Recuperar", "Login")" class="link-forgot">
+                            ¿Olvidaste tu contraseña?
+                        </a>
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-login-action">
+                            INICIAR SESIÓN <i class="fa-solid fa-arrow-right-to-bracket ms-2"></i>
+                        </button>
+                    </div>
+
+                    <div class="footer-register">
+                        <small class="text-muted d-block mb-1">¿Aún no tienes cuenta?</small>
+                        <a href="@Url.Action("Index", "Registro")" class="link-register">
+                            Registrarse
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @@keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

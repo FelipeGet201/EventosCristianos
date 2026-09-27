@@ -1,0 +1,1493 @@
+@using RedAJP.Globales
+@using RedAJP.Models
+@using RedAJP.Controllers
+@model RedAJP.Models.EditorEventoViewModel
+@{
+    Layout = "Principal";
+
+    int idEvento = ViewBag.Id_Evento != null ? Convert.ToInt32(ViewBag.Id_Evento) : 0;
+    string sIdEncriptado = ViewBag.Id_Encriptado_Evento as string ?? "";
+    string titulo = ViewBag.Titulo as string ?? "";
+    string descripcion = ViewBag.Descripcion as string ?? "";
+    string imagenUrl = ViewBag.Imagen_Url as string ?? "";
+    string fechaInicio = ViewBag.Fecha_Inicio is DateTime fi ? fi.ToString("yyyy-MM-ddTHH:mm") : "";
+    string fechaFin = ViewBag.Fecha_Fin is DateTime ff ? ff.ToString("yyyy-MM-ddTHH:mm") : "";
+    string costo = ViewBag.Costo_Entrada?.ToString() ?? "0.00";
+    string cupo = ViewBag.Cupo_Maximo?.ToString() ?? "0";
+    bool reqRegistro = ViewBag.Requiere_Registro != null && (bool)ViewBag.Requiere_Registro;
+    bool permitirPago = ViewBag.Permitir_Pago != null && (bool)ViewBag.Permitir_Pago;
+    bool esDestacado = ViewBag.Es_Destacado != null && (bool)ViewBag.Es_Destacado;
+    bool activo = ViewBag.Activo != null && (bool)ViewBag.Activo;
+    bool tienePagos = ViewBag.TienePagos != null && (bool)ViewBag.TienePagos;
+    bool esPrivado = ViewBag.Es_Privado != null && (bool)ViewBag.Es_Privado;
+    bool permitirParciales = ViewBag.Permitir_Pagos_Parciales != null && (bool)ViewBag.Permitir_Pagos_Parciales;
+    int tipoRegistro = ViewBag.Tipo_Registro != null ? Convert.ToInt32(ViewBag.Tipo_Registro) : 1;
+    bool permitirTransferencia = ViewBag.Permitir_Transferencia as bool? ?? false;
+    bool permitirPagoTarjeta = ViewBag.Permitir_Pago_Tarjeta as bool? ?? true;
+    bool cobrarComisionExtra = ViewBag.Cobrar_Comision_Extra as bool? ?? true;
+    var listaCompleta = ViewBag.CalendarioPagos as List<CalendarioPagoItem> ?? new List<CalendarioPagoItem>();
+    var calendario = listaCompleta.Where(x => x.Id_Subtipo == 0).ToList();
+    var preguntas = ViewBag.Preguntas as List<PreguntaConfigitem> ?? new List<PreguntaConfigitem>();
+    var subtipos = ViewBag.Subtipos as List<SubtipoEventoItem> ?? new List<SubtipoEventoItem>();
+    var galeria = ViewBag.Galeria as List<FotoGaleriaItem> ?? new List<FotoGaleriaItem>();
+    var inscriptores = ViewBag.Inscriptores as List<InscriptorItem> ?? new List<InscriptorItem>();
+    var todosUsuarios = ViewBag.TodosUsuarios as List<dynamic> ?? new List<dynamic>();
+    var gruposDisponibles = ViewBag.ListaGrupos as List<dynamic> ?? new List<dynamic>();
+    int idGrupoSeleccionado = ViewBag.Id_Grupo_Usuarios != null ? (int)ViewBag.Id_Grupo_Usuarios : 0;
+    
+    // Vinculación por Evento
+    int idEventoVinculado = ViewBag.Id_Evento_Vinculado ?? 0;
+    string subtiposVinculados = ViewBag.Subtipos_Vinculados_Acceso as string ?? "";
+    var eventosVinculables = ViewBag.EventosVinculables as List<dynamic> ?? new List<dynamic>();
+
+    // Encuesta Requisito
+    var encuestasReq = ViewBag.ListaEncuestasRequisito as List<dynamic> ?? new List<dynamic>();
+    int idEncuestaSeleccionada = ViewBag.Id_Encuesta_Requisito != null ? (int)ViewBag.Id_Encuesta_Requisito : 0;
+
+    string claveCuenta = ViewBag.ClaveCuenta as string ?? "DEFAULT";
+    var listaBancos = ViewBag.ListaBancos as Dictionary<string, string>;
+    string idsInscriptoresStr = string.Join(",", inscriptores.Select(x => x.Id_Usuario));
+    bool bPuedeBorrarEvento = User.TienePermiso(RedAJP.Globales.Parametros.Modulos.Eventos, RedAJP.Globales.Parametros.Permisos.Borrar);
+    var historialRegistros = ViewBag.InscriptoresConHistorial as List<int> ?? new List<int>();
+    bool hayRegistrados = historialRegistros.Any();
+    ViewData["Title"] = (idEvento == 0 ? "Nuevo" : "Editar") + " Evento";
+}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    #dropzoneGaleria.dragover { background-color: #e9ecef !important; border-color: #0d6efd !important; transform: scale(1.02); }
+    .select2-container .select2-selection--single { height: 38px !important; border: 1px solid #ced4da; border-radius: 0.375rem; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 38px; padding-left: 12px; }
+    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
+    .preview-card { cursor: grab; transition: transform 0.2s; }
+    .preview-card:active { cursor: grabbing; transform: scale(1.05); z-index: 10; }
+    .preview-img { height: 120px; width: 100%; object-fit: cover; border-radius: 6px 6px 0 0; }
+    .input-group > .select2-container { flex: 1 1 auto; width: 1% !important; }
+    .input-group > .select2-container .select2-selection--single { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+</style>
+
+<script>
+    window.addEventListener('load', function() { if (typeof activarMenu === 'function') activarMenu('menu-eventos'); });
+</script>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-11">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-bottom p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="fw-bold mb-0 text-dark">@ViewData["Title"]</h3>
+                        <div class="d-flex gap-2">
+                            @if (idEvento > 0 && bPuedeBorrarEvento && !hayRegistrados)
+                            {
+                                <form id="formBorrarEvento" action="@Url.Action("Eliminar", "Eventos")" method="post" class="d-none">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@idEvento" />
+                                </form>
+                                <button type="button" class="btn btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#modalConfirmarBorrado">
+                                    <i class="fa-solid fa-trash me-2"></i> Borrar Evento
+                                </button>
+                            }
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill">
+                                <i class="fa-solid fa-arrow-left me-2"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <form method="post" action="@Url.Action("Guardar")" id="formEditor" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id_Evento" value="@idEvento" />
+
+                        <ul class="nav nav-tabs nav-justified bg-light" id="myTab" role="tablist">
+                            <li class="nav-item"><button class="nav-link active py-3 fw-bold rounded-0 text-dark" data-bs-toggle="tab" data-bs-target="#panel-general" type="button"><i class="fa-solid fa-circle-info me-2 text-primary"></i> General</button></li>
+                            <li class="nav-item"><button class="nav-link py-3 fw-bold rounded-0 text-dark" data-bs-toggle="tab" data-bs-target="#panel-registro" type="button"><i class="fa-solid fa-clipboard-list me-2 text-primary"></i> Registro y Costos</button></li>
+                            <li class="nav-item"><button class="nav-link py-3 fw-bold rounded-0 text-dark" data-bs-toggle="tab" data-bs-target="#panel-adicionales" type="button"><i class="fa-solid fa-cart-plus me-2 text-primary"></i> Productos Extra</button></li>
+                            <li class="nav-item"><button class="nav-link py-3 fw-bold rounded-0 text-dark" data-bs-toggle="tab" data-bs-target="#panel-media" type="button"><i class="fa-solid fa-images me-2 text-primary"></i> Galería</button></li>
+                            <li class="nav-item"><button class="nav-link py-3 fw-bold rounded-0 text-dark" data-bs-toggle="tab" data-bs-target="#panel-avanzado" type="button"><i class="fa-solid fa-shield-halved me-2 text-primary"></i> Avanzado</button></li>
+                        </ul>
+
+                        <div class="tab-content p-4 p-md-5">
+
+                            <div class="tab-pane fade show active" id="panel-general">
+                                <div class="row g-4">
+                                    <div class="col-md-8">
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold">Título del Evento</label>
+                                            <input type="text" name="Titulo" class="form-control form-control-lg border-primary border-opacity-25" value="@titulo" required />
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold">Descripción</label>
+                                            <textarea name="Descripcion" class="form-control" rows="6">@descripcion</textarea>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-6"><label class="form-label fw-bold">Inicio</label><input type="datetime-local" id="txtFechaInicio" name="Fecha_Inicio" class="form-control" value="@fechaInicio" required /></div>
+                                            <div class="col-md-6"><label class="form-label fw-bold">Fin</label><input type="datetime-local" id="txtFechaFin" name="Fecha_Fin" class="form-control" value="@fechaFin" /></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4 border-start ps-4">
+                                        <label class="form-label fw-bold text-dark">Imagen Portada</label>
+                                        @if (!string.IsNullOrEmpty(imagenUrl))
+                                        {
+                                            <div class="mb-3 position-relative">
+                                                <img src="@imagenUrl" class="img-fluid rounded shadow-sm border" style="max-height: 200px; width: 100%; object-fit: cover;" />
+                                                <span class="badge bg-success position-absolute top-0 end-0 m-2">Actual</span>
+                                            </div>
+                                            <input type="hidden" name="Imagen_Url" value="@imagenUrl" id="hdnImagenUrl" />
+                                        }
+                                        <input type="file" name="fotoPortadaNueva" id="filePortada" class="form-control mb-2" accept=".jpg,.jpeg,.png,.webp" />
+                                        <div class="form-text small mb-4">Max 10MB. Formatos: JPG, PNG, WEBP.</div>
+
+                                        @if (idEvento > 0)
+                                        {
+                                            <div id="wrapperBtnGrafico" class="p-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded-4">
+                                                <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>Edición Gráfica</h6>
+                                                <p class="small text-muted mb-3">Configura sellos de "Agotado" sobre la imagen de portada de forma visual.</p>
+                                                
+                                                <a href="@Url.Action("EditorImagenPortada", new { sid = sIdEncriptado })"
+                                                id="btnEditorGrafico" 
+                                                class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm">
+                                                    <i class="fa-solid fa-arrows-to-dot me-2"></i> Abrir Editor de Mapa
+                                                </a>
+
+                                                <div id="alertaCambiosImagen" class="alert alert-warning mt-2 small py-2 d-none">
+                                                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                                    Has seleccionado una <strong>nueva imagen</strong> o modificado datos. Guarda para habilitar el editor.
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="panel-registro">
+                                <div class="form-check form-switch p-3 bg-light rounded border mb-4">
+                                    <input class="form-check-input me-3" type="checkbox" id="chkRegistro" name="Requiere_Registro" value="true" @(reqRegistro ? "checked" : "") onchange="toggleRegistro()">
+                                    <input type="hidden" name="Requiere_Registro" value="false" />
+                                    <label class="form-check-label fw-bold m-0" for="chkRegistro">Habilitar Registro de Asistentes</label>
+                                </div>
+
+                                <div id="panelRegistroContent" style="display:none;">
+                                    <h6 class="text-primary fw-bold text-uppercase small mb-3 border-bottom pb-2">Configuración Base</h6>
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">Costo General ($)</label>
+                                            <input type="number" step="0.01" name="Costo_Entrada" id="txtCostoTotal" class="form-control mb-2" value="@costo" @(tienePagos ? "readonly" : "") />
+                                            
+                                            <div class="form-check form-switch mt-1 p-2 bg-light rounded border border-light">
+                                                <input class="form-check-input ms-0 me-2" type="checkbox" id="chkComision" name="Cobrar_Comision_Extra" value="true" @(cobrarComisionExtra ? "checked" : "") style="cursor: pointer;">
+                                                <input type="hidden" name="Cobrar_Comision_Extra" value="false" />
+                                                <label class="form-check-label small fw-bold text-muted" for="chkComision" style="cursor: pointer;" data-bs-toggle="tooltip" title="Si se desactiva, la organización absorberá los gastos de gestión de Stripe para este evento.">
+                                                    Cobrar comisión extra
+                                                </label>
+                                            </div>
+                                            <div class="form-text small mt-1">Precio base. Requerido para calcular porcentajes.</div>
+                                        </div>
+                                        <div class="col-md-4"><label class="form-label small fw-bold">Cupo Global</label><input type="number" name="Cupo_Maximo" class="form-control" value="@cupo" /><div class="form-text small">0 = Ilimitado.</div></div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">Modo Registro</label>
+                                            <select name="Tipo_Registro" class="form-select">
+                                                <!option value="1" @(tipoRegistro == 1 ? "selected" : "")>Individual</!option>
+                                                <!option value="2" @(tipoRegistro == 2 ? "selected" : "")>Grupal (Líder inscribe)</!option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="text-primary fw-bold text-uppercase small mb-3 border-bottom pb-2">Modalidades / Subtipos (Opcional)</h6>
+                                    <div class="mb-4">
+                                        <div class="alert alert-info py-2 small"><i class="fa-solid fa-circle-info me-2"></i> Opciones específicas. Si tienen inscritos, no se pueden borrar ni cambiar costo.</div>
+                                        <table class="table table-sm table-bordered">
+                                            <thead class="table-light small"><tr><th>Nombre Modalidad</th><th width="120">Costo ($)</th><th width="100">Cupo</th><th width="50"></th></tr></thead>
+                                            <tbody id="tbodySubtipos">
+                                                @for (int i = 0; i < subtipos.Count; i++)
+                                                {
+                                                    bool bloqueado = subtipos[i].Ocupados > 0;
+                                                    string readOnly = bloqueado ? "readonly" : "";
+                                                    string classBloq = bloqueado ? "bg-light text-muted" : "";
+                                                    <tr class="fila-subtipo">
+                                                        <td>
+                                                            <input type="hidden" name="Subtipos[@i].Id_Subtipo" value="@subtipos[i].Id_Subtipo" />
+                                                            <input type="hidden" name="Subtipos[@i].Activo" value="true" class="inp-act-sub" />
+                                                            <input type="text" name="Subtipos[@i].Nombre" class="form-control form-control-sm @classBloq" value="@subtipos[i].Nombre" required @readOnly />
+                                                        </td>
+                                                        <td><input type="number" step="0.01" name="Subtipos[@i].Costo" class="form-control form-control-sm @classBloq" value="@subtipos[i].Costo" required @readOnly /></td>
+                                                        <td><input type="number" name="Subtipos[@i].Cupo" class="form-control form-control-sm" value="@subtipos[i].Cupo" required /></td>
+                                                        <td class="text-center">
+                                                            @if (bloqueado)
+                                                            {
+                                                                <span class="text-muted" title="Tiene inscritos"><i class="fa-solid fa-lock"></i></span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="eliminarFila(this, '.inp-act-sub')"><i class="fa-solid fa-trash"></i></button>
+                                                            }
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                        <button type="button" class="btn btn-sm btn-secondary" onclick="agregarSubtipo()"><i class="fa-solid fa-plus me-1"></i> Agregar Modalidad</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="abrirModalLote()"><i class="fa-solid fa-layer-group me-1"></i> Crear en Lote</button>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="chkPago" name="Permitir_Pago" value="true" @(permitirPago ? "checked" : "") onchange="toggleParciales()">
+                                        <input type="hidden" name="Permitir_Pago" value="false" />
+                                        <label class="form-check-label fw-bold" for="chkPago">Habilitar Recepción de Pagos</label>
+                                    </div>
+
+                                    <div id="panelBancario" style="display:none;" class="p-4 bg-white rounded-4 shadow-sm border mb-4 fade-in">
+                                        <h6 class="text-primary fw-bold text-uppercase small mb-3 border-bottom pb-2">
+                                            <i class="fa-solid fa-credit-card me-2"></i> Métodos de Pago Habilitados
+                                        </h6>
+
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-md-6">
+                                                <div class="p-3 border rounded-3 bg-light h-100 transition-hover">
+                                                    <div class="form-check form-switch mb-2 d-flex align-items-center">
+                                                        <input class="form-check-input me-2" type="checkbox" id="chkTarjeta" name="Permitir_Pago_Tarjeta" value="true" @(permitirPagoTarjeta ? "checked" : "") style="transform: scale(1.3); cursor: pointer;">
+                                                        <input type="hidden" name="Permitir_Pago_Tarjeta" value="false" />
+                                                        <label class="form-check-label fw-bold" for="chkTarjeta" style="cursor: pointer;">
+                                                            <i class="fa-brands fa-stripe text-indigo fs-5 me-1" style="color: #635bff; vertical-align: middle;"></i> Tarjeta de Crédito/Débito
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="p-3 border rounded-3 bg-light h-100 transition-hover">
+                                                    <div class="form-check form-switch mb-2 d-flex align-items-center">
+                                                        <input class="form-check-input me-2" type="checkbox" id="chkTransferencia" name="Permitir_Transferencia" value="true" @(permitirTransferencia ? "checked" : "") onchange="toggleBanco()" style="transform: scale(1.3);
+ cursor: pointer;">
+                                                        <input type="hidden" name="Permitir_Transferencia" value="false" />
+                                                        <label class="form-check-label fw-bold" for="chkTransferencia" style="cursor: pointer;">
+                                                            <i class="fa-solid fa-building-columns text-secondary me-1"></i> Transferencia Bancaria
+                                                        </label>
+                                                    </div>
+                                                    <div id="divSelectBanco" style="display:none;" class="mt-3 pt-3 border-top border-secondary border-opacity-25 ms-2">
+                                                        <label class="form-label small fw-bold text-muted mb-1"><i class="fa-solid fa-arrow-turn-down me-1"></i> Cuenta receptora destino</label>
+                                                        <select name="Clave_Cuenta_Bancaria" class="form-select form-select-sm border-secondary shadow-sm" id="cboCuentaBancariaDefault">
+                                                            @foreach (var b in listaBancos)
+                                                            {
+                                                                <!option value="@b.Key" @(b.Key == claveCuenta ? "selected" : "")>@b.Value</!option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                 </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-check form-switch mb-3 mt-3">
+                                            <input class="form-check-input" type="checkbox" id="chkUsaCuentaPersonalizada" name="Usa_Cuenta_Personalizada" value="true" @(ViewBag.Usa_Cuenta_Personalizada == true ? "checked" : "") onchange="toggleCuentaPersonalizada()">
+                                            <input type="hidden" name="Usa_Cuenta_Personalizada" value="false" />
+                                            <label class="form-check-label fw-bold text-danger" for="chkUsaCuentaPersonalizada"><i class="fa-solid fa-building-columns me-1"></i> Usar Cuenta Bancaria Personalizada</label>
+                                        </div>
+
+                                        <div id="divCuentaPersonalizada" style="display:none;" class="p-4 border rounded border-warning bg-warning bg-opacity-10 mb-3 rounded-4 shadow-sm">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold">Banco *</label>
+                                                    <input type="text" name="Banco_Custom" id="txtBancoCustom" class="form-control form-control-sm" value="@ViewBag.Banco_Custom" placeholder="Ej. BBVA" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold">Titular de la Cuenta *</label>
+                                                    <input type="text" name="Titular_Custom" id="txtTitularCustom" class="form-control form-control-sm" value="@ViewBag.Titular_Custom" placeholder="Nombre completo" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold">CLABE Interbancaria (18 dígitos) *</label>
+                                                    <input type="text" name="Clabe_Custom" id="txtClabeCustom" class="form-control form-control-sm font-monospace" value="@ViewBag.Clabe_Custom" maxlength="18" placeholder="012..." />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label small fw-bold">Número de Cuenta *</label>
+                                                    <input type="text" name="Cuenta_Custom" id="txtCuentaCustom" class="form-control form-control-sm font-monospace" value="@ViewBag.Cuenta_Custom" placeholder="Cuenta" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h6 class="text-primary fw-bold text-uppercase small mb-3 border-bottom pb-2 mt-2">
+                                            <i class="fa-solid fa-calendar-days me-2"></i> Esquema de Cobro
+                                        </h6>
+
+                                        <div class="p-3 border rounded-3 bg-light mb-3">
+                                            <div class="form-check form-switch mb-0 d-flex align-items-center">
+                                                <input class="form-check-input me-2" type="checkbox" id="chkParciales" name="Permitir_Pagos_Parciales" value="true" @(permitirParciales ? "checked" : "") onchange="toggleTablaParciales()" style="transform: scale(1.3); cursor: pointer;">
+                                                <input type="hidden" name="Permitir_Pagos_Parciales" value="false" />
+                                                <label class="form-check-label fw-bold" for="chkParciales" style="cursor: pointer;">
+                                                    Activar Pagos en Parcialidades (Plazos)
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div id="contenedorTablaPagos" style="display:none;" class="p-4 border rounded-3 bg-white shadow-sm mt-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                                                <div>
+                                                    <h6 class="fw-bold mb-0 text-dark">Calendario Base</h6>
+                                                    <small class="text-muted">Distribución automática según el Costo General.</small>
+                                                </div>
+                                                <div class="input-group input-group-sm shadow-sm" style="max-width: 300px;">
+                                                    <span class="input-group-text bg-light fw-bold text-dark">Dividir en</span>
+                                                    <input type="number" id="txtNumPagosAuto" class="form-control text-center fw-bold" value="2" min="2" max="12">
+                                                    <span class="input-group-text bg-light text-dark">pagos</span>
+                                                    <button type="button" class="btn btn-primary fw-bold px-3" onclick="generarCalendarioAuto()"><i class="fa-solid fa-wand-magic-sparkles"></i> Generar</button>
+                                                </div>
+                                            </div>
+        
+                                            <div class="table-responsive rounded border mb-2">
+                                                <table class="table table-sm table-hover table-borderless align-middle mb-0">
+                                                    <thead class="table-light border-bottom">
+                                                        <tr>
+                                                            <th width="50" class="text-center text-muted">#</th>
+                                                            <th>Fecha Límite</th>
+                                                            <th>Monto Base ($)</th>
+                                                            <th width="50" class="text-center"></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="tbodyPagos">
+                                                        @for (int i = 0; i < calendario.Count; i++)
+                                                        {
+                                                            <tr class="fila-pago border-bottom">
+                                                                <td class="text-center fw-bold num-pago text-secondary">@(i + 1)</td>
+                                                                <td>
+                                                                    <input type="hidden" name="CalendarioPagos[@i].Id_Calendario_Pago" value="@calendario[i].Id_Calendario_Pago" />
+                                                                    <input type="hidden" name="CalendarioPagos[@i].Eliminado" value="false" class="inp-del-pago" />
+                                                                    <input type="hidden" name="CalendarioPagos[@i].Numero_Pago" value="@calendario[i].Numero_Pago" class="inp-num-pago" />
+                                                                    <input type="datetime-local" name="CalendarioPagos[@i].Fecha_Limite" class="form-control form-control-sm inp-fecha shadow-none" value="@calendario[i].Fecha_Limite.ToString("yyyy-MM-ddTHH:mm")" required />
+                                                                </td>
+                                                                <td>
+                                                                    <div class="input-group input-group-sm">
+                                                                        <span class="input-group-text bg-white text-muted border-end-0"><i class="fa-solid fa-dollar-sign"></i></span>
+                                                                        <input type="number" step="0.01" name="CalendarioPagos[@i].Monto" class="form-control form-control-sm inp-monto border-start-0 ps-0 shadow-none" value="@calendario[i].Monto" required />
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 bg-light" onclick="eliminarFila(this, '.inp-del-pago')"><i class="fa-solid fa-trash"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold rounded-pill px-3 mt-2" onclick="agregarPago()">
+                                                <i class="fa-solid fa-plus me-1"></i> Agregar Pago Manual
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="text-primary fw-bold text-uppercase small mb-3 border-bottom pb-2">Preguntas del Formulario</h6>
+                                    <div id="contenedorPreguntas">
+                                        @for (int i = 0; i < preguntas.Count; i++)
+                                        {
+                                            var p = preguntas[i];
+                                            <div class="card p-2 mb-2 border-light bg-light fila-pregunta">
+                                                <input type="hidden" name="Preguntas[@i].Id_Pregunta" value="@p.Id_Pregunta" />
+                                                <input type="hidden" name="Preguntas[@i].Eliminada" value="false" class="inp-eliminada" />
+                                                <div class="row g-2 align-items-center">
+                                                    <div class="col-md-3">
+                                                        <select name="Preguntas[@i].Tipo" class="form-select form-select-sm sel-tipo-preg" onchange="toggleOpciones(this)">
+                                                            <!option value="1" @(p.Tipo == TipoPregunta.Texto ? "selected" : "")>Texto Libre</!option>
+                                                            <!option value="2" @(p.Tipo == TipoPregunta.Booleano ? "selected" : "")>Sí / No</!option>
+                                                            <!option value="3" @(p.Tipo == TipoPregunta.OpcionMultiple ? "selected" : "")>Opción Múltiple</!option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <input type="text" name="Preguntas[@i].Texto" value="@p.Texto" class="form-control form-control-sm mb-1" placeholder="¿Pregunta?" required />
+                                                        <input type="text" name="Preguntas[@i].Opciones" value="@p.Opciones" class="form-control form-control-sm bg-white inp-opciones" placeholder="Opciones separadas por |" style="display: @(p.Tipo == TipoPregunta.OpcionMultiple ? "block" : "none");" />
+                                                    </div>
+                                                    <div class="col-md-1 text-end"><button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="eliminarFila(this, '.inp-eliminada')"><i class="fa-solid fa-trash"></i></button></div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-dark mt-2" onclick="agregarPregunta()"><i class="fa-solid fa-plus me-1"></i> Nueva Pregunta</button>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="panel-adicionales">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold m-0"><i class="fa-solid fa-cart-plus me-2 text-primary"></i>Productos y Servicios Adicionales</h5>
+                                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-sm" onclick="agregarProductoExtra()"><i class="fa-solid fa-plus me-1"></i> Agregar Producto</button>
+                                </div>
+                                <p class="text-muted small">Ofrece extras como cenas, playeras, o desayunos. Estos se cobrarán junto con la inscripción.</p>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm align-middle bg-white mb-0 text-center" style="font-size:0.85rem;">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="text-start">Nombre del Producto / Concepto</th>
+                                                <th>Costo</th>
+                                                <th>Min</th>
+                                                <th>Max</th>
+                                                <th>Aplicar a Modalidad</th>
+                                                <th style="width:40px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodyProductosExtra">
+                                            @if (ViewBag.ProductosExtra != null)
+                                            {
+                                                int idxExtra = 0;
+                                                foreach (var ext in ViewBag.ProductosExtra)
+                                                {
+                                                    var vis = ext.Activo ? "" : "display:none;";
+                                                    <tr class="fila-extra" style="@vis">
+                                                        <td class="text-start">
+                                                            <input type="hidden" name="ProductosExtra[@idxExtra].Id_ProductoExtra" value="@ext.Id_ProductoExtra" />
+                                                            <input type="hidden" name="ProductosExtra[@idxExtra].Activo" value="@(ext.Activo ? "true" : "false")" class="inp-act-ext" />
+                                                            <input type="text" name="ProductosExtra[@idxExtra].Nombre_Producto" class="form-control form-control-sm mb-1" value="@ext.Nombre_Producto" required />
+                                                            <input type="text" name="ProductosExtra[@idxExtra].Descripcion" class="form-control form-control-sm text-secondary" placeholder="Descripci&oacute;n breve (Opcional)" value="@ext.Descripcion" />
+                                                        </td>
+                                                        <td><input type="number" step="0.01" name="ProductosExtra[@idxExtra].Precio" class="form-control form-control-sm" value="@ext.Precio" required /></td>
+                                                        <td><input type="number" name="ProductosExtra[@idxExtra].Cantidad_Minima" class="form-control form-control-sm" value="@ext.Cantidad_Minima" required /></td>
+                                                        <td><input type="number" name="ProductosExtra[@idxExtra].Cantidad_Maxima" class="form-control form-control-sm" value="@ext.Cantidad_Maxima" required /></td>
+                                                        <td>
+                                                            <select name="ProductosExtra[@idxExtra].Id_Subtipo" class="form-select form-select-sm">
+                                                                <option value="">Todas (Universal)</option>
+                                                                @if (ViewBag.Subtipos != null)
+                                                                {
+                                                                    foreach (var sub in ViewBag.Subtipos)
+                                                                    {
+                                                                        var sel = ext.Id_Subtipo == sub.Id_Subtipo ? "selected" : "";
+                                                                        <option value="@sub.Id_Subtipo" @sel>@sub.Nombre</option>
+                                                                    }
+                                                                }
+                                                            </select>
+                                                        </td>
+                                                        <td><button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="eliminarFila(this, '.inp-act-ext')"><i class="fa-solid fa-trash"></i></button></td>
+                                                    </tr>
+                                                    idxExtra++;
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="panel-media">
+                                <div class="alert alert-secondary small"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Las imágenes se optimizarán y subirán a la nube automáticamente.</div>
+                                @if (galeria.Any())
+                                {
+                                    <h6 class="fw-bold mb-3 border-bottom pb-2">Imágenes Actuales <span class="small text-muted fw-normal">(Arrastra para reordenar)</span></h6>
+                                    <div class="row g-3 mb-5" id="contenedorFotosExistentes">
+                                        @for (int i = 0; i < galeria.Count; i++)
+                                        {
+                                            var foto = galeria[i];
+                                            <div class="col-md-3 col-6 card-existente" draggable="true">
+                                                <div class="card h-100 shadow-sm border-secondary" style="cursor: grab;">
+                                                    <div class="position-absolute top-0 start-0 m-1">
+                                                        <span class="badge bg-secondary rounded-circle"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
+                                                    </div>
+                                                    <img src="@foto.Url_Foto" class="card-img-top" style="height: 120px; object-fit: cover;">
+                                                    <div class="card-body p-2 text-center bg-light" style="cursor: default;">
+                                                        <input type="hidden" name="Galeria[@i].Id_Foto" value="@foto.Id_Foto" class="input-id-foto" />
+                                                        <input type="text" name="Galeria[@i].Descripcion" value="@foto.Descripcion" class="form-control form-control-sm mb-2 border-primary input-desc-foto" placeholder="Descripción (opcional)" />
+                                                        <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="marcarEliminarFoto(this, '@foto.Url_Foto')">
+                                                            <i class="fa-solid fa-trash me-1"></i> Eliminar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                <h6 class="fw-bold mb-3 border-bottom pb-2 mt-5">Agregar Nuevas Imágenes</h6>
+                                <div class="mb-4">
+                                    <input type="file" id="inputGaleriaNuevas" name="nuevasFotosGaleria" accept=".jpg,.jpeg,.png,.webp" multiple style="display: none;" />
+                                    <div id="dropzoneGaleria" class="border rounded p-4 text-center bg-light" style="cursor: pointer; border: 2px dashed #ccc !important; transition: all 0.3s;">
+                                        <i class="fa-solid fa-cloud-arrow-up fa-3x text-secondary mb-2"></i>
+                                        <h6 class="text-dark fw-bold">Haz clic aquí o arrastra tus imágenes</h6>
+                                        <p class="mb-0 text-muted small">Formatos: JPG, PNG, WEBP. (Max 10MB por foto)</p>
+                                    </div>
+                                    <div id="previewNuevasFotos" class="row g-3 mt-3"></div>
+                                </div>
+                                <div id="contenedorImagenesAEliminar"></div>
+                            </div>
+
+                            <div class="tab-pane fade" id="panel-avanzado">
+                                
+                                <div class="mb-4 p-3 bg-white border rounded shadow-sm">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-clipboard-question text-primary me-2"></i>Encuesta como Requisito (Obligatoria)</h5>
+                                    </div>
+                                    <p class="small text-muted mb-3">Si seleccionas una encuesta, los usuarios (inscripción individual) no podrán registrarse hasta que la hayan resuelto. Solo se listan encuestas configuradas con <strong>"Requiere Inicio de Sesión"</strong>.</p>
+                                    
+                                    <div class="mb-3">
+                                        <select class="form-select border-primary" id="cboEncuestaRequisito" name="Id_Encuesta_Requisito">
+                                            <option value="0">-- Ninguna (No requerida) --</option>
+                                            @foreach (var enc in encuestasReq)
+                                            {
+                                                <!option value="@enc.Id" @(enc.Id == idEncuestaSeleccionada ? "selected" : "")>@enc.Titulo</!option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4 p-3 bg-white border rounded shadow-sm transition-hover">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="form-check form-switch me-3 mb-0">
+                                            <input class="form-check-input" type="checkbox" id="Es_Privado" name="Es_Privado" value="true" @(esPrivado ? "checked" : "") onchange="toggleWhitelist()" style="transform: scale(1.5); cursor: pointer; border-color: #0d6efd; background-color: @(esPrivado ? "#0d6efd" : "#e9ecef");">
+                                            <input type="hidden" name="Es_Privado" value="false" />
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h5 class="fw-bold mb-0 d-flex align-items-center" id="lblPrivacidadTitulo">
+                                                <i class="fa-solid fa-lock text-primary me-2" id="iconoPrivacidad"></i>
+                                                <span id="textoPrivacidad" class="text-primary">Acceso Privado</span>
+                                            </h5>
+                                        </div>
+                                    </div>
+                                    <div class="border rounded p-3 bg-light shadow-sm" id="boxPrivacidadInfo">
+                                        <div class="d-flex align-items-center mb-2" id="hintPrivado">
+                                            <i class="fa-solid fa-check text-success me-2"></i>
+                                            <span class="fw-bold text-dark">El Evento NO SERÁ VISIBLE para Todos</span>
+                                        </div>
+                                        <div class="d-flex align-items-center" id="hintPublico">
+                                            <i class="fa-solid fa-xmark text-danger opacity-50 me-2"></i>
+                                            <span class="text-muted text-decoration-line-through">Cualquier usuario registrado PODRÁ VER el Evento.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="panelWhitelist" style="display:none;" class="fade-in">
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <div class="card h-100 border-primary border-opacity-25 bg-primary bg-opacity-10">
+                                                <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                                                    <h6 class="fw-bold text-primary mb-0"><i class="fa-solid fa-users-rectangle me-2"></i>A. Acceso por Grupo</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="small text-muted mb-3">Todos los usuarios vinculados al grupo seleccionado tendrán acceso automático.</p>
+                                                    <div class="mb-3">
+                                                        <label for="cboGrupo" class="form-label small fw-bold text-muted mb-1">Seleccionar Grupo de Usuarios</label>
+                                                        <select class="form-select border-primary" id="cboGrupo" name="Id_Grupo_Usuarios" style="width: 100%;">
+                                                            <option value="0">-- Ninguno (Solo lista individual) --</option>
+                                                            @foreach (var g in gruposDisponibles)
+                                                            {
+                                                                <!option value="@g.Id" @(g.Id == idGrupoSeleccionado ? "selected" : "")>@g.Nombre</!option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    <div class="mt-2 small text-primary">
+                                                        <i class="fa-solid fa-circle-info me-1"></i> Útil para "Líderes", "Ventas", etc.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card h-100 border-secondary border-opacity-25">
+                                                <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                                                    <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-user-plus me-2"></i>B. Lista Individual</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="small text-muted mb-3">Agrega usuarios específicos adicionales (aunque no estén en el grupo).</p>
+                                                    <div class="input-group mb-2">
+                                                        <select class="form-select" id="cboUsuarios">
+                                                            <option value="">- Buscar Usuario -</option>
+                                                            @foreach (dynamic u in todosUsuarios)
+                                                            {
+                                                                <!option value="@u.Id" data-verificado="@u.Verificado.ToString().ToLower()">
+                                                                    @u.Nombre @(u.Verificado ? "✅" : "⚠️")
+                                                                </!option>
+                                                            }
+                                                        </select>
+                                                        <button type="button" class="btn btn-secondary" onclick="agregarInscriptor()">
+                                                            <i class="fa-solid fa-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="border rounded bg-white p-0 overflow-auto" style="max-height: 150px;">
+                                                        <input type="hidden" name="IdsInscriptores" id="hdnIdsInscriptores" value="@idsInscriptoresStr" />
+                                                        <ul class="list-group list-group-flush" id="listaInscriptores">
+                                                            @{
+                                                                var hist = ViewBag.InscriptoresConHistorial as List<int> ?? new List<int>();
+                                                            }
+                                                            @foreach (var ins in inscriptores)
+                                                            {
+                                                                bool locked = hist.Contains(ins.Id_Usuario);
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center item-whitelist py-2" data-id="@ins.Id_Usuario">
+                                                                    <span class="small fw-bold text-truncate" style="max-width: 80%;">
+                                                                        <i class="fa-solid fa-user-check me-2 text-success"></i>@ins.NombreUsuario
+                                                                    </span>
+                                                                    @if (locked)
+                                                                    {
+                                                                        <span class="badge bg-light text-muted border"><i class="fa-solid fa-lock"></i></span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <button type="button" class="btn btn-sm text-danger p-0" onclick="removerInscriptor(@ins.Id_Usuario)">
+                                                                            <i class="fa-solid fa-xmark"></i>
+                                                                        </button>
+                                                                    }
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 mt-4">
+                                            <div class="card border-info bg-info bg-opacity-10 rounded-4">
+                                                <div class="card-header bg-transparent border-0 pt-3">
+                                                    <h6 class="fw-bold text-info mb-0"><i class="fa-solid fa-link me-2"></i>C. Validación por Evento Previo</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="small text-muted mb-3">Requiere que el usuario esté inscrito y tenga <strong>al menos un pago aprobado</strong> en el evento seleccionado.</p>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small fw-bold text-dark">1. Seleccionar Evento Origen</label>
+                                                            <select class="form-select" id="cboEventoVinculado" name="Id_Evento_Vinculado" onchange="cargarModalidadesVinculadas(this.value)">
+                                                                <option value="0">-- Ninguno (Sin dependencia) --</option>
+                                                                @foreach (var e in eventosVinculables)
+                                                                {
+                                                                    <!option value="@e.Id" @(e.Id == idEventoVinculado ? "selected" : "")>@e.Titulo @(!e.Activo ? "(Pasado/Inactivo)" : "")</!option>
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small fw-bold text-dark">2. Modalidades Válidas (Opcional)</label>
+                                                            <div id="cntModalidadesVinculadas" class="p-3 bg-white border rounded shadow-sm" style="max-height: 150px; overflow-y: auto;">
+                                                                <span class="text-muted small">Selecciona un evento para ver modalidades.</span>
+                                                            </div>
+                                                            <input type="hidden" name="Subtipos_Vinculados_Acceso" id="hdnSubVinculados" value="@subtiposVinculados" />
+                                                            <div class="form-text small">Si no marcas ninguna, cualquier persona del evento origen con pago podrá acceder.</div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="alert alert-warning mt-3 small mb-0">
+                                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                        <strong>Nota:</strong> El acceso se concede si el usuario cumple con <strong>CUALQUIERA</strong> de las condiciones habilitadas (Grupo O Lista Individual O Evento Previo).
+                                    </div>
+                                </div>
+
+                                <h6 class="text-success fw-bold text-uppercase small mb-3 border-bottom pb-2 mt-5">Opciones de Publicación</h6>
+                                <div class="d-flex gap-4 flex-wrap">
+                                    <div class="form-check form-switch p-2 border rounded bg-light pe-4">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="Es_Destacado" name="Es_Destacado" value="true" @(esDestacado ? "checked" : "")>
+                                        <input type="hidden" name="Es_Destacado" value="false" />
+                                        <label class="form-check-label fw-bold" for="Es_Destacado">Destacar en Inicio</label>
+                                    </div>
+                                    <div class="form-check form-switch p-2 border rounded bg-light pe-4">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="Activo" name="Activo" value="true" @(activo ? "checked" : "")>
+                                        <input type="hidden" name="Activo" value="false" />
+                                        <label class="form-check-label fw-bold" for="Activo">Evento Público / Activo</label>
+                                    </div>
+                                    <div class="form-check form-switch p-2 border rounded bg-danger bg-opacity-10 border-danger pe-4">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="Bloqueado" name="Bloqueado" value="true" @((ViewBag.Bloqueado != null && (bool)ViewBag.Bloqueado) ? "checked" : "") style="cursor:pointer;">
+                                        <input type="hidden" name="Bloqueado" value="false" />
+                                        <label class="form-check-label fw-bold text-danger" for="Bloqueado">Bloquear Evento</label>
+                                        <div class="form-text small mt-1 text-dark">Impide nuevos registros, edición de datos y cancelaciones. Solo permite pagar deudas.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-top p-4">
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow hover-scale"><i class="fa-solid fa-save me-2"></i> Guardar Todo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="tplSubtipo">
+    <tr class="fila-subtipo">
+        <td><input type="hidden" name="Subtipos[IDX].Id_Subtipo" value="0" disabled /><input type="hidden" name="Subtipos[IDX].Activo" value="true" class="inp-act-sub" disabled /><input type="text" name="Subtipos[IDX].Nombre" class="form-control form-control-sm" placeholder="Ej. Cabaña" required disabled /></td>
+        <td><input type="number" step="0.01" name="Subtipos[IDX].Costo" class="form-control form-control-sm" required disabled /></td>
+        <td><input type="number" name="Subtipos[IDX].Cupo" class="form-control form-control-sm" required disabled /></td>
+        <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="eliminarFila(this, '.inp-act-sub')"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>
+</template>
+
+<template id="tplProductoExtra">
+    <tr class="fila-extra">
+        <td class="text-start">
+            <input type="hidden" name="ProductosExtra[IDX].Id_ProductoExtra" value="0" disabled />
+            <input type="hidden" name="ProductosExtra[IDX].Activo" value="true" class="inp-act-ext" disabled />
+            <input type="text" name="ProductosExtra[IDX].Nombre_Producto" class="form-control form-control-sm mb-1" placeholder="Ej. Cena de Gala" required disabled />
+            <input type="text" name="ProductosExtra[IDX].Descripcion" class="form-control form-control-sm text-secondary" placeholder="Descripci&oacute;n breve (Opcional)" disabled />
+        </td>
+        <td><input type="number" step="0.01" name="ProductosExtra[IDX].Precio" class="form-control form-control-sm" value="0" required disabled /></td>
+        <td><input type="number" name="ProductosExtra[IDX].Cantidad_Minima" class="form-control form-control-sm" value="0" required disabled /></td>
+        <td><input type="number" name="ProductosExtra[IDX].Cantidad_Maxima" class="form-control form-control-sm" value="1" required disabled /></td>
+        <td>
+            <select name="ProductosExtra[IDX].Id_Subtipo" class="form-select form-select-sm" disabled>
+                <option value="">Todas (Universal)</option>
+                @if (ViewBag.Subtipos != null)
+                {
+                    foreach (var sub in ViewBag.Subtipos)
+                    {
+                        <option value="@sub.Id_Subtipo">@sub.Nombre</option>
+                    }
+                }
+            </select>
+        </td>
+        <td><button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="eliminarFila(this, '.inp-act-ext')"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>
+</template>
+
+<template id="tplPregunta">
+    <div class="card p-2 mb-2 border-light bg-light fila-pregunta">
+        <input type="hidden" name="Preguntas[IDX].Id_Pregunta" value="0" disabled />
+        <input type="hidden" name="Preguntas[IDX].Eliminada" value="false" class="inp-eliminada" disabled />
+        <div class="row g-2 align-items-center">
+            <div class="col-md-3"><select name="Preguntas[IDX].Tipo" class="form-select form-select-sm sel-tipo-preg" onchange="toggleOpciones(this)" disabled><option value="1">Texto Libre</option><option value="2">Sí / No</option><option value="3">Opción Múltiple</option></select></div>
+            <div class="col-md-8"><input type="text" name="Preguntas[IDX].Texto" class="form-control form-control-sm mb-1" placeholder="¿Pregunta?" required disabled /><input type="text" name="Preguntas[IDX].Opciones" class="form-control form-control-sm bg-white inp-opciones" placeholder="Opciones separadas por |" style="display:none;" disabled /></div>
+            <div class="col-md-1 text-end"><button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="eliminarFila(this, '.inp-eliminada')"><i class="fa-solid fa-trash"></i></button></div>
+        </div>
+    </div>
+</template>
+
+<template id="tplPago">
+    <tr class="fila-pago">
+        <td class="text-center fw-bold num-pago">#</td>
+        <td><input type="hidden" name="CalendarioPagos[IDX].Id_Calendario_Pago" value="0" disabled /><input type="hidden" name="CalendarioPagos[IDX].Eliminado" value="false" class="inp-del-pago" disabled /><input type="hidden" name="CalendarioPagos[IDX].Numero_Pago" value="0" class="inp-num-pago" disabled /><input type="datetime-local" name="CalendarioPagos[IDX].Fecha_Limite" class="form-control form-control-sm inp-fecha" required disabled /></td>
+        <td><input type="number" step="0.01" name="CalendarioPagos[IDX].Monto" class="form-control form-control-sm inp-monto" required disabled /></td>
+        <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="eliminarFila(this, '.inp-del-pago')"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>
+</template>
+
+<div class="modal fade" id="modalLoteSubtipos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-layer-group me-2"></i>Crear Modalidades en Lote</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pb-4 pt-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Formato del Nombre</label>
+                    <input type="text" id="txtLoteFormato" class="form-control" placeholder="Ej. Asiento #{n} - VIP" value="Asiento #{n}" />
+                    <div class="form-text small">Usa <strong>{n}</strong> donde quieras que aparezca el número progresivo.</div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Cantidad a crear</label>
+                        <input type="number" id="txtLoteCantidad" class="form-control" min="1" max="100" value="40" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Inicia en</label>
+                        <input type="number" id="txtLoteInicio" class="form-control" min="1" value="1" />
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Costo ($)</label>
+                        <input type="number" id="txtLoteCosto" class="form-control" step="0.01" value="0.00" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Cupo c/u</label>
+                        <input type="number" id="txtLoteCupo" class="form-control" value="1" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" onclick="generarLoteSubtipos()">Generar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAlertaEvento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark border-0">
+                <h5 class="modal-title fw-bold" id="modalAlertaTitulo">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Atención
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pb-4 pt-4">
+                <p id="modalAlertaMensaje" class="mb-0 fs-6 text-dark"></p>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-secondary fw-bold px-4" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarBorrado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pb-4 pt-4">
+                <p class="mb-3 fs-5 text-dark text-center fw-bold">
+                    ¿Estás totalmente seguro de borrar este evento?
+                    </p>
+                <p class="mb-0 text-muted small text-center">
+                    Esta acción eliminará para siempre las configuraciones, modalidades, calendario de pagos y preguntas asociadas.<br>
+                    <span class="text-danger fw-bold">Esta acción NO se puede deshacer.</span>
+                </p>
+            </div>
+            <div class="modal-footer border-0 bg-light d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger fw-bold px-4 rounded-pill shadow-sm" onclick="document.getElementById('formBorrarEvento').submit();">
+                    Sí, borrar evento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+        $('#cboUsuarios').select2({
+            placeholder: "- Buscar Usuario -",
+            allowClear: true,
+            language: {
+                noResults: function() { return "No se encontraron usuarios"; }
+            }
+        });
+        $('#cboGrupo, #cboEventoVinculado').select2({
+            width: '100%' 
+        });
+
+        const idVinculadoInicial = parseInt($('#cboEventoVinculado').val());
+        if(idVinculadoInicial > 0) { 
+            cargarModalidadesVinculadas(idVinculadoInicial, "@subtiposVinculados"); 
+        }
+
+        let formCambiado = false;
+        const btnGrafico = document.getElementById('btnEditorGrafico');
+        const alertaCambios = document.getElementById('alertaCambiosImagen');
+        const filePortada = document.getElementById('filePortada');
+        if(btnGrafico) {
+            document.getElementById('formEditor').addEventListener('change', () => {
+                formCambiado = true;
+                btnGrafico.classList.add('disabled', 'opacity-50');
+                btnGrafico.style.pointerEvents = 'none';
+                if(alertaCambios) alertaCambios.classList.remove('d-none');
+            });
+            if(filePortada && filePortada.files.length > 0) {
+                btnGrafico.classList.add('disabled', 'opacity-50');
+                btnGrafico.style.pointerEvents = 'none';
+            }
+        }
+        });
+
+        function cargarModalidadesVinculadas(id, seleccionados = "") {
+            const container = $('#cntModalidadesVinculadas');
+            const hdn = $('#hdnSubVinculados');
+            if(id == 0) {
+                container.html('<span class="text-muted small">Selecciona un evento para ver modalidades.</span>');
+                hdn.val("");
+                return;
+            }
+
+            container.html('<div class="text-center py-2"><i class="fa-solid fa-spinner fa-spin text-info"></i></div>');
+            $.get("@Url.Action("GetSubtiposEvento")", { idEvento: id }, function(res) {
+                if(res && res.length > 0) {
+                    let html = '<div class="row">';
+                    const arraySeleccionados = seleccionados.split(',');
+                    res.forEach(m => {
+                        const checked = arraySeleccionados.includes(m.id.toString()) ? "checked" : "";
+                        html += `<div class="col-12"><div class="form-check">
+                        <input class="form-check-input chk-sub-vinc" type="checkbox" value="${m.id}" id="sv_${m.id}" ${checked} onchange="actualizarSubVinculados()">
+                        <label class="form-check-label small" for="sv_${m.id}">${m.nombre}</label>
+                        </div></div>`;
+                    });
+                    html += '</div>';
+                    container.html(html);
+                } else {
+                    container.html('<span class="text-info small"><i class="fa-solid fa-circle-info me-1"></i> Este evento no tiene modalidades. Cualquier inscrito con pago podrá acceder.</span>');
+                    hdn.val("");
+                }
+            });
+        }
+
+        function actualizarSubVinculados() {
+            const seleccionados = $('.chk-sub-vinc:checked').map(function() { return this.value; }).get();
+            $('#hdnSubVinculados').val(seleccionados.join(','));
+        }
+    </script>
+}
+<script>
+    function toggleRegistro() {
+        var chk = document.getElementById('chkRegistro');
+        var panel = document.getElementById('panelRegistroContent');
+        if (panel) { panel.style.display = chk.checked ? 'block' : 'none'; }
+        toggleParciales();
+    }
+
+    function toggleParciales() {
+        var chkPago = document.getElementById('chkPago');
+        var panel = document.getElementById('panelBancario');
+        if (panel) { panel.style.display = chkPago.checked ? 'block' : 'none'; }
+        toggleTablaParciales(); 
+        toggleBanco();
+    }
+
+    function toggleBanco() {
+        var chk = document.getElementById('chkTransferencia');
+        var div = document.getElementById('divSelectBanco');
+        if (chk && div) { div.style.display = chk.checked ? 'block' : 'none'; }
+    }
+
+    function toggleTablaParciales() {
+        var chk = document.getElementById('chkParciales');
+        var pago = document.getElementById('chkPago');
+        var tabla = document.getElementById('contenedorTablaPagos');
+        if (tabla) { tabla.style.display = (chk.checked && pago.checked) ? 'block' : 'none'; }
+    }
+
+    function toggleOpciones(select) {
+        var row = select.closest('.row');
+        var inp = row.querySelector('.inp-opciones');
+        if (inp) { inp.style.display = (select.value == '3') ? 'block' : 'none'; }
+    }
+
+    function toggleWhitelist() {
+        var chk = document.getElementById('Es_Privado');
+        var panel = document.getElementById('panelWhitelist');
+        if (panel) { panel.style.display = chk.checked ? 'block' : 'none'; }
+
+        var icono = document.getElementById('iconoPrivacidad');
+        var texto = document.getElementById('textoPrivacidad');
+        var hintPrivado = document.getElementById('hintPrivado');
+        var hintPublico = document.getElementById('hintPublico');
+        if(chk && icono && texto && hintPrivado && hintPublico) {
+            if (chk.checked) {
+                icono.className = 'fa-solid fa-lock text-primary me-2';
+                texto.innerText = 'Acceso Privado'; 
+                texto.className = 'text-primary';
+
+                hintPrivado.innerHTML = '<i class="fa-solid fa-check text-success me-2"></i> <span class="fw-bold text-dark">El Evento NO SERÁ VISIBLE para Todos</span>';
+                hintPublico.innerHTML = '<i class="fa-solid fa-xmark text-danger opacity-50 me-2"></i> <span class="text-muted text-decoration-line-through">Cualquier usuario registrado PODRÁ VER el Evento.</span>';
+                chk.style.backgroundColor = '#0d6efd'; 
+                chk.style.borderColor = '#0d6efd';
+            } else {
+                icono.className = 'fa-solid fa-globe text-success me-2';
+                texto.innerText = 'Acceso Público'; 
+                texto.className = 'text-success';
+
+                hintPrivado.innerHTML = '<i class="fa-solid fa-xmark text-danger opacity-50 me-2"></i> <span class="text-muted text-decoration-line-through">El Evento NO SERÁ VISIBLE para Todos</span>';
+                hintPublico.innerHTML = '<i class="fa-solid fa-check text-success me-2"></i> <span class="fw-bold text-dark">Cualquier usuario registrado PODRÁ VER el Evento.</span>';
+                chk.style.backgroundColor = '';
+                chk.style.borderColor = '';
+            }
+        }
+    }
+
+    var arrInscriptores = [@idsInscriptoresStr];
+    var arrBloqueados = [@string.Join(",", (ViewBag.InscriptoresConHistorial as List<int> ?? new List<int>()))];
+    
+    function agregarInscriptor() {
+        var cbo = document.getElementById('cboUsuarios');
+        var id = parseInt(cbo.value);
+        if (!id) return;
+        if (arrInscriptores.includes(id)) return;
+
+        var option = cbo.options[cbo.selectedIndex];
+        if (option.getAttribute('data-verificado') === 'false') {
+            alert('⛔ NO PERMITIDO: El usuario seleccionado no tiene su correo verificado.');
+            return;
+        }
+
+        arrInscriptores.push(id);
+        actualizarHiddenInscriptores();
+
+        var li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center item-whitelist py-2';
+        li.setAttribute('data-id', id);
+        li.innerHTML = `<span class="small fw-bold text-truncate" style="max-width: 80%;"><i class="fa-solid fa-user-check me-2 text-success"></i>${option.text}</span>
+        <button type="button" class="btn btn-sm text-danger p-0" onclick="removerInscriptor(${id})">
+            <i class="fa-solid fa-xmark"></i>
+            </button>`;
+        document.getElementById('listaInscriptores').appendChild(li);
+        $('#cboUsuarios').val(null).trigger('change');
+    }
+
+    function removerInscriptor(id) {
+        if (arrBloqueados.includes(id)) { 
+            alert('⚠️ DENEGADO: Este usuario ya tiene historial de registros en este evento.'); 
+            return; 
+        }
+        arrInscriptores = arrInscriptores.filter(x => x !== id);
+        actualizarHiddenInscriptores();
+        var item = document.querySelector(`.item-whitelist[data-id="${id}"]`);
+        if (item) item.remove();
+    }
+
+    function actualizarHiddenInscriptores() { 
+        document.getElementById('hdnIdsInscriptores').value = arrInscriptores.join(','); 
+    }
+
+    function agregarItemGenerico(idContainer, idTemplate, claseItem) {
+        var container = document.getElementById(idContainer);
+        var template = document.getElementById(idTemplate);
+        if (!container || !template) return;
+
+        var index = document.querySelectorAll(claseItem).length;
+        var html = template.innerHTML.replace(/IDX/g, index);
+        var tempElement;
+        if (container.tagName === 'TBODY') {
+            tempElement = document.createElement('tbody');
+            tempElement.innerHTML = html;
+            container.appendChild(tempElement.firstElementChild);
+        } else {
+            tempElement = document.createElement('div');
+            tempElement.innerHTML = html;
+            container.appendChild(tempElement.firstElementChild);
+        }
+        var inputs = container.lastElementChild.querySelectorAll('input, select, textarea, button');
+        inputs.forEach(el => el.removeAttribute('disabled'));
+    }
+
+    function marcarEliminarFoto(btn, url) {
+        var container = document.getElementById('contenedorImagenesAEliminar');
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'imagenesAEliminar';
+        input.value = url;
+        container.appendChild(input);
+        var card = btn.closest('.col-md-3') || btn.closest('.col-6');
+        if (card) card.style.display = 'none';
+    }
+
+    function agregarSubtipo() { agregarItemGenerico('tbodySubtipos', 'tplSubtipo', '.fila-subtipo'); }
+    function agregarProductoExtra() { agregarItemGenerico('tbodyProductosExtra', 'tplProductoExtra', '.fila-extra'); }
+    function abrirModalLote() { 
+        var modal = new bootstrap.Modal(document.getElementById('modalLoteSubtipos'));
+        modal.show(); 
+    }
+
+    function generarLoteSubtipos() {
+        var formato = document.getElementById('txtLoteFormato').value;
+        var cantidad = parseInt(document.getElementById('txtLoteCantidad').value);
+        var inicio = parseInt(document.getElementById('txtLoteInicio').value);
+        var costo = parseFloat(document.getElementById('txtLoteCosto').value);
+        var cupo = parseInt(document.getElementById('txtLoteCupo').value);
+        if (!formato.includes('{n}')) { 
+            alert("El formato debe incluir el comodín {n} para colocar el número."); 
+            return; 
+        }
+        if (isNaN(cantidad) || cantidad <= 0) return;
+
+        var container = document.getElementById('tbodySubtipos');
+        var template = document.getElementById('tplSubtipo');
+        for (var i = 0; i < cantidad; i++) {
+            var numActual = inicio + i;
+            var numStr = numActual < 10 ? "0" + numActual : numActual.toString();
+            var nombreFinal = formato.replace(/{n}/g, numStr);
+            var index = document.querySelectorAll('.fila-subtipo').length;
+            var html = template.innerHTML.replace(/IDX/g, index);
+            
+            var tempElement = document.createElement('tbody');
+            tempElement.innerHTML = html;
+            var nuevaFila = tempElement.firstElementChild;
+            nuevaFila.querySelector('input[name$=".Nombre"]').value = nombreFinal;
+            nuevaFila.querySelector('input[name$=".Costo"]').value = costo;
+            nuevaFila.querySelector('input[name$=".Cupo"]').value = cupo;
+            
+            var inputs = nuevaFila.querySelectorAll('input, select, textarea, button');
+            inputs.forEach(el => el.removeAttribute('disabled'));
+
+            container.appendChild(nuevaFila);
+        }
+
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalLoteSubtipos'));
+        modal.hide();
+    }
+
+    function agregarPregunta() { agregarItemGenerico('contenedorPreguntas', 'tplPregunta', '.fila-pregunta'); }
+    function agregarPago() {
+        agregarItemGenerico('tbodyPagos', 'tplPago', '.fila-pago');
+        renumerarPagos();
+    }
+
+    function eliminarFila(btn, selectorBorradoLogico) {
+        var fila = btn.closest('.fila-subtipo, .fila-pago, .fila-pregunta, .fila-extra');
+        if (!fila) return;
+
+        var inputId = fila.querySelector('input[name*=".Id_"]');
+        var esNuevo = (inputId && (inputId.value === "0" || inputId.value === ""));
+        if (esNuevo) {
+            fila.remove();
+        } else {
+            var inputOculto = fila.querySelector(selectorBorradoLogico);
+            if (inputOculto) {
+                fila.style.display = 'none';
+                if (selectorBorradoLogico.includes('inp-act-sub') || selectorBorradoLogico.includes('inp-act-ext')) { 
+                    inputOculto.value = 'false'; 
+                } else {
+                    inputOculto.value = 'true';
+                }
+                inputOculto.removeAttribute('disabled');
+                fila.querySelectorAll('input, select, textarea').forEach(el => { 
+                    el.removeAttribute('required'); 
+                });
+            } else {
+                fila.remove(); 
+            }
+        }
+
+        if (typeof renumerarPagos === 'function') renumerarPagos();
+    }
+
+    var callbackModalAlerta = null;
+    document.getElementById('modalAlertaEvento').addEventListener('hidden.bs.modal', function () {
+        if (typeof callbackModalAlerta === 'function') {
+            callbackModalAlerta(); 
+            callbackModalAlerta = null; 
+        }
+    });
+    function mostrarModalAlerta(titulo, mensaje, callbackAlCerrar) {
+        document.getElementById('modalAlertaTitulo').innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i>' + titulo;
+        document.getElementById('modalAlertaMensaje').innerHTML = mensaje.replace(/\n/g, '<br>');
+        callbackModalAlerta = callbackAlCerrar || null;
+        var modal = new bootstrap.Modal(document.getElementById('modalAlertaEvento'));
+        modal.show();
+    }
+
+    function generarCalendarioAuto() {
+        var inputCosto = document.getElementById('txtCostoTotal');
+        var inputNum = document.getElementById('txtNumPagosAuto');
+        var inputFecha = document.getElementById('txtFechaInicio');
+
+        var costo = parseFloat(inputCosto.value);
+        var num = parseInt(inputNum.value);
+        var fechaStr = inputFecha.value;
+        if (!costo || costo <= 0 || !fechaStr) {
+            mostrarModalAlerta(
+                "Datos incompletos",
+                "Para generar el calendario automático necesitas:\n\n1. Definir un <strong>Costo General</strong> válido.\n2. Definir la <strong>Fecha de Inicio</strong> del evento."
+            );
+            return;
+        }
+
+        var fechaEvento = new Date(fechaStr);
+        var fechaHoy = new Date();
+        if (fechaEvento <= fechaHoy) {
+            mostrarModalAlerta(
+                "Fecha inválida", 
+                "La fecha de inicio del evento ya pasó o es hoy.\n\nAjusta la configuración a una <strong>fecha futura</strong> para poder calcular las parcialidades correctamente.", 
+            function() {
+                var tabGeneralBtn = document.querySelector('button[data-bs-target="#panel-general"]');
+                if (tabGeneralBtn) { 
+                    var tabGeneral = new bootstrap.Tab(tabGeneralBtn);
+                    tabGeneral.show();
+                }
+
+                setTimeout(function() {
+                    inputFecha.setAttribute('title', 'Debe ser en el futuro para calcular parcialidades.');
+
+                    if(typeof inputFecha.setCustomValidity === 'function') { 
+                        inputFecha.setCustomValidity('La fecha debe ser en el futuro.'); 
+                        inputFecha.reportValidity();
+                    }
+
+                    inputFecha.focus();
+                    inputFecha.addEventListener('input', function() { 
+                        inputFecha.setCustomValidity('');
+                        inputFecha.removeAttribute('title');
+                    }, { once: true });
+                }, 200);
+            }
+            );
+            return;
+        }
+
+        var limiteFinal = new Date(fechaEvento);
+        limiteFinal.setDate(limiteFinal.getDate() - 30);
+        if (limiteFinal < fechaHoy) limiteFinal = new Date(fechaEvento);
+
+        var montoBase = Math.floor(costo / num);
+        var resto = costo - (montoBase * (num - 1));
+        var tiempoTotal = limiteFinal.getTime() - fechaHoy.getTime();
+        var intervalo = (tiempoTotal < 0 ? 0 : tiempoTotal) / Math.max(1, num - 1);
+        document.querySelectorAll('.fila-pago').forEach(row => {
+            var inpId = row.querySelector('input[name*="Id_Calendario"]');
+            if (inpId && inpId.value == "0") { row.remove(); }
+            else {
+                var inpDel = row.querySelector('.inp-del-pago');
+                if (inpDel) { 
+                    row.style.display = 'none'; 
+                    inpDel.value = 'true';
+                    inpDel.removeAttribute('disabled');
+                }
+            }
+        });
+        for (var i = 0; i < num; i++) {
+            agregarPago();
+            var filasVisibles = Array.from(document.querySelectorAll('.fila-pago')).filter(x => x.style.display !== 'none');
+            var tr = filasVisibles[filasVisibles.length - 1];
+            var monto = (i === num - 1) ? resto : montoBase;
+            var fechaCalculada = (i === 0) ?
+            fechaHoy : (i === num - 1 ? limiteFinal : new Date(fechaHoy.getTime() + (intervalo * i)));
+            var localDate = new Date(fechaCalculada.getTime() - (fechaCalculada.getTimezoneOffset() * 60000));
+            tr.querySelector('.inp-monto').value = monto.toFixed(2);
+            tr.querySelector('.inp-fecha').value = localDate.toISOString().slice(0, 16);
+        }
+    }
+
+    function renumerarPagos() {
+        var c = 1;
+        document.querySelectorAll('.fila-pago').forEach(row => {
+            if (row.style.display !== 'none') {
+                row.querySelector('.num-pago').innerText = c;
+                row.querySelector('.inp-num-pago').value = c;
+                c++;
+            }
+        });
+    }
+
+    const dropzone = document.getElementById('dropzoneGaleria');
+    const inputGaleria = document.getElementById('inputGaleriaNuevas');
+    const previewContainer = document.getElementById('previewNuevasFotos');
+
+    let dt = new DataTransfer();
+    let descripcionesMapeo = [];
+    if (dropzone && inputGaleria && previewContainer) {
+        dropzone.addEventListener('click', () => inputGaleria.click());
+        dropzone.addEventListener('dragover', (e) => { 
+            e.preventDefault();
+            dropzone.classList.add('dragover'); 
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => { 
+            e.preventDefault();
+            dropzone.classList.remove('dragover'); 
+            procesarArchivosNuevos(e.dataTransfer.files); 
+        });
+        inputGaleria.addEventListener('change', (e) => { 
+            procesarArchivosNuevos(e.target.files); 
+        });
+    }
+
+    function procesarArchivosNuevos(files) {
+        for (let i = 0; i < files.length; i++) {
+            if (files[i].size > 10 * 1024 * 1024) { 
+                alert(`La imagen ${files[i].name} pesa más de 10MB.`); 
+                continue;
+            }
+            dt.items.add(files[i]);
+            descripcionesMapeo.push("");
+        }
+        actualizarInputYRenderizarNuevas();
+    }
+
+    function actualizarInputYRenderizarNuevas() { 
+inputGaleria.files = dt.files; 
+renderizarPreviewsNuevas(); 
+    }
+
+    function renderizarPreviewsNuevas() {
+        previewContainer.innerHTML = '';
+        Array.from(dt.files).forEach((file, index) => {
+            let reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function(e) {
+                let col = document.createElement('div');
+                col.className = 'col-md-3 col-6 preview-card';
+                col.draggable = true;
+                col.dataset.index = index;
+                col.innerHTML = `
+                <div class="card shadow-sm border-success h-100 bg-light">
+                <div class="position-absolute top-0 start-0 m-1">
+                <span class="badge bg-success rounded-circle"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
+                </div>
+                <img src="${e.target.result}" class="preview-img">
+                <div
+                    class="card-body p-2 text-center">
+                <p class="small text-truncate mb-1 text-muted" title="${file.name}">${file.name}</p>
+                <input type="text" name="descripcionesNuevasFotos" class="form-control form-control-sm mb-2 border-success inp-desc-dinamico" placeholder="Descripción (Opcional)" value="${descripcionesMapeo[index]}">
+                
+                <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="eliminarArchivoNuevo(${index})">
+                <i class="fa-solid fa-trash me-1"></i> Quitar
+                </button>
+                </div>
+
+                </div>
+                `;
+                setTimeout(() => {
+                    let textInput = col.querySelector('.inp-desc-dinamico');
+                    textInput.addEventListener('input', function(ev) {
+                        let currentIndex = parseInt(col.dataset.index);
+                        descripcionesMapeo[currentIndex] = ev.target.value;
+                    });
+                }, 0);
+                col.addEventListener('dragstart', handleDragStart);
+                col.addEventListener('dragover', handleDragOver);
+                col.addEventListener('drop', handleDrop);
+                col.addEventListener('dragend', handleDragEnd);
+
+                previewContainer.appendChild(col);
+            }
+        });
+    }
+
+    let dragSrcEl = null;
+    function handleDragStart(e) {
+        if(e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button') { 
+            e.preventDefault(); 
+            return;
+        }
+        dragSrcEl = this;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => this.style.opacity = '0.4', 0);
+    }
+
+    function handleDragOver(e) { 
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move'; 
+        return false; 
+    }
+
+    function handleDrop(e) {
+        e.stopPropagation();
+        if (dragSrcEl !== null && dragSrcEl !== this) {
+
+            const allCards = Array.from(previewContainer.querySelectorAll('.preview-card'));
+            const srcIndexDOM = allCards.indexOf(dragSrcEl);
+            const targetIndexDOM = allCards.indexOf(this);
+
+            if (srcIndexDOM < targetIndexDOM) {
+                this.parentNode.insertBefore(dragSrcEl, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(dragSrcEl, this); 
+            }
+
+            let newDt = new DataTransfer();
+            let newDescripciones = [];
+            const reorderedCards = previewContainer.querySelectorAll('.preview-card');
+            reorderedCards.forEach((card, newIndex) => {
+                let oldIndex = parseInt(card.dataset.index);
+                newDt.items.add(dt.files[oldIndex]);
+                newDescripciones.push(descripcionesMapeo[oldIndex]);
+                card.dataset.index = newIndex;
+                let btn = card.querySelector('button');
+                if (btn) btn.setAttribute('onclick', `eliminarArchivoNuevo(${newIndex})`);
+            });
+            dt = newDt; 
+            descripcionesMapeo = newDescripciones;
+            inputGaleria.files = dt.files;
+        }
+        return false;
+    }
+
+    function handleDragEnd(e) {
+        this.style.opacity = '1'; 
+        dragSrcEl = null; 
+    }
+
+    window.eliminarArchivoNuevo = function(indexToRemove) {
+        let newDt = new DataTransfer();
+        let filesArray = Array.from(dt.files);
+        filesArray.splice(indexToRemove, 1);
+        descripcionesMapeo.splice(indexToRemove, 1);
+        filesArray.forEach((file) => newDt.items.add(file));
+        dt = newDt;
+        actualizarInputYRenderizarNuevas();
+    }
+
+    var txtInicio = document.getElementById('txtFechaInicio');
+    if (txtInicio) {
+        txtInicio.addEventListener('change', function() {
+            var valInicio = this.value;
+            var txtFin = document.getElementById('txtFechaFin');
+            if (valInicio && txtFin) {
+                var d = new Date(valInicio);
+                d.setHours(d.getHours() + 2);
+                var localDate = new Date(d.getTime() - (d.getTimezoneOffset() * 60000));
+                txtFin.value = localDate.toISOString().slice(0, 16);
+            }
+        });
+    }
+
+    toggleRegistro();
+    if (typeof toggleWhitelist === 'function') toggleWhitelist();
+    toggleCuentaPersonalizada();
+
+    function toggleCuentaPersonalizada() {
+        var chkCustom = document.getElementById('chkUsaCuentaPersonalizada');
+        var divCustom = document.getElementById('divCuentaPersonalizada');
+        var chkTarjeta = document.getElementById('chkTarjeta');
+        var chkTransferencia = document.getElementById('chkTransferencia');
+        var cboDefault = document.getElementById('cboCuentaBancariaDefault');
+
+        if (chkCustom && divCustom) {
+            if (chkCustom.checked) {
+                divCustom.style.display = 'block';
+                if (cboDefault) cboDefault.disabled = true;
+                if (chkTarjeta) {
+                    chkTarjeta.checked = false;
+                    chkTarjeta.disabled = true;
+                }
+                if (chkTransferencia) {
+                    chkTransferencia.checked = true;
+                    if (typeof toggleBanco === 'function') toggleBanco();
+                }
+            } else {
+                divCustom.style.display = 'none';
+                if (cboDefault) cboDefault.disabled = false;
+                if (chkTarjeta) {
+                    chkTarjeta.disabled = false;
+                }
+            }
+        }
+    }
+
+    const contenedorExistentes = document.getElementById('contenedorFotosExistentes');
+    let dragSrcExistente = null;
+
+    if (contenedorExistentes) {
+        const cardsExistentes = contenedorExistentes.querySelectorAll('.card-existente');
+        cardsExistentes.forEach(card => {
+            card.addEventListener('dragstart', function(e) {
+                if(e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button') { 
+                    e.preventDefault(); return;
+                }
+                dragSrcExistente = this; 
+                e.dataTransfer.effectAllowed = 'move'; 
+                setTimeout(() => this.style.opacity = '0.4', 0);
+            });
+            card.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move'; 
+                return false;
+            });
+            card.addEventListener('drop', function(e) {
+                e.stopPropagation();
+                if (dragSrcExistente !== null && 
+                dragSrcExistente !== this) {
+                    const allCards = Array.from(contenedorExistentes.querySelectorAll('.card-existente'));
+                    const srcIndex = allCards.indexOf(dragSrcExistente);
+                    const targetIndex = allCards.indexOf(this);
+                    if (srcIndex < targetIndex) { 
+                        this.parentNode.insertBefore(dragSrcExistente, this.nextSibling);
+                    } else {
+                        this.parentNode.insertBefore(dragSrcExistente, this); 
+                    }
+                    reindexarExistentes();
+                }
+                return false;
+            });
+            card.addEventListener('dragend', function(e) { 
+                this.style.opacity = '1';
+                dragSrcExistente = null;
+            });
+        });
+    }
+
+    function reindexarExistentes() {
+        const cards = contenedorExistentes.querySelectorAll('.card-existente');
+        cards.forEach((card, index) => {
+            const idInput = card.querySelector('.input-id-foto');
+            const descInput = card.querySelector('.input-desc-foto');
+            if (idInput) idInput.name = `Galeria[${index}].Id_Foto`;
+            if (descInput) descInput.name = `Galeria[${index}].Descripcion`;
+        });
+    }
+</script>

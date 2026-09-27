@@ -1,0 +1,525 @@
+﻿@model List<List<RedAJP.Models.BoletoPersonalViewModel>>
+@{
+    Layout = null;
+    decimal CostoXBoleto = ViewBag.CostoBoleto;
+    string nombreMostrar = ViewBag.NombreMostrar as string ?? "Vendedor";
+    if (nombreMostrar.Contains("Mi Cuenta") || nombreMostrar.Contains("Venta Directa"))
+    {
+        string miNombre = User.FindFirst("NombreCompleto")?.Value ??
+                          User.Identity?.Name ?? "Administrador";
+        nombreMostrar = miNombre + "";
+    }
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planilla - @nombreMostrar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <style>
+        /* CONFIGURACIÓN DE PÁGINA PARA IMPRESIÓN CON CERO DESPERDICIO */
+        @@page { 
+            size: letter;
+            margin: 5mm 10mm; 
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f1f5f9; 
+            color: #0f172a; 
+            padding: 10px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-container { 
+            max-width: 1000px;
+            margin: 0 auto; 
+            background: white; 
+            padding: 15px; 
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        
+        .hoja-impresion { 
+            page-break-after: always;
+            padding-bottom: 0.5rem; 
+            margin-bottom: 1rem; 
+            border-bottom: 2px dashed #cbd5e1; 
+        }
+        .hoja-impresion:last-child { 
+            page-break-after: auto;
+            border-bottom: none; 
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .header-planilla {
+            border-bottom: 2px solid #0ea5e9;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .img-rifa {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #e0f2fe;
+            flex-shrink: 0;
+        }
+        
+        .header-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header-meta {
+            text-align: right;
+            min-width: 240px; /* Aumentado para evitar saltos de línea en el rango */
+            font-size: 0.80rem;
+            background-color: #f8fafc;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            white-space: nowrap; /* Evita que el contenido interno haga salto de línea */
+        }
+
+        /* GRID MÁS COMPACTO */
+        .ticket-grid { 
+            display: flex;
+            flex-direction: column; 
+            gap: 0.6rem; 
+        }
+        
+        /* ESTRUCTURA DEL BOLETO DIVIDIDO - OPTIMIZADA */
+        .ticket-card-divided {
+            display: flex;
+            flex-direction: row; 
+            width: 100%;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            border: 1px solid #94a3b8; 
+            border-radius: 8px;
+            background-color: white;
+            overflow: hidden;
+            min-height: 125px; /* Permite que crezca a lo alto si el QR lo necesita */
+        }
+
+        /* PARTE IZQUIERDA (TALONARIO DEL VENDEDOR) - Aumentado a 40% para líneas más largas */
+        .left-stub {
+            flex: 0 0 40%;
+            padding: 0.6rem 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 2px dashed #94a3b8;
+            background-color: #f8fafc;
+            position: relative;
+        }
+
+        /* Indicador de corte moderno */
+        .left-stub::after {
+            content: '\2702';
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg);
+            background: white;
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        /* PARTE DERECHA (BOLETO DEL CLIENTE) */
+        .right-ticket {
+            flex: 1;
+            padding: 0.6rem 0.8rem 0.6rem 1rem;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        /* AJUSTES TALONARIO IZQUIERDO */
+        .stub-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .ticket-num-badge { 
+            background: #0ea5e9;
+            color: white; 
+            font-weight: 800; 
+            font-size: 0.9rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .ticket-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem; 
+        }
+
+        .field-row { 
+            display: flex;
+            align-items: flex-end; 
+        }
+        
+        .field-label { 
+            font-weight: 700;
+            margin-right: 0.3rem; 
+            font-size: 0.75rem;
+            color: #475569;
+        }
+        
+        .field-line { 
+            flex-grow: 1; /* Esto hace que la línea ocupe todo el espacio extra */
+            border-bottom: 1px solid #94a3b8;
+            height: 1rem; 
+            position: relative; 
+        }
+
+        .filled-text {
+            position: absolute;
+            bottom: 1px;
+            left: 2px;
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 98%;
+        }
+
+        /* AJUSTES BOLETO DERECHO */
+        .ticket-main-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1; 
+        }
+
+        .ticket-title-small {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            margin-bottom: 0.2rem;
+        }
+
+        .ticket-num-badge-large { 
+            color: #0ea5e9;
+            font-weight: 900; 
+            font-size: 2.2rem;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+
+        .ticket-num-badge-large.vendido {
+            color: #22c55e;
+        }
+
+        .ticket-date {
+            font-size: 0.75rem;
+            font-weight: 700; 
+            color: #0f172a; 
+            margin-bottom: 0.2rem;
+        }
+
+        .ticket-validity {
+            font-size: 0.65rem;
+            color: #64748b; 
+            max-width: 220px;
+            line-height: 1.2;
+            text-align: center;
+        }
+
+        .ticket-validity strong {
+            color: #334155;
+            font-weight: 700;
+        }
+
+        /* ZONA QR HORIZONTAL - OPTIMIZADA PARA LECTURA */
+        .qr-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #f8fafc;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            max-width: 280px; /* Aumentado para dar espacio al texto y al QR grande */
+            flex-shrink: 0;
+        }
+
+        /* ZONA SIN QR - PLACEHOLDER */
+        .no-qr-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 140px;
+            min-height: 90px;
+            background-color: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            flex-shrink: 0;
+            padding: 5px;
+            text-align: center;
+        }
+
+        .qr-text {
+            flex: 1;
+            font-size: 0.65rem;
+            color: #475569;
+            text-align: left;
+            line-height: 1.2;
+        }
+
+        .qr-text strong {
+            color: #16a34a;
+            display: block;
+            margin-bottom: 2px;
+            font-size: 0.75rem;
+        }
+
+        /* CONTENEDOR QR AUMENTADO */
+        .ticket-qr-container {
+            width: 100px; /* Mucho más grande para fácil escaneo */
+            flex-shrink: 0;
+            background: white;
+            padding: 4px; 
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* AJUSTES ESTRICTOS PARA IMPRESORA */
+        @@media print {
+            body { 
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .print-container { 
+                box-shadow: none;
+                margin: 0; 
+                padding: 0; 
+                max-width: 100%; 
+            }
+            .btn-imprimir { 
+                display: none !important;
+            }
+            .hoja-impresion { 
+                border-bottom: none;
+                margin-bottom: 0;
+            }
+            .ticket-card-divided {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="print-container">
+        <div class="d-flex justify-content-end mb-3 btn-imprimir gap-2">
+            <a href="@Url.Action("PanelAdministracion", "RifasPersonales", new { token = ViewBag.TokenRifaStr })" class="btn btn-outline-danger shadow-sm fw-bold me-auto btn-sm">
+                <i class="fa-solid fa-arrow-left me-2"></i> Volver al Panel
+            </a>
+            <button onclick="window.print()" class="btn btn-primary shadow-sm fw-bold btn-sm">
+                <i class="fa-solid fa-print me-2"></i> Imprimir Planillas
+            </button>
+        </div>
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="alert alert-warning text-center">
+                <i class="fa-solid fa-circle-exclamation fs-3 mb-2 d-block"></i>
+                No hay boletos asignados para generar la planilla.
+            </div>
+        }
+        else
+        {
+            foreach (var hoja in Model)
+            {
+                var primerBoleto = hoja.OrderBy(b => b.Numero).First();
+                var ultimoBoleto = hoja.OrderBy(b => b.Numero).Last();
+                string rangoBoletos = $"#{primerBoleto.Numero.ToString("000")} al #{ultimoBoleto.Numero.ToString("000")}";
+                string fechaAsignacion = primerBoleto.FechaAsignacion?.ToString("dd/MMM/yyyy") ?? "Sin fecha";
+
+                <div class="hoja-impresion">
+                    
+                    <div class="header-planilla">
+                        @if (!string.IsNullOrEmpty(ViewBag.ImagenUrl))
+                        {
+                            <img src="@ViewBag.ImagenUrl" alt="Rifa" class="img-rifa" />
+                        }
+                        else
+                        {
+                            <div class="img-rifa d-flex align-items-center justify-content-center bg-light text-secondary">
+                                <i class="fa-solid fa-ticket fs-4"></i>
+                            </div>
+                        }
+                        
+                        <div class="header-info">
+                            <h2 class="m-0 text-primary fw-bold" style="font-size: 1.2rem; line-height: 1.1;">@ViewBag.TituloRifa</h2>
+                            <p class="m-0 text-dark" style="font-size: 0.9rem;">
+                                <i class="fa-solid fa-user-tag me-1 text-secondary"></i> <strong>Promotor:</strong> @nombreMostrar
+                            </p>
+                            @if(!string.IsNullOrEmpty(ViewBag.DescripcionRifa))
+                            {
+                                <p class="m-0 text-muted mt-1" style="font-size: 0.75rem; line-height: 1.2; padding-right: 15px;">@ViewBag.DescripcionRifa</p>
+                            }
+                        </div>
+
+                        <div class="header-meta">
+                            <div class="d-flex justify-content-between gap-3">
+                                <div class="text-start">
+                                    <div class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem;">Rango Boletos</div>
+                                    <div class="fw-bold text-primary" style="font-size: 0.9rem;">@rangoBoletos</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem;">Asignación</div>
+                                    <div class="fw-bold text-dark" style="font-size: 0.8rem;"><i class="fa-regular fa-calendar me-1"></i> @fechaAsignacion</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ticket-grid">
+                        @foreach (var boleto in hoja.OrderBy(b => b.Numero))
+                        {
+                            <div class="ticket-card-divided">
+                                <div class="left-stub">
+                                    <div class="stub-header">
+                                        <div class="d-flex flex-column">
+                                            <span class="text-muted" style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase;">
+                                                @(boleto.Estado == "Vendido" ? "Vendido" : "Asignado")
+                                            </span>
+                                            <span class="text-success fw-bold" style="font-size: 0.75rem; line-height: 1;">
+                                                @CostoXBoleto.ToString("C")
+                                            </span>
+                                        </div>
+                                        <div class="ticket-num-badge" style="@(boleto.Estado == "Vendido" ? "background-color: #22c55e;" : "")">
+                                            #@boleto.Numero.ToString("000")
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="ticket-fields">
+                                        <div class="field-row">
+                                            <span class="field-label"><i class="fa-solid fa-user me-1"></i> Nombre:</span>
+                                            <span class="field-line">
+                                                @if (!string.IsNullOrEmpty(boleto.NombreComprador))
+                                                {
+                                                    <span class="filled-text">@boleto.NombreComprador</span>
+                                                }
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="field-row">
+                                            <span class="field-label"><i class="fa-brands fa-whatsapp text-success me-1"></i> Teléfono:</span>
+                                            <span class="field-line">
+                                                @if (!string.IsNullOrEmpty(boleto.TelefonoComprador))
+                                                {
+                                                    <span class="filled-text">@boleto.TelefonoComprador</span>
+                                                }
+                                            </span>
+                                        </div>
+
+                                        <div class="field-row">
+                                            <span class="field-label"><i class="fa-solid fa-pen me-1"></i> Notas:</span>
+                                            <span class="field-line">
+                                                @if (!string.IsNullOrEmpty(boleto.Comentarios))
+                                                {
+                                                    <span class="filled-text">@boleto.Comentarios</span>
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="right-ticket">
+                                    <div class="ticket-main-info">
+                                        <div class="ticket-title-small d-flex justify-content-center align-items-center gap-2">
+                                            <span>COSTO DEL BOLETO:</span>
+                                            <span class="badge bg-success text-white" style="font-size: 0.65rem; padding: 0.25em 0.4em; letter-spacing: normal;">@CostoXBoleto.ToString("C")</span>
+                                        </div>
+                                        
+                                        <div class="ticket-num-badge-large @(boleto.Estado == "Vendido" ? "vendido" : "")">
+                                            #@boleto.Numero.ToString("000")
+                                        </div>
+                                        
+                                        @if (ViewBag.FechaSorteo != null)
+                                        {
+                                            <div class="ticket-date">
+                                                <i class="fa-regular fa-calendar-days me-1" style="color: #0ea5e9;"></i> Sorteo: @ViewBag.FechaSorteo
+                                            </div>
+                                        }
+
+                                        <div class="ticket-validity">
+                                            <i class="fa-solid fa-check-double" style="color: #cbd5e1; font-size: 0.6rem;"></i>
+                                            Válido para: <strong>@ViewBag.TituloRifa</strong>
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(ViewBag.QrGrupoWhatsappUrl as string))
+                                    {
+                                        <div class="qr-section">
+                                            <div class="qr-text">
+                                                <strong style="color: #0f172a; display: block; font-size: 0.75rem; margin-bottom: 2px; white-space: nowrap;">
+                                                    <i class="fa-solid fa-trophy" style="color: #d97706;"></i> ¡Descubre si ganaste!
+                                                </strong>
+                                                Apunta tu cámara aquí para ver los resultados el día de la rifa y conocer al ganador.
+                                            </div>
+                                            <div class="ticket-qr-container">
+                                                <img src="@ViewBag.QrGrupoWhatsappUrl" alt="QR WhatsApp" style="width: 100%; height: auto; object-fit: contain;" />
+                                                <div style="font-size: 0.50rem; color: #475569; font-weight: bold; margin-top: 2px; text-align: center;">ESCANÉAME</div>
+                                            </div>
+                                        </div>
+                                    }
+                                    else 
+                                    {
+                                        <div class="no-qr-section">
+                                            <div class="text-muted">
+                                                <i class="fa-solid fa-ticket-simple d-block mb-1" style="font-size: 1.5rem; color: #cbd5e1;"></i>
+                                                <span style="font-size: 0.70rem; font-weight: 700; color: #64748b; line-height: 1;">
+                                                    ¡Conserva tu<br>boleto!
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                    
+                                </div>
+                            </div>
+                        }
+                    </div>
+            
+                </div>
+            }
+        }
+    </div>
+
+</body>
+</html>

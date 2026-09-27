@@ -1,0 +1,617 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+@{
+    Layout = "~/Views/Shared/LayoutPaginasWEB.cshtml";
+    string nombreReal = string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "" : Model.NombreIglesia;
+    ViewData["Title"] = nombreReal;
+    
+    // Imagen de fondo opcional para las tarjetas visuales
+    string coverBg = Model.Galeria != null && Model.Galeria.Any() && !string.IsNullOrWhiteSpace(Model.Galeria.First().UrlImagen)
+                    ? Model.Galeria.First().UrlImagen
+                    : "";
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --cd-bg: #f1f5f9;
+        --cd-surface: #ffffff;
+        --cd-primary: #0f172a;
+        --cd-text: #334155;
+        --cd-accent: #3b82f6; /* Azul brillante, invita a la confianza */
+        --cd-wa: #25d366; /* Verde WhatsApp */
+        --cd-map: #ef4444; /* Rojo pin de mapa */
+        --font-title: 'Poppins', sans-serif;
+        --font-body: 'Manrope', sans-serif;
+    }
+
+    body {
+        background-color: var(--cd-bg);
+        color: var(--cd-text);
+        font-family: var(--font-body);
+        line-height: 1.6;
+    }
+
+    h1, h2, h3, h4, h5, h6, .font-title {
+        font-family: var(--font-title);
+        color: var(--cd-primary);
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    /* Navegación Flotante Minimalista */
+    .cd-nav-wrapper {
+        position: fixed;
+        top: 20px;
+        left: 0;
+        width: 100%;
+        z-index: 1030;
+        pointer-events: none; /* Permite hacer clic detrás */
+    }
+
+    .cd-navbar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 50px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        pointer-events: auto; /* Reactiva los clics en la barra */
+        padding: 0.8rem 2rem;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .cd-nav-link {
+        color: var(--cd-primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin: 0 10px;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+        .cd-nav-link:hover {
+            color: var(--cd-accent);
+        }
+
+    /* Bento Grid (Hero de Contacto) */
+    .bento-container {
+        padding-top: 120px; /* Espacio para el nav flotante */
+        padding-bottom: 3rem;
+    }
+
+    .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: auto auto;
+        gap: 20px;
+    }
+
+    .bento-item {
+        background: var(--cd-surface);
+        border-radius: 30px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.03);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .bento-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+        }
+
+    /* Tallas del Bento Grid */
+    .bento-main {
+        grid-column: span 2;
+        grid-row: span 2;
+    }
+
+    .bento-wa {
+        grid-column: span 1;
+        grid-row: span 1;
+        background: var(--cd-wa);
+        color: white;
+    }
+
+    .bento-map {
+        grid-column: span 1;
+        grid-row: span 1;
+        background: var(--cd-map);
+        color: white;
+    }
+
+    .bento-tel {
+        grid-column: span 2;
+        grid-row: span 1;
+        background: var(--cd-primary);
+        color: white;
+    }
+
+        .bento-wa:hover, .bento-map:hover, .bento-tel:hover {
+            color: white;
+        }
+
+    .bento-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .bento-wa .bento-icon, .bento-map .bento-icon, .bento-tel .bento-icon {
+        opacity: 0.9;
+    }
+
+    /* Estilos responsivos del grid */
+    @@media (max-width: 991px) {
+        .bento-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .bento-main {
+            grid-column: span 2;
+        }
+
+        .bento-tel {
+            grid-column: span 2;
+        }
+    }
+    @@media (max-width: 575px) {
+        .bento-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .bento-main, .bento-wa, .bento-map, .bento-tel {
+            grid-column: span 1;
+        }
+    }
+
+    /* Secciones Globales */
+    .section-spacing {
+        padding: 5rem 0;
+    }
+
+    .section-title {
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        text-align: center;
+    }
+
+    /* Tarjetas de Listas (Avisos/Eventos) */
+    .list-card {
+        background: var(--cd-surface);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid rgba(0,0,0,0.05);
+        height: 100%;
+    }
+
+    .date-badge {
+        display: inline-block;
+        background: var(--cd-bg);
+        color: var(--cd-primary);
+        font-weight: 800;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    /* Galería Premium */
+    .masonry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .gallery-item {
+        border-radius: 20px;
+        overflow: hidden;
+        aspect-ratio: 1 / 1;
+        background: #e2e8f0;
+    }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.08);
+        }
+
+    /* Puntos Doctrinales Adaptación */
+    .doctrina-wrapper .doctrina-main-title {
+        color: var(--cd-primary);
+        font-family: var(--font-title);
+    }
+
+    .doctrina-wrapper .doctrina-badge {
+        background-color: var(--cd-accent) !important;
+    }
+
+    .doctrina-wrapper .doctrina-num {
+        color: var(--cd-accent) !important;
+        font-weight: 900;
+    }
+
+    .doctrina-wrapper .accordion-button:not(.collapsed) {
+        background-color: var(--cd-bg);
+        color: var(--cd-primary);
+        font-weight: bold;
+    }
+
+    .btn-outline-custom {
+        border: 2px solid var(--cd-primary);
+        color: var(--cd-primary);
+        border-radius: 50px;
+        padding: 0.5rem 1.5rem;
+        font-weight: bold;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+        .btn-outline-custom:hover {
+            background: var(--cd-primary);
+            color: white;
+        }
+</style>
+
+<div class="cd-nav-wrapper fade-in-up">
+    <div class="container d-flex justify-content-center">
+        <nav class="cd-navbar d-flex align-items-center justify-content-between w-100" style="max-width: 900px;">
+            <span class="font-title fs-5 m-0 text-truncate" style="max-width: 200px;">@nombreReal</span>
+            <div class="d-none d-md-flex">
+                @if ((Model.Eventos != null && Model.Eventos.Any()) || (Model.Avisos != null && Model.Avisos.Any()))
+                {
+                    <a href="#actividades" class="cd-nav-link">Actividades</a>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Historia))
+                {
+                    <a href="#historia" class="cd-nav-link">Nosotros</a>
+                }
+                <a href="#doctrina" class="cd-nav-link">Doctrina</a>
+                @if (Model.Multimedia != null && Model.Multimedia.Any())
+                {
+                    <a href="#multimedia" class="cd-nav-link">Multimedia</a>
+                }
+            </div>
+            @if (Model.Eventos != null && Model.Eventos.Any())
+            {
+                <a href="#actividades" class="btn-outline-custom d-none d-sm-block">Ver Eventos</a>
+            }
+            <button class="btn d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+                <i class="fa-solid fa-bars fs-4"></i>
+            </button>
+        </nav>
+    </div>
+    <div class="container collapse d-md-none mt-2" id="mobileMenu" style="pointer-events: auto;">
+        <div class="bg-white p-3 rounded-4 shadow-lg border text-center d-flex flex-column gap-3">
+            @if ((Model.Eventos != null && Model.Eventos.Any()) || (Model.Avisos != null && Model.Avisos.Any()))
+            {
+                <a href="#actividades" class="cd-nav-link m-0">Actividades</a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Historia))
+            {
+                <a href="#historia" class="cd-nav-link m-0">Nosotros</a>
+            }
+            <a href="#doctrina" class="cd-nav-link m-0">Doctrina</a>
+        </div>
+    </div>
+</div>
+
+<main>
+    <section class="container bento-container fade-in-up">
+        <div class="bento-grid">
+
+            <div class="bento-item bento-main" style="background: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.95)), url('@Html.Raw(coverBg)') center/cover;">
+                @if (!string.IsNullOrWhiteSpace(Model.Municipio))
+                {
+                    <span class="badge bg-primary align-self-start mb-3 px-3 py-2 rounded-pill fs-6">
+                        <i class="fa-solid fa-location-dot me-2"></i>@Model.Municipio
+                    </span>
+                }
+                <h1 class="display-4 font-title mb-3">@nombreReal</h1>
+                
+                @if (!string.IsNullOrWhiteSpace(Model.DireccionCompleta))
+                {
+                    <p class="fs-5 text-muted mb-4">@Model.DireccionCompleta</p>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.Horarios))
+                {
+                    <div class="mt-auto pt-4 border-top">
+                        <h6 class="font-title mb-3">Horarios Generales:</h6>
+                        @{
+                            var lineas = Model.Horarios.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var linea in lineas.Take(3)) // Mostramos máximo 3 para no romper la tarjeta
+                                {
+                                    var partes = linea.Split(" | ");
+                                    if (partes.Length == 3)
+                                    {
+                                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fs-6 theme-strict-text">
+                                            <strong class="text-primary" style="color:#0d6efd !important">@partes[0]</strong> - @partes[1]
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fs-6 theme-strict-text">@linea</span>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+            {
+                <a href="https://wa.me/52@(Model.Whatsapp)" target="_blank" class="bento-item bento-wa text-center">
+                    <i class="fa-brands fa-whatsapp bento-icon"></i>
+                    <h3 class="font-title text-white mb-1">WhatsApp</h3>
+                    <p class="mb-0 opacity-75">Envíanos un mensaje</p>
+                </a>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.MapaUrl))
+            {
+                <a href="@Model.MapaUrl" target="_blank" class="bento-item bento-map text-center">
+                    <i class="fa-solid fa-location-arrow bento-icon"></i>
+                    <h3 class="font-title text-white mb-1">Cómo Llegar</h3>
+                    <p class="mb-0 opacity-75">Abrir en Google Maps</p>
+                </a>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Telefono) || !string.IsNullOrWhiteSpace(Model.FacebookUrl) || !string.IsNullOrWhiteSpace(Model.InstagramUrl) || !string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+            {
+                <div class="bento-item bento-tel d-flex flex-row align-items-center justify-content-between flex-wrap gap-3">
+                    @if (!string.IsNullOrWhiteSpace(Model.Telefono))
+                    {
+                        <div class="d-flex align-items-center gap-4">
+                            <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fa-solid fa-phone bento-icon m-0 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-title text-white mb-1">Llamada Directa</h3>
+                                <a href="tel:@Model.Telefono" class="text-white fs-5 fw-bold text-decoration-none stretched-link">@Model.Telefono</a>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="d-flex gap-2" style="position: relative; z-index: 2;">
+                        @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl))
+                        {
+                            <a href="@Model.FacebookUrl" target="_blank" class="btn btn-light rounded-circle px-0" style="width:45px; height:45px;"><i class="fa-brands fa-facebook-f fs-5 text-primary mt-1"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.InstagramUrl))
+                        {
+                            <a href="@Model.InstagramUrl" target="_blank" class="btn btn-light rounded-circle px-0" style="width:45px; height:45px;"><i class="fa-brands fa-instagram fs-5 text-primary mt-1"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+                        {
+                            <a href="@Model.YoutubeUrl" target="_blank" class="btn btn-light rounded-circle px-0" style="width:45px; height:45px;"><i class="fa-brands fa-youtube fs-5 text-primary mt-1"></i></a>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+    </section>
+
+    @if ((Model.Avisos != null && Model.Avisos.Any()) || (Model.Eventos != null && Model.Eventos.Any()))
+    {
+        <section class="container section-spacing pt-0" id="actividades">
+            
+            @if (Model.Avisos != null && Model.Avisos.Any())
+            {
+                <div class="mb-5">
+                    <h2 class="font-title mb-4 fs-2 d-flex align-items-center"><i class="fa-solid fa-bullhorn text-warning me-3"></i> Avisos</h2>
+                    <div class="row g-3">
+                        @foreach (var aviso in Model.Avisos)
+                        {
+                            <div class="col-md-6 col-lg-4 d-flex">
+                                <div class="list-card w-100 border-start border-warning border-5">
+                                    @if (!string.IsNullOrWhiteSpace(aviso.Titulo))
+                                    {
+                                        <h5 class="font-title mb-3">@aviso.Titulo</h5>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(aviso.Descripcion))
+                                    {
+                                        <p class="text-muted mb-4 flex-grow-1 theme-strict-text">@Html.Raw(aviso.Descripcion.Replace("\n", "<br>").Replace("\r\n", "<br>"))</p>
+                                    }
+                                    @if (aviso.FechaExpiracion != default)
+                                    {
+                                        <div class="text-end small fw-bold text-muted border-top pt-3">
+                                            Vigente hasta: @aviso.FechaExpiracion.ToString("dd MMM yyyy")
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Model.Eventos != null && Model.Eventos.Any())
+            {
+                <div>
+                    <h2 class="font-title mb-4 fs-2 d-flex align-items-center"><i class="fa-regular fa-calendar-check text-primary me-3"></i> Próximos Eventos</h2>
+                    <div class="row g-4">
+                        @foreach (var ev in Model.Eventos)
+                        {
+                            <div class="col-lg-6 d-flex">
+                                <div class="list-card w-100 d-flex flex-column flex-sm-row gap-4 p-0 overflow-hidden">
+                                    @if (!string.IsNullOrWhiteSpace(ev.ImagenUrl))
+                                    {
+                                        <div style="flex: 0 0 200px; background: url('@ev.ImagenUrl') center/cover; min-height: 200px;"></div>
+                                    }
+                                    <div class="p-4 d-flex flex-column flex-grow-1">
+                                        @if (ev.Fecha != default)
+                                        {
+                                            <div class="date-badge"><i class="fa-regular fa-calendar me-2"></i> @ev.Fecha.ToString("dd MMMM yyyy")</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(ev.Titulo))
+                                        {
+                                            <h4 class="font-title mb-2">@ev.Titulo</h4>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(ev.Horarios))
+                                        {
+                                            <p class="fw-bold text-primary mb-2"><i class="fa-regular fa-clock me-1"></i> @ev.Horarios</p>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(ev.Descripcion))
+                                        {
+                                            <p class="text-muted small mb-0 mt-2 theme-strict-text">
+                                                @Html.Raw(ev.Descripcion.Replace("\n", "<br>").Replace("\r\n", "<br>"))
+                                            </p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Historia))
+    {
+        <section class="bg-white border-top border-bottom py-5" id="historia">
+            <div class="container section-spacing py-0">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10 text-center">
+                        <h2 class="section-title">Nuestra Historia</h2>
+                        <div class="fs-5 text-muted text-start theme-strict-text" style="line-height: 1.8;">
+                            @Html.Raw(Model.Historia.Replace("\n", "<br>").Replace("\r\n", "<br>"))
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+    <section class="container section-spacing" id="doctrina">
+        <div style="max-width: 900px; margin: 0 auto;">
+            @await Html.PartialAsync("../_PuntosDoctrinales.cshtml")
+        </div>
+    </section>
+
+    @if (Model.Multimedia != null && Model.Multimedia.Any())
+    {
+        <section class="bg-primary text-white py-5" id="multimedia">
+            <div class="container section-spacing py-4">
+                <h2 class="font-title text-center text-white mb-5">Mensajes y Predicaciones</h2>
+                <div class="row justify-content-center g-4">
+                    @foreach (var m in Model.Multimedia)
+                    {
+                        @if (!string.IsNullOrWhiteSpace(m.UrlEmbed))
+                        {
+                            <div class="col-md-6">
+                                <div class="bg-dark p-2 p-md-4 rounded-4 h-100">
+                                    @if (!string.IsNullOrWhiteSpace(m.Titulo))
+                                    {
+                                        <h5 class="font-title text-white mb-3 px-2">@m.Titulo</h5>
+                                    }
+                                    <div class="ratio ratio-16x9 rounded-3 overflow-hidden shadow">
+                                        @{
+                                            string embedUrl = m.UrlEmbed;
+                                            string ytId = "";
+                                            if (embedUrl.Contains("youtu.be/")) ytId = embedUrl.Split(new[] { "youtu.be/" }, StringSplitOptions.None)[1];
+                                            else if (embedUrl.Contains("watch?v=")) ytId = embedUrl.Split(new[] { "watch?v=" }, StringSplitOptions.None)[1];
+                                            else if (embedUrl.Contains("embed/")) ytId = embedUrl.Split(new[] { "embed/" }, StringSplitOptions.None)[1];
+                                            else if (embedUrl.Contains("/shorts/")) ytId = embedUrl.Split(new[] { "/shorts/" }, StringSplitOptions.None)[1];
+                                            else if (embedUrl.Contains("/live/")) ytId = embedUrl.Split(new[] { "/live/" }, StringSplitOptions.None)[1];
+                                            if (!string.IsNullOrEmpty(ytId))
+                                            {
+                                                ytId = ytId.Split('?')[0].Split('&')[0].Trim('/');
+                                                embedUrl = "https://www.youtube.com/embed/" + ytId;
+                                            }
+                                        }
+                                        <iframe src="@embedUrl" frameborder="0" allowfullscreen></iframe>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    @if (Model.Galeria != null && Model.Galeria.Any())
+    {
+        <section class="container section-spacing border-bottom mb-5">
+            <h2 class="section-title">Galería</h2>
+            <div class="masonry-grid">
+                @foreach (var img in Model.Galeria)
+                {
+                    @if (!string.IsNullOrWhiteSpace(img.UrlImagen))
+                    {
+                        <div class="gallery-item position-relative">
+                            <img src="@img.UrlImagen" alt="@(img.Titulo ?? "Imagen")" loading="lazy" />
+                            @if (!string.IsNullOrWhiteSpace(img.Titulo))
+                            {
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+                                    <h6 class="text-white m-0 font-title fs-6">@img.Titulo</h6>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </section>
+    }
+</main>
+
+<footer class="bg-white py-5">
+    <div class="container text-center">
+        <h3 class="font-title mb-4">@nombreReal</h3>
+        
+        @if (!string.IsNullOrWhiteSpace(Model.DireccionCompleta) || !string.IsNullOrWhiteSpace(Model.Municipio))
+        {
+            <p class="text-muted mb-4 mx-auto" style="max-width: 500px;">
+                @if (!string.IsNullOrWhiteSpace(Model.DireccionCompleta))
+                {
+                    @Model.DireccionCompleta <br>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Municipio))
+                {
+                    @Model.Municipio
+                }
+            </p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl) || !string.IsNullOrWhiteSpace(Model.InstagramUrl) || !string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+        {
+            <div class="d-flex justify-content-center gap-3 mb-5">
+                @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl))
+                {
+                    <a href="@Model.FacebookUrl" target="_blank" class="btn btn-light rounded-circle text-primary fs-5" style="width: 50px; height: 50px; line-height: 35px;"><i class="fa-brands fa-facebook-f"></i></a>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.InstagramUrl))
+                {
+                    <a href="@Model.InstagramUrl" target="_blank" class="btn btn-light rounded-circle text-primary fs-5" style="width: 50px; height: 50px; line-height: 35px;"><i class="fa-brands fa-instagram"></i></a>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+                {
+                    <a href="@Model.YoutubeUrl" target="_blank" class="btn btn-light rounded-circle text-primary fs-5" style="width: 50px; height: 50px; line-height: 35px;"><i class="fa-brands fa-youtube"></i></a>
+                }
+            </div>
+        }
+
+        <div class="border-top pt-4 text-muted small">
+            © @DateTime.Now.Year @nombreReal. Todos los derechos reservados. <br>
+            @if (!string.IsNullOrWhiteSpace(Model.PlantillaVista))
+            {
+                <span class="opacity-50">Plantilla: @Model.PlantillaVista</span>
+            }
+        </div>
+    </div>
+</footer>

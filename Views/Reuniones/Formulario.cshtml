@@ -1,0 +1,514 @@
+﻿@model RedAJP.Models.IglesiaRegistroViewModel
+
+@{
+    Layout = "Principal";
+    bool esEdicion = Model != null && Model.Id > 0;
+    ViewData["Title"] = esEdicion ? "Editar Congregación" : "Registrar Congregación";
+    var listaMunicipios = ViewBag.Municipios as List<RedAJP.Models.Municipio>;
+}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* Estilo idéntico al que usa RegistroController para mostrar errores */
+    .form-control.is-invalid,
+    .form-select.is-invalid {
+        border-color: #dc3545;
+        padding-right: calc(1.5em + 0.75rem);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5zM6 8.2af.6.6 0 110-1.2.6.6 0 010 1.2z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    /* Integración de Select2 con el diseño del formulario */
+    .select2-container--default .select2-selection--single {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        height: 58px; /* Altura para coincidir con form-floating */
+        padding-top: 15px;
+    }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 40px;
+            padding-left: 12px;
+            color: #212529;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 56px;
+        }
+</style>
+<script>
+    // --- 1. Activar Menú (si existe la función) ---
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-reuniones');
+        }
+    });
+</script>
+<div class="fade-in py-4 px-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="mb-3">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm px-3">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Regresar al Directorio
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header border-0 py-3 text-white d-flex align-items-center" style="background-color: var(--header-footer);">
+                    <h6 class="mb-0 fw-bold text-uppercase ls-1">
+                        @(esEdicion ? "Formulario de Edición" : "Formulario de Registro")
+                    </h6>
+                </div>
+
+                <div class="card-body p-4 bg-white">
+                    <form action="@Url.Action("Formulario", "Reuniones")" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="Id" value="@Model.Id" />
+
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="alert alert-danger shadow-sm mb-4 border-0 rounded-3 text-center" role="alert">
+                                <i class="fa-solid fa-circle-exclamation me-2"></i> @TempData["Error"]
+                            </div>
+                        }
+
+                        <div class="mb-4">
+                            <label class="text-primary fw-bold small mb-2 text-uppercase ls-1">Ubicación</label>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="text" name="Nombre"
+                                               class="form-control rounded-3 @(ViewData["ErrorNombre"] != null ? "is-invalid" : "")"
+                                               placeholder="Nombre"
+                                               value="@Model.Nombre"
+                                               title="@ViewData["ErrorNombre"]" />
+                                        <label>Nombre de la Congregación</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <div class="form-floating">
+                                        <select id="selectMunicipio" name="MunicipioId" class="form-select rounded-3 @(ViewData["ErrorMunicipio"] != null ? "is-invalid" : "")"
+                                                title="@ViewData["ErrorMunicipio"]">
+                                            <option value="0">-- Selecciona --</option>
+                                            @if (listaMunicipios != null)
+                                            {
+                                                foreach (var m in listaMunicipios)
+                                                {
+                                                    <!option value="@m.Id" @(Model.MunicipioId == m.Id ? "selected" : "")>@m.Nombre</!option>
+                                                }
+                                            }
+                                        </select>
+                                        <label>Municipio</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <div class="form-floating">
+                                        <input type="text" name="Localidad"
+                                               class="form-control rounded-3 @(ViewData["ErrorLocalidad"] != null ? "is-invalid" : "")"
+                                               placeholder="Loc"
+                                               value="@Model.Localidad"
+                                               title="@ViewData["ErrorLocalidad"]" />
+                                        <label>Localidad</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6 mt-3">
+                                    <div class="form-floating mb-1">
+                                        <input type="number" name="Zona" min="0"
+                                               class="form-control rounded-3"
+                                               placeholder="Zona"
+                                               value="@Model.Zona" />
+                                        <label>Zona <span class="text-muted" style="font-size:0.75rem;">(Opcional)</span></label>
+                                    </div>
+                                    <small class="text-muted d-block ms-1" style="font-size: 0.7rem; opacity: 0.7;">
+                                        <i class="fa-solid fa-circle-info me-1"></i>División regional mayor (puede englobar varios sectores).
+                                    </small>
+                                </div>
+
+                                <div class="col-6 mt-3">
+                                    <div class="form-floating mb-1">
+                                        <input type="number" name="Sector" min="0"
+                                               class="form-control rounded-3"
+                                               placeholder="Sector"
+                                               value="@Model.Sector" />
+                                        <label>Sector <span class="text-muted" style="font-size:0.75rem;">(Opcional)</span></label>
+                                    </div>
+                                    <small class="text-muted d-block ms-1" style="font-size: 0.7rem; opacity: 0.7;">
+                                        <i class="fa-solid fa-circle-info me-1"></i>Subdivisión interna de lugares perteneciente a la zona.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="text-primary fw-bold small mb-2 text-uppercase ls-1">Dirección</label>
+                            <div class="row g-2">
+                                <div class="col-8">
+                                    <div class="form-floating">
+                                        <input type="text" name="Calle"
+                                               class="form-control rounded-3 @(ViewData["ErrorCalle"] != null ? "is-invalid" : "")"
+                                               placeholder="Calle"
+                                               value="@Model.Calle"
+                                               title="@ViewData["ErrorCalle"]" />
+                                        <label>Calle</label>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-floating">
+                                        <input type="text" name="Numero"
+                                               class="form-control rounded-3 @(ViewData["ErrorNumero"] != null ? "is-invalid" : "")"
+                                               placeholder="#"
+                                               value="@Model.Numero"
+                                               title="@ViewData["ErrorNumero"]" />
+                                        <label>Núm.</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="text" name="Colonia"
+                                               class="form-control rounded-3 @(ViewData["ErrorColonia"] != null ? "is-invalid" : "")"
+                                               placeholder="Col"
+                                               value="@Model.Colonia"
+                                               title="@ViewData["ErrorColonia"]" />
+                                        <label>Colonia</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <textarea name="Referencia" class="form-control rounded-3 @(ViewData["ErrorReferencia"] != null ? "is-invalid" : "")" title="@ViewData["ErrorReferencia"]" style="height: 70px" placeholder="Ref">@Model.Referencia</textarea>
+                                        <label>Referencia</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="text-primary fw-bold small mb-2 text-uppercase ls-1">Horarios de Reunión</label>
+                                    <div class="p-3 border rounded-3 bg-light-subtle">
+                                        <input type="hidden" name="Horarios" id="hiddenHorarios" value="@Model.Horarios" />
+                                        <div id="contenedor-horarios" class="d-flex flex-column gap-2"></div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary mt-2 rounded-pill fw-bold" onclick="agregarHorario()">
+                                            <i class="fa-solid fa-plus me-1"></i> Añadir Horario
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fa-solid fa-map-location-dot"></i></span>
+                                        <div class="form-floating flex-grow-1">
+                                            <input type="text" name="MapaUrl" class="form-control rounded-end-3 @(ViewData["ErrorMapa"] != null ? "is-invalid" : "")" title="@ViewData["ErrorMapa"]" placeholder="Maps" value="@Model.MapaUrl" />
+                                            <label>Link Maps</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-3">
+                                    <div class="p-3 border rounded-3 bg-light-subtle">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="text-primary fw-bold small mb-0 text-uppercase ls-1">
+                                                <i class="fa-solid fa-crosshairs me-1"></i>Coordenadas Geográficas
+                                            </label>
+
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" role="switch" id="chkManual">
+                                                <label class="form-check-label small fw-bold text-muted" for="chkManual">Modo Manual</label>
+                                            </div>
+                                        </div>
+
+                                        <div id="containerPaste" class="form-floating mb-2">
+                                            <input type="text" id="inputPasteCoords" class="form-control border-primary shadow-sm" placeholder="Pegar aquí" />
+                                            <label class="text-primary"><i class="fa-regular fa-paste me-1"></i>Pegar coordenadas de Google Maps</label>
+                                            <small class="text-muted d-block mt-1 ms-1" style="font-size: 0.75rem;">
+                                                Haz clic derecho en Maps y pega aquí los números.
+                                            </small>
+                                        </div>
+
+                                        <div class="row g-2 mt-1">
+                                            <div class="col-6">
+                                                <div class="form-floating">
+                                                    <input type="text" id="txtLatitud" name="Latitud"
+                                                           class="form-control bg-light rounded-3 @(ViewData["ErrorLatitud"] != null ? "is-invalid" : "")"
+                                                           placeholder="Lat" value="@Model.Latitud" readonly />
+                                                    <label>Latitud</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-floating">
+                                                    <input type="text" id="txtLongitud" name="Longitud"
+                                                           class="form-control bg-light rounded-3 @(ViewData["ErrorLongitud"] != null ? "is-invalid" : "")"
+                                                           placeholder="Lon" value="@Model.Longitud" readonly />
+                                                    <label>Longitud</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fa-brands fa-facebook"></i></span>
+                                        <div class="form-floating flex-grow-1">
+                                            <input type="text" name="FacebookUrl" class="form-control rounded-end-3" placeholder="FB" value="@Model.FacebookUrl" />
+                                            <label>Link Facebook</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="text-primary fw-bold small mb-2 text-uppercase ls-1">Configurar Página Web</label>
+                            <div class="row g-3 p-3 border rounded-3 bg-light-subtle">
+
+                                <div class="col-12">
+                                    <div class="form-check form-switch fs-5 mb-2">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="chkActivarWeb" name="ActivarPaginaWeb" value="true" @(Model.ActivarPaginaWeb ? "checked" : "")>
+                                        <label class="form-check-label fw-bold text-dark" for="chkActivarWeb">Activar Página Web Personalizada</label>
+                                    </div>
+                                    <small class="text-muted d-block ms-1">Si activas esta opción, debes asignar al menos un administrador a continuación.</small>
+                                </div>
+
+                                <div class="col-12" id="divAdministradores" style="display: @(Model.ActivarPaginaWeb ? "block" : "none");">
+                                    <label class="form-label fw-bold small text-muted">Administradores de la Página <span class="text-danger">*</span></label>
+                                    <select id="selectAdmins" name="AdministradoresIds[]" class="form-select select2-multiple" multiple="multiple">
+                                        @if (ViewBag.UsuariosDisponibles != null)
+                                        {
+                                            foreach (var u in ViewBag.UsuariosDisponibles)
+                                            {
+                                                var isSelected = Model.AdministradoresIds.Contains((int)u.Id) ? "selected" : "";
+                                                <!option value="@u.Id" @isSelected>@u.Nombre</!option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="invalid-feedback d-block" id="errorAdmins" style="display: none;">
+                                        Debes seleccionar al menos un administrador.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4 pt-2">
+                            <button type="submit" class="btn btn-nautico py-3 fw-bold">
+                                <i class="fa-solid fa-save me-2"></i>GUARDAR
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-light text-muted">Cancelar</a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<template id="template-horario">
+    <div class="card p-2 dynamic-row horario-row shadow-sm border-0 bg-white">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select class="form-select form-select-sm horario-dia">
+                    <option value="Domingo">Domingo</option>
+                    <option value="Lunes">Lunes</option>
+                    <option value="Martes">Martes</option>
+                    <option value="Miércoles">Miércoles</option>
+                    <option value="Jueves">Jueves</option>
+                    <option value="Viernes">Viernes</option>
+                    <option value="Sábado">Sábado</option>
+                    <option value="Diario">Diario</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control form-control-sm horario-hora" placeholder="Ej. 10:00 AM" />
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control form-control-sm horario-act" placeholder="Ej. Culto" />
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-sm btn-outline-danger w-100 p-1" onclick="eliminarHorario(this)">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+                const rawHorariosStr = document.getElementById('hiddenHorarios').value;
+
+        function inicializarHorarios() {
+            const lineas = rawHorariosStr.split(/\r?\n/);
+            let encontrados = 0;
+
+            lineas.forEach(linea => {
+                if (!linea.trim()) return;
+                const partes = linea.split(' | ');
+
+                if (partes.length === 3) {
+                    agregarHorario(partes[0].trim(), partes[1].trim(), partes[2].trim());
+                    encontrados++;
+                } else {
+                    // Soporte para datos viejos: Lo pone en Actividad
+                    agregarHorario('Domingo', '', linea.trim());
+                    encontrados++;
+                }
+            });
+
+            if (encontrados === 0) agregarHorario('Domingo', '', '');
+        }
+
+        function agregarHorario(dia = 'Domingo', hora = '', act = '') {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = document.getElementById('template-horario').innerHTML;
+            const row = tempDiv.firstElementChild;
+
+            row.querySelector('.horario-dia').value = dia;
+            row.querySelector('.horario-hora').value = hora;
+            row.querySelector('.horario-act').value = act;
+
+            document.getElementById('contenedor-horarios').appendChild(row);
+        }
+
+        function eliminarHorario(btn) {
+            $(btn).closest('.horario-row').remove();
+        }
+
+        $(document).ready(function() {
+            // Inicializar Select2 múltiple para admins
+            $('#selectAdmins').select2({
+                placeholder: "Buscar y seleccionar administradores...",
+                width: '100%',
+                theme: 'default'
+            });
+
+            // Mostrar/ocultar panel de admins según el checkbox
+            $('#chkActivarWeb').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#divAdministradores').slideDown();
+                } else {
+                    $('#divAdministradores').slideUp();
+                    $('#selectAdmins').val(null).trigger('change'); // Limpiar selección si se apaga
+                }
+            });
+
+            // Validación antes de enviar el form original
+            $('form').on('submit', function(e) {
+                if ($('#chkActivarWeb').is(':checked')) {
+                    var seleccionados = $('#selectAdmins').val();
+                    if (!seleccionados || seleccionados.length === 0) {
+                        e.preventDefault();
+                        $('#errorAdmins').show();
+                        mostrarMensaje('Atención', 'Si activas la página web, debes designar al menos un administrador.', 'alerta');
+                    }
+                }
+            });
+
+            // Inicializar Select2
+            $('#selectMunicipio').select2({
+                placeholder: "-- Buscar Municipio --",
+                allowClear: true,
+                width: '100%',
+                theme: 'default' // Puedes usar temas de bootstrap si los incluyes
+            });
+
+                inicializarHorarios();
+
+                // Actualiza tu evento de submit existente (o agrega este bloque dentro)
+                $('form').on('submit', function(e) {
+                    let horariosFinal = [];
+                    $('#contenedor-horarios .horario-row').each(function() {
+                        let d = $(this).find('.horario-dia').val().trim();
+                        let h = $(this).find('.horario-hora').val().trim();
+                        let a = $(this).find('.horario-act').val().trim();
+
+                        if(h !== '' || a !== '') {
+                            h = h.replace(/\|/g, '-');
+                            a = a.replace(/\|/g, '-');
+                            horariosFinal.push(`${d} | ${h} | ${a}`);
+                        }
+                    });
+                    $('#hiddenHorarios').val(horariosFinal.join('\n'));
+
+                    // Aquí dejas tu validación existente de chkActivarWeb...
+                });
+        });
+
+        // Tu lógica de coordenadas (DOMContentLoaded es correcto aquí)
+        document.addEventListener("DOMContentLoaded", function() {
+        const chkManual = document.getElementById('chkManual');
+        const containerPaste = document.getElementById('containerPaste');
+        const pasteInput = document.getElementById('inputPasteCoords');
+        const latInput = document.getElementById('txtLatitud');
+        const lonInput = document.getElementById('txtLongitud');
+
+        // Función para cambiar entre automático y manual
+        chkManual.addEventListener('change', function() {
+            if (this.checked) {
+                // Modo Manual Activo
+                latInput.readOnly = false;
+                lonInput.readOnly = false;
+                latInput.classList.remove('bg-light');
+                lonInput.classList.remove('bg-light');
+                containerPaste.style.opacity = "0.5";
+                pasteInput.disabled = true;
+                pasteInput.value = "";
+            } else {
+                // Modo Automático Activo
+                latInput.readOnly = true;
+                lonInput.readOnly = true;
+                latInput.classList.add('bg-light');
+                lonInput.classList.add('bg-light');
+                containerPaste.style.opacity = "1";
+                pasteInput.disabled = false;
+            }
+        });
+
+        // Procesar el pegado (solo si no es manual)
+        pasteInput.addEventListener('input', function(e) {
+            const texto = e.target.value.trim();
+            if (texto === "") {
+                latInput.value = "";
+                lonInput.value = "";
+                return;
+            }
+
+            // 1. Intentar formato Decimal (Ej: 19.432, -99.133)
+            const regexDecimal = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/;
+            const matchDecimal = texto.match(regexDecimal);
+
+            if (matchDecimal) {
+                latInput.value = matchDecimal[1];
+                lonInput.value = matchDecimal[2];
+                pasteInput.classList.add('is-valid');
+                return;
+            }
+
+            // 2. Intentar formato DMS (Ej: 18°46'29.3"N 95°44'54.6"W)
+            // Buscamos los patrones de grados, minutos, segundos y la dirección (N,S,E,W)
+            const regexDMS = /(\d+)°(\d+)'(\d+\.?\d*)"([NSEW])\s+(\d+)°(\d+)'(\d+\.?\d*)"([NSEW])/i;
+            const matchDMS = texto.match(regexDMS);
+
+            if (matchDMS) {
+                const convertirADecimal = (grados, minutos, segundos, direccion) => {
+                    let decimal = parseFloat(grados) + parseFloat(minutos)/60 + parseFloat(segundos)/3600;
+                    if (direccion === 'S' || direccion === 'W') decimal = decimal * -1;
+                    return decimal.toFixed(6); // 6 decimales es el estándar de precisión
+                };
+
+                const lat = convertirADecimal(matchDMS[1], matchDMS[2], matchDMS[3], matchDMS[4].toUpperCase());
+                const lon = convertirADecimal(matchDMS[5], matchDMS[6], matchDMS[7], matchDMS[8].toUpperCase());
+
+                latInput.value = lat;
+                lonInput.value = lon;
+                pasteInput.classList.add('is-valid');
+            } else {
+                pasteInput.classList.remove('is-valid');
+            }
+        });
+    });
+    </script>
+}

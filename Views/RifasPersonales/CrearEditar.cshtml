@@ -1,0 +1,320 @@
+﻿@model RedAJP.Models.RifaPersonalViewModel
+@{
+    // Usa el Layout maestro para salir del "área de trabajo" de la rifa
+    Layout = "~/Views/Shared/Principal.cshtml";
+    bool esEdicion = Model != null && Model.IdRifa > 0;
+    ViewData["Title"] = esEdicion ? "Editar Configuración" : "Nueva Rifa";
+}
+<style>
+    /* Control de Switch Personalizado para WhatsApp */
+    .switch-custom-wp {
+        cursor: pointer;
+        height: 1.5em;
+        width: 3em;
+    }
+    
+        /* Estado APAGADO (Gris claro) */
+        .switch-custom-wp:not(:checked) {
+            background-color: #e2e8f0 !important; /* Fondo gris */
+            border-color: #cbd5e1 !important; /* Borde gris */
+            /* Bolita color gris oscuro para que resalte */
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%2364748b'/%3e%3c/svg%3e") !important;
+        }
+    
+        /* Estado ENCENDIDO (Verde Éxito) */
+        .switch-custom-wp:checked {
+            background-color: #198754 !important; /* Fondo verde */
+            border-color: #198754 !important; /* Borde verde */
+            /* Bolita color blanco */
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") !important;
+        }
+</style>
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-rifaspersonales');
+        }
+        // Ejecutamos el cálculo al cargar la página por si es edición
+        calcularGanancia();
+    });
+    // Función para calcular y mostrar la ganancia en tiempo real
+    function calcularGanancia() {
+        var costo = parseFloat(document.getElementById('inputCosto').value) || 0;
+        var boletos = parseInt(document.getElementById('inputMeta').value) || 0;
+        var inversion = parseFloat(document.getElementById('inputInversion').value) || 0;
+        var ganancia = (costo * boletos) - inversion;
+        var txtGanancia = document.getElementById('txtGananciaEstimada');
+        if (ganancia > 0) {
+            // Formatear como moneda
+            txtGanancia.innerHTML = '$' + ganancia.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <small class="fw-light fs-6">MXN</small>';
+            txtGanancia.className = "mb-0 fw-bold text-white";
+        } else if (ganancia < 0) {
+            txtGanancia.innerHTML = '-$' + Math.abs(ganancia).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <small class="fw-light fs-6">MXN (Pérdida)</small>';
+            txtGanancia.className = "mb-0 fw-bold text-warning";
+        } else {
+            txtGanancia.innerHTML = '$0.00 <small class="fw-light fs-6">MXN</small>';
+            txtGanancia.className = "mb-0 fw-bold text-white opacity-75";
+        }
+    }
+</script>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="mb-3">
+                <a href="@Url.Action("Index", "RifasPersonales")" class="text-muted text-decoration-none fw-bold">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Volver a Mis Rifas
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-5">
+                    <h3 class="fw-bold mb-4 text-dark">
+                        <i class="fa-solid @(esEdicion ? "fa-pen-to-square text-primary" : "fa-plus text-success") me-2"></i>
+                        @(esEdicion ? "Configuración de la Dinámica" : "Detalles de la Nueva Rifa")
+                    </h3>
+                    
+                    <form action="@Url.Action("Guardar", "RifasPersonales")" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        
+                        <input type="hidden" name="tokenRifa" value="@(esEdicion? Model.Token: "")" />
+                        <input type="hidden" name="ImagenUrl" value="@Model?.ImagenUrl" />
+
+                        <div class="mb-4 bg-light p-4 rounded-4 border">
+                            <label class="form-label fw-bold text-dark mb-3">Imagen de Portada (Opcional)</label>
+                            <div class="d-flex flex-column flex-md-row align-items-center gap-4">
+                                <div class="position-relative shadow-sm" style="width: 150px; height: 150px; border-radius: 15px; overflow: hidden; border: 2px dashed #adb5bd; background-color: #ffffff; flex-shrink: 0;">
+                                    <img id="vistaPreviaImagen"
+                                         src="@(!string.IsNullOrEmpty(Model?.ImagenUrl) ? Model.ImagenUrl : "")"
+                                         style="width: 100%; height: 100%; object-fit: cover; @(string.IsNullOrEmpty(Model?.ImagenUrl) ? "display: none;" : "")" />
+                                    
+                                    <div id="placeholderImagen" class="position-absolute top-50 start-50 translate-middle text-muted text-center w-100" style="@(!string.IsNullOrEmpty(Model?.ImagenUrl) ? "display: none;" : "")">
+                                        <i class="fa-regular fa-image fa-2x mb-1"></i>
+                                        <div class="small fw-bold">Sin imagen</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex-grow-1 w-100">
+                                    <input type="file" name="fotoPortadaNueva" id="inputFotoPortada" class="form-control form-control-lg border-primary shadow-sm mb-2" accept="image/*" onchange="mostrarVistaPrevia(this)" />
+                                    <small class="text-muted"><i class="fa-solid fa-circle-info me-1"></i> Selecciona una imagen atractiva (JPG o PNG). Si ya tenías una y no seleccionas nada, se conservará la actual.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Título de la Dinámica</label>
+                            <input type="text" name="Titulo" class="form-control form-control-lg border-primary shadow-sm" value="@Model?.Titulo" required placeholder="Ej. Rifa de una Pantalla 50 pulgadas" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción / Premios</label>
+                            <textarea name="Descripcion" class="form-control shadow-sm border-primary" rows="3" required placeholder="Explica qué estás rifando y las reglas...">@Model?.Descripcion</textarea>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Costo por Boleto ($)</label>
+                                <input type="number" name="CostoBoleto" id="inputCosto" class="form-control shadow-sm border-primary" min="1" step="0.5" value="@(Model?.CostoBoleto > 0 ? Model.CostoBoleto : 50)" required oninput="calcularGanancia()" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Cantidad de Boletos</label>
+                                <input type="number" name="MetaBoletos" id="inputMeta" class="form-control shadow-sm border-primary" min="@(esEdicion? Model.MetaBoletos: 10)" value="@(Model?.MetaBoletos > 0 ? Model.MetaBoletos : 100)" required oninput="calcularGanancia()" />
+                                @if (esEdicion)
+                                {
+                                    <div class="form-text text-warning small fw-bold">Mínimo actual: @Model.MetaBoletos</div>
+                                }
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Fecha del Sorteo</label>
+                                <input type="datetime-local" name="FechaSorteo" class="form-control shadow-sm border-primary" value="@(Model?.FechaSorteo == DateTime.MinValue ? DateTime.Now.AddDays(15).ToString("yyyy-MM-ddTHH:mm") : Model.FechaSorteo.ToString("yyyy-MM-ddTHH:mm"))" required />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4 align-items-stretch">
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold">Costo del Premio ($)</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text border-primary bg-light"><i class="fa-solid fa-tag text-primary"></i></span>
+                                    <input type="number" name="InversionPremio" id="inputInversion" class="form-control border-primary" min="0" step="0.5" value="@(Model?.InversionPremio > 0 ? Model.InversionPremio : 0)" placeholder="Ej. 1500" required oninput="calcularGanancia()" />
+                                </div>
+                                <div class="form-text text-muted small"><i class="fa-solid fa-circle-info"></i> ¿Cuánto te costó lo que vas a rifar?</div>
+                            </div>
+                            
+                            <div class="col-md-7">
+                                <div class="card shadow-sm rounded-4 h-100 border-0" style="background: linear-gradient(135deg, #198754 0%, #20c997 100%);">
+                                    <div class="card-body d-flex align-items-center justify-content-between p-3">
+                                        <div>
+                                            <h6 class="mb-1 text-white opacity-75 fw-bold text-uppercase" style="font-size: 0.8rem;"><i class="fa-solid fa-chart-line me-2"></i>Ganancia Neta Estimada</h6>
+                                            <h3 class="mb-0 fw-bold text-white" id="txtGananciaEstimada">$0.00</h3>
+                                        </div>
+                                        <i class="fa-solid fa-sack-dollar fa-3x text-white opacity-25"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-5 p-4 rounded-4 border border-success shadow-sm" style="background-color: #f4fbf7;">
+                            <h5 class="fw-bold text-success mb-3 pb-2 border-bottom border-success border-opacity-25">
+                                <i class="fa-brands fa-whatsapp me-2"></i>Comunidad y Seguimiento
+                            </h5>
+                            
+                            <div class="alert bg-white border border-success border-opacity-25 small text-muted mb-4 shadow-sm">
+                                <i class="fa-solid fa-circle-info text-success me-1"></i> (Opcional) Activa un grupo de WhatsApp para mantener a tus participantes informados sobre el progreso de la dinámica y notificar al ganador.
+                            </div>
+
+                            <div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input switch-custom-wp shadow-sm" type="checkbox" id="chkGrupoWhatsapp" onchange="toggleGrupoWhatsapp()" @(string.IsNullOrEmpty(Model?.EnlaceGrupoWhatsapp) ? "" : "checked")>
+                                    <label class="form-check-label fw-bold text-dark" style="cursor: pointer;" for="chkGrupoWhatsapp">
+                                        Habilitar enlace a Grupo de WhatsApp
+                                    </label>
+                                </div>
+
+                                <div id="contenedorEnlaceWhatsapp" style="@(string.IsNullOrEmpty(Model?.EnlaceGrupoWhatsapp) ? "display: none;" : "display: block;")" class="mt-3 p-4 bg-white rounded-4 border shadow-sm">
+                                    <label class="form-label fw-bold text-success mb-2">Enlace de Invitación del Grupo</label>
+                                    
+                                    <div class="input-group shadow-sm mb-2">
+                                        <button class="btn btn-success px-3" type="button" id="btnPegarEnlace" onclick="pegarDesdePortapapeles()" title="Pegar Enlace">
+                                            <i class="fa-solid fa-paste text-white"></i>
+                                        </button>
+                                        
+                                        <input type="url" name="EnlaceGrupoWhatsapp" id="EnlaceGrupoWhatsapp" class="form-control form-control-lg border-success bg-light" value="@Model?.EnlaceGrupoWhatsapp" placeholder="https://chat.whatsapp.com/..." />
+                                        
+                                        <button class="btn btn-success px-3" type="button" id="btnCopiarEnlace" onclick="copiarAlPortapapeles()" title="Copiar Enlace">
+                                            <i class="fa-solid fa-copy text-white"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    @if (esEdicion && !string.IsNullOrEmpty(Model?.EnlaceGrupoWhatsapp))
+                                    {
+                                        <div class="alert alert-warning border-warning small mt-3 mb-2 py-2 d-flex align-items-center">
+                                            <i class="fa-solid fa-triangle-exclamation fs-4 me-2 text-warning"></i>
+                                            <div>
+                                                <strong>¡Advertencia importante!</strong> No edites ni cambies este enlace ni modifiques el grupo de Whatsapp (si existe) si ya has compartido los boletos digitales o impreso las planillas físicas. Si lo cambias, <strong>los códigos QR generados anteriormente dejarán de funcionar</strong>.
+                                            </div>
+                                        </div>
+                                    }
+                                    
+                                    <div class="form-text text-muted small mt-2">
+                                        <i class="fa-solid fa-qrcode text-success"></i> Al guardar, se generará automáticamente un código QR que se mostrará en cada boleto impreso de la planilla.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold text-dark mt-5 mb-3 border-bottom pb-2">
+                            <i class="fa-solid fa-building-columns text-primary me-2"></i>Datos para Recepción de Pagos
+                        </h5>
+                        <div class="alert alert-light border small text-muted mb-3">
+                            <i class="fa-solid fa-circle-info text-primary me-1"></i> Configura la cuenta donde tus vendedores deberán transferir el dinero de esta rifa. (Opcional)
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Banco</label>
+                                <input type="text" name="Banco" class="form-control shadow-sm" value="@Model?.Banco" placeholder="Ej. BBVA, Banamex..." />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Titular de la Cuenta</label>
+                                <input type="text" name="TitularCuenta" class="form-control shadow-sm" value="@Model?.TitularCuenta" placeholder="Nombre completo..." />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Cuenta CLABE</label>
+                                <input type="text" name="CuentaClabe" class="form-control shadow-sm" value="@Model?.CuentaClabe" placeholder="18 dígitos..." />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Número de Cuenta</label>
+                                <input type="text" name="NumeroCuenta" class="form-control shadow-sm" value="@Model?.NumeroCuenta" placeholder="10 dígitos..." />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Número de Tarjeta</label>
+                                <input type="text" name="NumeroTarjeta" class="form-control shadow-sm" value="@Model?.NumeroTarjeta" placeholder="16 dígitos..." />
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4 pt-4 border-top">
+                            <a href="@Url.Action("Index", "RifasPersonales")" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm">Cancelar</a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow">
+                                <i class="fa-solid fa-save me-2"></i> @(esEdicion ? "Guardar Cambios" : "Crear Rifa")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function mostrarVistaPrevia(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var img = document.getElementById('vistaPreviaImagen');
+                    var placeholder = document.getElementById('placeholderImagen');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    placeholder.style.display = 'none';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function toggleGrupoWhatsapp() {
+            var chk = document.getElementById('chkGrupoWhatsapp');
+            var contenedor = document.getElementById('contenedorEnlaceWhatsapp');
+            var inputEnlace = document.getElementById('EnlaceGrupoWhatsapp');
+            
+            if (chk.checked) {
+                contenedor.style.display = 'block';
+            } else {
+                contenedor.style.display = 'none';
+                inputEnlace.value = '';
+            }
+        }
+                
+        async function copiarAlPortapapeles() {
+            var inputEnlace = document.getElementById('EnlaceGrupoWhatsapp');
+            var texto = inputEnlace.value;
+            
+            if (!texto) {
+                alert("No hay ningún enlace para copiar.");
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(texto);
+                var btn = document.getElementById('btnCopiarEnlace');
+                var iconoOriginal = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check text-white"></i>';
+                setTimeout(() => { btn.innerHTML = iconoOriginal; }, 1500);
+            } catch (err) {
+                console.error('Error al copiar: ', err);
+                alert("No se pudo copiar el enlace automáticamente.");
+            }
+        }
+
+        async function pegarDesdePortapapeles() {
+            var inputEnlace = document.getElementById('EnlaceGrupoWhatsapp');
+            try {
+                if (!navigator.clipboard || !navigator.clipboard.readText) {
+                    throw new Error("API del portapapeles no soportada");
+                }
+                
+                const texto = await navigator.clipboard.readText();
+                if (texto) {
+                    inputEnlace.value = texto;
+                    var btn = document.getElementById('btnPegarEnlace');
+                    var iconoOriginal = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-check text-white"></i>';
+                    setTimeout(() => { btn.innerHTML = iconoOriginal; }, 1500);
+                }
+            } catch (err) {
+                console.error('Error al leer del portapapeles: ', err);
+                alert("Tu navegador bloqueó el acceso al portapapeles. Por favor, pega el enlace manualmente (dejando presionado el cuadro de texto).");
+            }
+        }
+    </script>
+}

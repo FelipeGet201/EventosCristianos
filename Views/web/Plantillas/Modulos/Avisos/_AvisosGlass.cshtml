@@ -1,0 +1,20 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<div class="container py-5 fade-in-up">
+    <h2 class="mb-4" style="font-family: var(--theme-font-title); color: var(--theme-primary); font-weight: 800;">Importante</h2>
+    <div class="d-flex flex-column gap-3">
+        @if (Model.Avisos != null && Model.Avisos.Any())
+        {
+            foreach (var aviso in Model.Avisos)
+            {
+                <div class="p-4 rounded-4" style="background: var(--theme-surface); border: 1px solid rgba(128, 128, 128, 0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <h5 class="mb-2" style="font-family: var(--theme-font-title); color: var(--theme-text-main);">@aviso.Titulo</h5>
+                    <p class="small mb-3" style="font-family: var(--theme-font-body); color: var(--theme-text-muted);">@aviso.Descripcion</p>
+                    <div class="pt-2 border-top" style="border-color: rgba(128, 128, 128, 0.2) !important; font-size: 0.8rem; color: var(--theme-accent); font-family: var(--theme-font-body); font-weight: 600;">
+                        Expira: @(aviso.FechaExpiracion == default ? "--" : aviso.FechaExpiracion.ToString("dd/MM/yyyy"))
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

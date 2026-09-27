@@ -1,0 +1,278 @@
+﻿@model RedAJP.Models.CarritoViewModel
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Tu Carrito";
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-tienda');
+        }
+    });
+</script>
+
+<div class="fade-in py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="fw-bold mb-0">Tu Carrito <span class="text-muted fs-4">(@Model.Items.Count artículos)</span></h2>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left me-2"></i> Seguir Comprando
+        </a>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 400px;">
+            <div class="mb-4 position-relative">
+                <div class="bg-white shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 120px; height: 120px; border: 1px solid #f0f0f0;">
+                    <i class="fa-solid fa-cart-arrow-down fa-3x text-muted opacity-50"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold text-dark mb-2">Tu carrito está vacío</h3>
+            <p class="text-muted mb-4" style="max-width: 400px;">Parece que aún no has agregado nada. ¡Explora nuestra tienda!</p>
+            <a href="@Url.Action("Index")" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-sm">
+                Ir a la Tienda
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-body p-0">
+                        @foreach (var item in Model.Items)
+                        {
+                            bool hayErrorStock = item.Cantidad == 0;
+                            string claseFondo = hayErrorStock ? "bg-danger bg-opacity-10" : "";
+
+                            <div class="p-4 border-bottom d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-4 product-row @claseFondo">
+
+                                <div class="rounded-3 bg-light overflow-hidden flex-shrink-0 border" style="width: 100px; height: 100px;">
+                                    @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                                    {
+                                        <img src="@item.ImagenUrl" class="w-100 h-100 object-fit-cover">
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-muted"><i class="fa-solid fa-image fa-2x opacity-25"></i></div>
+                                    }
+                                </div>
+
+                                <div class="flex-grow-1 w-100">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="fw-bold mb-1 text-dark">@item.Nombre</h5>
+                                        <span class="d-sm-none fw-bold text-primary">$@item.Precio.ToString("N2")</span>
+                                    </div>
+
+                                    <div class="mb-2 mt-1">
+                                        @if (item.TallasDisponibles != null && item.TallasDisponibles.Count > 0)
+                                        {
+                                            <select class="form-select form-select-sm w-auto d-inline-block border-0 bg-light fw-bold text-secondary py-1"
+                                                    onfocus="this.setAttribute('data-prev', this.value)"
+                                                    onchange="actualizarItem(@item.IdDetalle, this, 'talla')"
+                                                    style="cursor: pointer;">
+                                                @foreach (var t in item.TallasDisponibles)
+                                                {
+                                                    // LÓGICA VISUAL: "Talla (Stock)"
+                                                    string infoExtra = t.Stock > 0 ? $"({t.Stock} disp.)" : "(Agotado)";
+                                                    string claseOp = t.Stock == 0 ? "text-muted" : "fw-bold text-dark";
+
+                                                    // Renderizado condicional
+                                                    <!option value="@t.Nombre" class="@claseOp" @(item.TallaActual == t.Nombre ? "selected" : "")>
+                                                    Talla: @t.Nombre @infoExtra
+                                                    </!option>
+                                                }
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted bg-light px-2 py-1 rounded">Unitalla</small>
+                                        }
+
+                                        @if (item.EsPersonalizado)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-2">Personalizado</span>
+                                        }
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-3 mt-2">
+                                        <div class="input-group input-group-sm" style="width: 110px;">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="cambiarCant(this, -1)">-</button>
+
+                                            <input type="number" class="form-control text-center fw-bold bg-white input-cantidad"
+                                                   data-id="@item.IdDetalle"
+                                                   data-prev="@item.Cantidad"
+                                                   value="@(item.Cantidad == 0 ? 1 : item.Cantidad)"
+                                                   min="1"
+                                                   onchange="actualizarItem(@item.IdDetalle, this, 'cantidad')"
+                                                   style="box-shadow: none;">
+
+                                            <button class="btn btn-outline-secondary" type="button" onclick="cambiarCant(this, 1)">+</button>
+                                        </div>
+                                        <span class="text-muted small">x $@item.Precio.ToString("N2")</span>
+                                    </div>
+
+                                    @if (hayErrorStock)
+                                    {
+                                        <div class="text-danger small mt-1 fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> Stock no disponible. Selecciona otra talla.</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa-solid fa-box-open me-1 text-primary opacity-50"></i> Disponibles: <strong>@item.StockMaximo</strong>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="text-end d-none d-sm-block">
+                                    <h5 class="fw-bold text-dark mb-3">$@item.Subtotal.ToString("N2")</h5>
+
+                                    <form method="post" action="@Url.Action("EliminarItem", "Tienda")">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idDetalle" value="@item.IdDetalle" />
+                                        <button type="submit" class="btn btn-link text-danger p-0 text-decoration-none small hover-scale">
+                                            <i class="fa-solid fa-trash me-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div class="d-sm-none w-100 mt-2">
+                                    <form method="post" action="@Url.Action("EliminarItem", "Tienda")">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idDetalle" value="@item.IdDetalle" />
+                                        <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                                            <i class="fa-solid fa-trash me-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 bg-light sticky-top" style="top: 100px; z-index: 1;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-4">Resumen</h5>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Subtotal</span>
+                            <span class="fw-bold">$@Model.Total.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-4 border-bottom pb-3">
+                            <span class="text-muted">Envío</span>
+                            <span class="text-success fw-bold">Gratis</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-4">
+                            <span class="fs-5 fw-bold">Total</span>
+                            <span class="fs-4 fw-bold text-primary">$@Model.Total.ToString("N2")</span>
+                        </div>
+
+                        <a href="@Url.Action("Pagar", "Tienda")" class="btn btn-dark w-100 rounded-pill py-3 fw-bold shadow-sm hover-scale @(Model.Total <= 0 ? "disabled" : "")">
+                            CONTINUAR COMPRA <i class="fa-solid fa-arrow-right ms-2"></i>
+                        </a>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Confirmarás tus datos en el siguiente paso.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    function cambiarCant(btn, delta) {
+        var input = btn.parentElement.querySelector('input');
+        var val = parseInt(input.value) || 0;
+        var nuevo = val + delta;
+        if(nuevo >= 1) {
+            input.value = nuevo;
+            var event = new Event('change');
+            input.dispatchEvent(event);
+        }
+    }
+
+    async function actualizarItem(idDetalle, elemento, tipo) {
+        const contenedor = elemento.closest('.product-row');
+        const inputCant = contenedor.querySelector('input.input-cantidad');
+        const selectTalla = contenedor.querySelector('select');
+
+        const nuevaCantidad = inputCant.value;
+        const nuevaTalla = selectTalla ? selectTalla.value : "N/A";
+
+        // Guardamos valores anteriores para revertir si falla
+        const cantAnterior = inputCant.getAttribute('data-prev');
+        const tallaAnterior = selectTalla ? selectTalla.getAttribute('data-prev') : "N/A";
+
+        document.body.style.cursor = 'wait';
+
+        try {
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+
+            const formData = new FormData();
+            formData.append('idDetalle', idDetalle);
+            formData.append('nuevaCantidad', nuevaCantidad);
+            formData.append('nuevaTalla', nuevaTalla);
+            formData.append('__RequestVerificationToken', token);
+
+            const response = await fetch('@Url.Action("ActualizarItemCarrito", "Tienda")', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                location.reload();
+            } else {
+                // Mostrar Modal de Error / Aviso
+                if (typeof mostrarMensaje === 'function') {
+                    mostrarMensaje('Aviso', data.message, 'alerta');
+                } else {
+                    alert(data.message);
+                }
+
+                // REVERTIR VISUALMENTE SIN RECARGAR
+                if(tipo === 'cantidad') {
+                    inputCant.value = cantAnterior;
+                }
+                if(tipo === 'talla' && selectTalla) {
+                    selectTalla.value = tallaAnterior;
+                }
+            }
+
+        } catch (error) {
+            console.error(error);
+            if (typeof mostrarMensaje === 'function') {
+                mostrarMensaje('Error de Conexión', 'No se pudo actualizar el carrito.', 'error');
+            }
+        } finally {
+            document.body.style.cursor = 'default';
+        }
+    }
+</script>
+
+<style>
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+</style>

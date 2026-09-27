@@ -1,0 +1,247 @@
+﻿@model RedAJP.Models.DisenadorViewModel
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Diseñar " + Model.Nombre_Base;
+
+    // Fallback de seguridad por si la BD trae ceros
+    int areaX = Model.Area_X;
+    int areaY = Model.Area_Y;
+    int areaW = Model.Area_Ancho > 0 ? Model.Area_Ancho : 50;
+    int areaH = Model.Area_Alto > 0 ? Model.Area_Alto : 60;
+}
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-tienda');
+        }
+    });
+</script>
+
+<div class="fade-in py-4">
+    <div class="row g-4">
+
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-light">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-shirt me-2"></i> Vista Previa</h5>
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">
+                        <i class="fa-solid fa-crop-simple me-1"></i> Zona de impresión
+                    </span>
+                </div>
+
+                <div class="card-body p-0 d-flex justify-content-center align-items-center bg-secondary bg-opacity-10" style="min-height: 600px;">
+
+                    <div id="areaDiseno" class="position-relative shadow-sm bg-white"
+                         style="width: 500px; height: 500px; overflow: hidden;">
+
+                        <img src="@Model.Imagen_Base_Url"
+                             crossOrigin="anonymous"
+                             class="w-100 h-100 object-fit-contain position-absolute top-0 start-0"
+                             style="z-index: 1; pointer-events: none;">
+
+                        <div id="zonaImpresion"
+                             class="position-absolute border border-primary border-2 border-dashed"
+                             style="left: @areaX%; top: @areaY%; width: @areaW%; height: @areaH%; z-index: 10; overflow: hidden;">
+
+                            <img id="imgUsuario" src=""
+                                 class="position-absolute"
+                                 style="display: none; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 100%; cursor: grab;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-0 text-center text-muted small py-3">
+                    <i class="fa-solid fa-circle-info me-1"></i> Tu diseño debe estar dentro del recuadro punteado azul.
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 100px; z-index: 1;">
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <h3 class="fw-bold mb-1">Personalizador</h3>
+                        <p class="text-muted small">Producto: <strong>@Model.Nombre_Base</strong></p>
+                    </div>
+
+                    <form id="formDiseno" method="post" action="@Url.Action("GuardarDiseno", "Tienda")" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="Id_Producto_Base" value="@Model.Id_Producto_Base" />
+                        <input type="hidden" asp-for="ConfiguracionJson" id="inputConfig" />
+
+                        <input type="hidden" name="ImagenPrevioBase64" id="inputPrevio" />
+
+                        <div class="mb-4 p-3 bg-light rounded-3 border text-center">
+                            <label for="fileInput" class="btn btn-outline-dark w-100 mb-2">
+                                <i class="fa-solid fa-cloud-arrow-up me-2"></i> Subir Imagen / Logo
+                            </label>
+                            <input type="file" name="ArchivoOriginal" id="fileInput" class="d-none" accept="image/*" required onchange="cargarImagen(this)">
+                            <div class="small text-muted" id="nombreArchivo">Formatos: PNG (Transparente), JPG</div>
+                        </div>
+
+                        <div id="controles" style="display: none;" class="animate__animated animate__fadeIn">
+                            <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="fa-solid fa-sliders me-2"></i> Ajustar Diseño</h6>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <label class="small text-muted fw-bold">Tamaño</label>
+                                    <span class="small" id="lblSize">100%</span>
+                                </div>
+                                <input type="range" class="form-range" min="10" max="300" value="100" id="rangeSize" oninput="actualizarEstilo()">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small text-muted fw-bold">Mover Horizontal</label>
+                                <input type="range" class="form-range" min="-100" max="200" value="50" id="rangeLeft" oninput="actualizarEstilo()">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small text-muted fw-bold">Mover Vertical</label>
+                                <input type="range" class="form-range" min="-100" max="200" value="50" id="rangeTop" oninput="actualizarEstilo()">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-nautico py-3 rounded-pill fw-bold shadow-sm" onclick="procesarGuardado()">
+                                <i class="fa-solid fa-check-circle me-2"></i> Terminar y Solicitar
+                            </button>
+                            <a href="@Url.Action("Detalle", new { id = Model.Id_Producto_Base })" class="btn btn-light rounded-pill text-muted border">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+    function cargarImagen(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = document.getElementById('imgUsuario');
+                img.src = e.target.result;
+                img.style.display = 'block';
+
+                document.getElementById('nombreArchivo').innerText = input.files[0].name;
+                document.getElementById('nombreArchivo').classList.add('text-success', 'fw-bold');
+
+                document.getElementById('rangeSize').value = 100;
+                document.getElementById('rangeLeft').value = 50;
+                document.getElementById('rangeTop').value = 50;
+
+                actualizarEstilo();
+                document.getElementById('controles').style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function actualizarEstilo() {
+        var size = document.getElementById('rangeSize').value;
+        var left = document.getElementById('rangeLeft').value;
+        var top = document.getElementById('rangeTop').value;
+
+        document.getElementById('lblSize').innerText = size + '%';
+
+        var img = document.getElementById('imgUsuario');
+        img.style.width = size + '%';
+        img.style.left = left + '%';
+        img.style.top = top + '%';
+    }
+
+    function procesarGuardado() {
+        var btn = document.querySelector('.btn-nautico');
+        var form = document.getElementById('formDiseno');
+
+        if(document.getElementById('fileInput').files.length === 0) {
+            alert('Por favor sube una imagen primero.');
+            return;
+        }
+
+        var textoOriginal = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Generando vista previa...';
+        btn.disabled = true;
+
+        var config = {
+            size: document.getElementById('rangeSize').value,
+            left: document.getElementById('rangeLeft').value,
+            top: document.getElementById('rangeTop').value
+        };
+        document.getElementById('inputConfig').value = JSON.stringify(config);
+
+        // Ocultar borde temporalmente
+        var zona = document.getElementById('zonaImpresion');
+        zona.classList.remove('border', 'border-primary', 'border-2', 'border-dashed');
+
+        var elementoACapturar = document.getElementById('areaDiseno');
+
+        // Configuración ROBUSTA para html2canvas
+        html2canvas(elementoACapturar, {
+            useCORS: true,       // Permite imágenes externas
+            allowTaint: true,    // Permite "manchar" el canvas (útil si CORS falla)
+            scale: 1,            // Calidad estándar
+            logging: true,       // Ayuda a depurar en consola (F12)
+            backgroundColor: null
+        }).then(canvas => {
+            // Restaurar borde
+            zona.classList.add('border', 'border-primary', 'border-2', 'border-dashed');
+
+            // Convertir
+            var imgData = canvas.toDataURL('image/jpeg', 0.8);
+
+            // VALIDACIÓN JS ANTES DE ENVIAR
+            if (!imgData || imgData.length < 1000) {
+                alert("Error: La vista previa generada está vacía. Intenta con otra imagen.");
+                console.error("DataURL vacía o muy corta:", imgData);
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
+                return;
+            }
+
+            // Asignar y enviar
+            document.getElementById('inputPrevio').value = imgData;
+            form.submit();
+
+        }).catch(err => {
+            console.error("Error html2canvas:", err);
+            alert('Hubo un error técnico al generar la imagen. Revisa la consola (F12).');
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+            zona.classList.add('border', 'border-primary', 'border-2', 'border-dashed');
+        });
+    }
+</script>
+
+<style>
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+        transition: 0.3s;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    #imgUsuario {
+        cursor: grab;
+    }
+
+        #imgUsuario:active {
+            cursor: grabbing;
+        }
+
+    .form-range::-webkit-slider-thumb {
+        background: var(--header-footer);
+        cursor: pointer;
+    }
+</style>

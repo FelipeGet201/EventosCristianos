@@ -1,0 +1,309 @@
+﻿@using RedAJP.Globales
+@model List<RedAJP.Models.ProductoListadoItem>
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Gestión de Productos";
+
+    bool p_Crear = User.TienePermiso(Parametros.Modulos.TiendaConfig, Parametros.Permisos.Crear);
+    bool p_Editar = User.TienePermiso(Parametros.Modulos.TiendaConfig, Parametros.Permisos.Editar);
+
+    var categorias = ViewBag.Categorias as IEnumerable<dynamic>;
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-catalogotienda');
+        }
+    });
+</script>
+
+<style>
+    /* Botón Principal (Azul vibrante/Cyan) */
+    .btn-nautico-vibrante {
+        background-color: #00BCD4; /* Color similar al carrito */
+        color: white !important;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+        .btn-nautico-vibrante:hover {
+            background-color: #0097A7;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 188, 212, 0.4);
+        }
+
+    /* Efecto Vidrio Esmerilado para la tarjeta del buscador */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.65) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px); /* Soporte Safari */
+        border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    }
+
+    /* Botón Buscar (Sutil y elegante) */
+    .btn-nautico-sutil {
+        background-color: white;
+        color: var(--header-footer, #002B36);
+        border: 1px solid rgba(0, 43, 54, 0.15);
+        transition: all 0.3s ease;
+    }
+
+        .btn-nautico-sutil:hover {
+            background-color: var(--header-footer, #002B36);
+            color: white;
+            border-color: var(--header-footer, #002B36);
+        }
+
+    /* Círculo translúcido para el pez vacío */
+    .glass-circle {
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .focus-ring-nautico:focus-within {
+        border-color: #00BCD4 !important;
+        box-shadow: 0 0 0 0.25rem rgba(0, 188, 212, 0.25) !important;
+    }
+</style>
+
+<div class="fade-in py-4 container-fluid">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h2 class="fw-bold mb-1" style="color: var(--header-footer);">
+                <i class="fa-solid fa-boxes-stacked me-2 text-warning"></i>Inventario
+            </h2>
+            <p class="text-muted mb-0 small">Gestión del catálogo de venta</p>
+        </div>
+    
+        @if (p_Crear)
+        {
+            <a href="@Url.Action("Editor", "TiendaProductos", new { id = 0 })" class="btn btn-nautico-vibrante rounded-pill px-4 shadow-sm w-100 w-md-auto d-flex align-items-center justify-content-center">
+                <i class="fa-solid fa-plus me-2"></i> Nuevo Producto
+            </a>
+        }
+    </div>
+
+    <div class="card border-0 shadow-sm mb-5 rounded-4 p-2 p-md-3 glass-card">
+        <form method="get" action="@Url.Action("Index")" class="row g-3 align-items-center m-0">
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-lg rounded-pill border bg-white overflow-hidden focus-ring-nautico shadow-sm">
+                    <span class="input-group-text bg-transparent border-0 text-muted ps-4">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="busqueda" class="form-control bg-transparent border-0 shadow-none"
+                           placeholder="Buscar producto..."
+                           value="@ViewData["Busqueda"]">
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="input-group input-group-lg rounded-pill border bg-white overflow-hidden focus-ring-nautico shadow-sm">
+                    <span class="input-group-text bg-transparent border-0 fw-bold small text-muted ps-4">
+                        <i class="fa-solid fa-filter me-2"></i> Cat:
+                    </span>
+                    <select class="form-select bg-transparent border-0 shadow-none"
+                            name="idCategoria"
+                            onchange="this.form.submit()"
+                            style="cursor: pointer;">
+                        <option value="">-- Todas --</option>
+                        @if (categorias != null)
+                        {
+                            foreach (dynamic c in categorias)
+                            {
+                                bool seleccionado = (ViewData["IdCategoria"] != null && (int)ViewData["IdCategoria"] == c.Id);
+                                <!option value="@c.Id" @(seleccionado ? "selected" : "")>@c.Nombre</!option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-3 d-flex gap-2 justify-content-md-end">
+                <button type="submit" class="btn btn-nautico-sutil rounded-pill px-4 fw-bold flex-fill flex-md-grow-0 d-flex align-items-center justify-content-center shadow-sm">
+                    Buscar
+                </button>
+
+                @if (ViewData["Busqueda"] != null || ViewData["IdCategoria"] != null)
+                {
+                    <a href="@Url.Action("Index")" class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                           title="Limpiar filtros" style="width: 48px; height: 48px; flex-shrink: 0; background-color: white;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <div class="row g-3 g-md-4">
+        @if (Model.Count == 0)
+        {
+            <div class="col-12 text-center py-5 mt-4">
+                <div class="d-inline-block p-4 rounded-circle glass-circle shadow-sm mb-3">
+                    <i class="fa-solid fa-fish fa-3x" style="color: var(--header-footer, #002B36); opacity: 0.6;"></i>
+                </div>
+                <h4 class="fw-bold" style="color: var(--header-footer, #002B36);">Inventario vacío</h4>
+                <p class="text-muted">No se encontraron productos con los filtros actuales.</p>
+            </div>
+        }
+
+        @foreach (var item in Model)
+        {
+            <div class="col-6 col-md-4 col-xl-3">
+                <div class="card h-100 border-0 shadow-sm card-hover rounded-4 overflow-hidden product-card bg-white">
+                    <div class="position-relative border-bottom ratio ratio-4x3 bg-light">
+                        @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                        {
+                            <img src="@item.ImagenUrl" alt="@item.Nombre"
+                                 class="w-100 h-100 p-3 img-fluid"
+                                 style="object-fit: contain;">
+                        }
+                        else
+                        {
+                            <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted opacity-25">
+                                <i class="fa-solid fa-image fa-3x"></i>
+                            </div>
+                        }
+
+                        <div class="position-absolute top-0 start-0 w-100 p-2 d-flex justify-content-between align-items-start" style="z-index: 5;">
+                            <div class="d-flex flex-column gap-1">
+                                @if (!item.Activo)
+                                {
+                                    <span class="badge bg-secondary shadow-sm rounded-pill px-2 py-1 badge-mini">Inactivo</span>
+                                }
+
+                                @if (item.Stock > 0)
+                                {
+                                    <span class="badge bg-success shadow-sm rounded-pill px-2 py-1 badge-mini">
+                                        <span class="d-none d-md-inline">Stock:</span> @item.Stock
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger shadow-sm rounded-pill px-2 py-1 badge-mini">
+                                        <i class="fa-solid fa-ban me-1 d-none d-md-inline"></i>Agotado
+                                    </span>
+                                }
+                            </div>
+
+                            @if (item.Es_Personalizable)
+                            {
+                                <div>
+                                    <span class="badge bg-info text-dark shadow-sm rounded-circle p-2" title="Personalizable">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="card-body d-flex flex-column p-3">
+                        <small class="text-muted text-uppercase fw-bold mb-1 categoria-txt" style="letter-spacing: 0.5px;">@item.Categoria</small>
+                        <h6 class="fw-bold text-dark mb-1 text-truncate nombre-prod" title="@item.Nombre">@item.Nombre</h6>
+                        <h5 class="fw-bold mb-3 precio-txt" style="color: var(--pez-azul, #00BCD4);">
+                            $@item.Precio.ToString("N2")
+                        </h5>
+
+                        <div class="mt-auto pt-3 border-top">
+                            @if (p_Editar)
+                            {
+                                <a href="@Url.Action("Editor", "TiendaProductos", new { id = item.Id_Producto })" class="btn btn-light btn-sm rounded-pill w-100 fw-bold py-2 btn-gestion text-dark border shadow-sm btn-hover-nautico">
+                                    <i class="fa-solid fa-pen-to-square me-1 text-primary"></i>
+                                    <span class="d-none d-md-inline">Gestionar</span>
+                                    <span class="d-inline d-md-none">Ver</span>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* === Estilos Náuticos Base === */
+    .btn-nautico {
+        background-color: var(--header-footer, #002B36);
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul, #00BCD4);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
+        }
+
+    .btn-hover-nautico:hover {
+        background-color: var(--pez-azul, #00BCD4) !important;
+        color: white !important;
+        border-color: transparent !important;
+    }
+    
+        .btn-hover-nautico:hover i {
+            color: white !important;
+        }
+
+    .focus-ring-nautico:focus-within {
+        border-color: var(--pez-azul, #00BCD4) !important;
+        box-shadow: 0 0 0 0.25rem rgba(0, 188, 212, 0.25);
+    }
+
+    /* === Animación Hover Tarjetas === */
+    .card-hover {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05) !important;
+    }
+
+        .card-hover:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+            border-color: rgba(0, 188, 212, 0.3) !important;
+        }
+
+    .ratio-4x3 {
+        --bs-aspect-ratio: 75%;
+    }
+
+    /* === Ajustes Responsive === */
+    @@media (min-width: 576px) {
+        .w-md-auto {
+            width: auto !important;
+        }
+    }
+
+    /* === Ajustes EXCLUSIVOS Móvil === */
+    @@media (max-width: 576px) {
+        .badge-mini {
+            font-size: 0.65rem !important;
+            padding: 0.35em 0.5em !important;
+        }
+
+        .categoria-txt {
+            font-size: 0.6rem !important;
+        }
+
+        .nombre-prod {
+            font-size: 0.9rem !important;
+        }
+
+        .precio-txt {
+            font-size: 1.1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .btn-gestion {
+            font-size: 0.8rem !important;
+        }
+        
+        .product-card {
+            border-radius: 16px !important;
+        }
+    }
+</style>

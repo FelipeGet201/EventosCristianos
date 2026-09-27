@@ -1,0 +1,349 @@
+﻿@model RedAJP.Models.Usuario
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Mi Perfil";
+    // Obtenemos el Rol desde la Cookie para mostrarlo en el badge
+    var rolUsuario = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Miembro";
+}
+
+<script>
+    // Este script le dice al Layout "Abuelo" (Principal) que encienda la opción "Tienda" en el menú superior
+    // El Layout "Padre" (_TiendaLayout) ya tiene su propio menú lateral activo
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-usuario');
+            activarMenu('submenu-miperfil');
+        }
+    });
+</script>
+
+<div class="row justify-content-center align-items-center py-4" style="min-height: 75vh;">
+    <div class="col-lg-8 col-md-10">
+
+        <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden; background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);">
+
+            <div class="card-header text-white text-center py-4" style="background: linear-gradient(135deg, var(--header-footer) 0%, #006064 100%);">
+                <div class="position-relative d-inline-block">
+                    <img src="https://ui-avatars.com/api/?name=@Model.NombreCompleto&background=ffb74d&color=fff&size=128&bold=true"
+                         class="rounded-circle border border-4 border-white shadow"
+                         alt="Avatar" style="width: 100px; height: 100px;">
+
+                    <span class="position-absolute bottom-0 start-100 translate-middle badge rounded-pill bg-danger border border-white shadow-sm">
+                        @rolUsuario
+                    </span>
+                </div>
+                <h3 class="mt-3 fw-bold">@Model.NombreCompleto</h3>
+                <p class="mb-0 text-white-50 small font-monospace">
+                    <i class="fa-solid fa-id-card me-1"></i> ID: @Model.Id_Usuario.ToString("D4")
+                </p>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+
+                <form action="@Url.Action("Guardar", "Perfil")" method="post" autocomplete="off" id="formPerfil">
+
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id_Usuario" value="@Model.Id_Usuario" />
+
+                    <div class="row g-3">
+
+                        <div class="col-12 mb-2">
+                            <h6 class="text-uppercase text-muted fw-bold small border-bottom pb-2" style="letter-spacing: 1px;">
+                                <i class="fa-solid fa-id-badge me-2"></i>Asignaciones y Grupos
+                            </h6>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            
+                            @if (ViewBag.RequiereVinculacion == true)
+                            {
+                                if (ViewBag.EstadoSolIglesia == "PEN")
+                                {
+                                    <div class="alert alert-warning py-2 mb-3 border border-warning shadow-sm"><i class="fa-solid fa-clock me-2"></i> Tu solicitud de vinculación está en <strong>revisión</strong>.</div>
+                                }
+                                else if (ViewBag.EstadoSolIglesia == "RCH")
+                                {
+                                    <div class="alert alert-danger py-2 mb-3 border border-danger shadow-sm"><i class="fa-solid fa-circle-xmark me-2"></i> Tu solicitud fue <strong>rechazada</strong>: @ViewBag.MotivoRchIglesia</div>
+                                }
+                                else if (string.IsNullOrEmpty(ViewBag.NombreIglesia as string))
+                                {
+                                    <div class="alert alert-secondary py-2 mb-3"><i class="fa-solid fa-triangle-exclamation me-2"></i> Aún no estás vinculado a una iglesia.</div>
+                                }
+                            }
+
+                            <div class="d-flex flex-wrap gap-2">
+                                
+                                @* 1. BADGE DE LA IGLESIA (SIEMPRE PRIMERO) *@
+                                @if (!string.IsNullOrEmpty(ViewBag.NombreIglesia as string))
+                                {
+                                    <span class="badge rounded-pill shadow-sm"
+                                          style="background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%); font-size: 0.9rem; padding: 0.7em 1.4em; border: 1px solid rgba(255,255,255,0.2);">
+                                        <i class="fa-solid fa-church me-2"></i>@ViewBag.NombreIglesia
+                                    </span>
+                                }
+
+                                @* 2. BADGES DE LOS GRUPOS (DINÁMICOS) *@
+                                @if (ViewBag.GruposUsuario != null)
+                                {
+                                    @foreach (var grupo in (List<string>)ViewBag.GruposUsuario)
+                                    {
+                                        <span class="badge rounded-pill shadow-sm"
+                                              style="background-color: #006064; font-size: 0.85rem; padding: 0.6em 1.2em; border: 1px solid rgba(255,255,255,0.1); opacity: 0.9;">
+                                            <i class="fa-solid fa-users me-1"></i> @grupo
+                                        </span>
+                                    }
+                                }
+
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-2 mb-2">
+                            <h6 class="text-uppercase text-muted fw-bold small border-bottom pb-2" style="letter-spacing: 1px;">
+                                <i class="fa-solid fa-user-astronaut me-2"></i>Datos de Identificación
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="Nombre_Usuario" name="Nombre_Usuario"
+                                       value="@Model.Nombre_Usuario" placeholder="Usuario" readonly>
+                                <label for="Nombre_Usuario">Usuario (Login)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="NombreCompleto" name="NombreCompleto"
+                                       value="@Model.NombreCompleto" placeholder="Nombre" readonly
+                                       data-locked="@(ViewBag.PuedeCambiarNombre != null && ViewBag.PuedeCambiarNombre ? "false" : "true")">
+                                <label for="NombreCompleto">Nombre Completo</label>
+                            </div>
+                            @if (ViewBag.PuedeCambiarNombre != null && ViewBag.PuedeCambiarNombre)
+                            {
+                                <small id="alertaNombre" class="text-danger d-none fw-bold mt-1 d-block"><i class="fa-solid fa-triangle-exclamation"></i> Nota: Solo podrás cambiar tu nombre 1 vez.</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted mt-1 d-block"><i class="fa-solid fa-lock me-1"></i> El nombre ya no puede modificarse.</small>
+                            }
+                        </div>
+
+                        <div class="col-12 mt-4 mb-2">
+                            <h6 class="text-uppercase text-muted fw-bold small border-bottom pb-2" style="letter-spacing: 1px;">
+                                <i class="fa-solid fa-address-book me-2"></i>Contacto (Editable)
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control input" id="Email" name="Email"
+                                       value="@Model.Email" placeholder="Correo" readonly required>
+                                <label for="Email">Correo Electrónico</label>
+                            </div>
+
+                            @if (ViewBag.TieneCambioPendiente != null && ViewBag.TieneCambioPendiente)
+                            {
+                                <div class="alert alert-warning mt-2 mb-0 py-2 small shadow-sm border-warning">
+                                    <i class="fa-solid fa-clock me-1"></i> Cambio pendiente a: <strong>@Model.Email_Temporal</strong><br />
+                                    Revisa tu bandeja para confirmarlo.
+
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button type="submit" form="formReenviarCorreo" class="btn btn-sm btn-outline-dark rounded-pill fw-bold" style="font-size: 0.7rem;">Reenviar Correo</button>
+                                        <button type="submit" form="formCancelarCorreo" class="btn btn-sm btn-outline-danger rounded-pill fw-bold" style="font-size: 0.7rem;">Cancelar Cambio</button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control input" id="Telefono" name="Telefono"
+                                       value="@Model.Telefono" placeholder="Teléfono" readonly>
+                                <label for="Telefono">Teléfono / Celular</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4 pt-3 border-top">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="chkCambiarPass"
+                                       name="CambiarPassword" value="true"
+                                       onchange="togglePasswordSection()" disabled>
+
+                                <label class="form-check-label fw-bold text-muted" for="chkCambiarPass">
+                                    <i class="fa-solid fa-key me-2"></i>Quiero cambiar mi contraseña
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="seccionPassword" class="row g-3 mt-1 d-none animate-fade">
+                            <div class="col-12">
+                                <div class="alert alert-warning py-2 small">
+                                    <i class="fa-solid fa-circle-info me-1"></i>
+                                    Ingresa tu contraseña actual para autorizar el cambio.
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="password" class="form-control" id="CurrentPassword" name="CurrentPassword" placeholder="Actual">
+                                    <label for="CurrentPassword">Contraseña Actual</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="password" class="form-control" id="NewPassword" name="NewPassword" placeholder="Nueva">
+                                    <label for="NewPassword">Nueva Contraseña</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="password" class="form-control" id="ConfirmPassword" name="ConfirmPassword" placeholder="Confirmar">
+                                    <label for="ConfirmPassword">Confirmar Nueva</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-5 pt-3 border-top">
+                        <button type="button" id="btnEditar" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" onclick="activarEdicion()">
+                            <i class="fa-solid fa-pen-to-square me-2"></i> Modificar Datos
+                        </button>
+
+                        <div id="accionesEdicion" class="d-none animate-fade">
+                            <a href="@Url.Action("Index", "Perfil")" class="btn btn-light border rounded-pill px-4 me-2 text-muted">Cancelar</a>
+                            <button type="submit" class="btn btn-nautico rounded-pill px-4 shadow">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+
+                @if (ViewBag.TieneCambioPendiente != null && ViewBag.TieneCambioPendiente)
+                {
+                    <form id="formReenviarCorreo" action="@Url.Action("ReenviarCorreoCambio", "Perfil")" method="post" class="d-none">
+                        @Html.AntiForgeryToken()
+                    </form>
+                    <form id="formCancelarCorreo" action="@Url.Action("CancelarCambioEmail", "Perfil")" method="post" class="d-none">
+                        @Html.AntiForgeryToken()
+                    </form>
+                }
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    /* Estilo botón guardar */
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+        transition: 0.3s;
+        border: none;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* Inputs Bloqueados (Modo Lectura) */
+    input[readonly] {
+        background-color: transparent !important;
+        border: 1px solid transparent;
+        border-bottom: 1px solid #e0e0e0;
+        border-radius: 0;
+        font-weight: 600;
+        color: var(--header-footer);
+        padding-left: 0;
+        cursor: default;
+    }
+
+        input[readonly]:focus {
+            box-shadow: none;
+        }
+
+    /* Inputs Editables (Modo Escritura) */
+    input:not([readonly]) {
+        background-color: white !important;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem; /* Bootstrap default radius */
+        padding-left: 0.75rem;
+        box-shadow: 0 0 10px rgba(0, 188, 212, 0.1);
+        transition: all 0.3s;
+    }
+
+    /* Animación suave para botones */
+    .animate-fade {
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    /* FORZAR VISIBILIDAD DEL SWITCH */
+    .form-check-input:checked {
+        background-color: var(--header-footer) !important;
+        /* O tu color azul deseado */
+        border-color: var(--header-footer) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") !important;
+    }
+</style>
+
+<script>
+    function togglePasswordSection() {
+        const check = document.getElementById('chkCambiarPass');
+        const section = document.getElementById('seccionPassword');
+        const inputsPass = section.querySelectorAll('input');
+
+        if (check.checked) {
+            section.classList.remove('d-none');
+            inputsPass.forEach(i => i.setAttribute('required', 'true'));
+        } else {
+            section.classList.add('d-none');
+            inputsPass.forEach(i => {
+                i.removeAttribute('required');
+                i.value = '';
+            });
+        }
+    }
+
+    function activarEdicion() {
+        const inputs = document.querySelectorAll('#formPerfil input');
+        inputs.forEach(input => {
+            // No desbloquear si es hidden, ni Usuario
+            if(input.type !== 'hidden' && input.id !== 'Nombre_Usuario') {
+
+                // Si es el nombre completo y está bloqueado, NO lo liberamos
+                if (input.id === 'NombreCompleto' && input.getAttribute('data-locked') === 'true') {
+                    return; // Ignorar este input
+                }
+
+                input.removeAttribute('readonly');
+            }
+        });
+
+        // Mostrar alerta del nombre si es que se liberó
+        const alertaNombre = document.getElementById('alertaNombre');
+        if (alertaNombre) alertaNombre.classList.remove('d-none');
+
+        // 1. Activar el checkbox de contraseña
+        document.getElementById('chkCambiarPass').removeAttribute('disabled');
+        // 2. Poner foco en el primer campo editable (EMAIL)
+        document.getElementById('Email').focus();
+        // 3. Cambiar botones
+        document.getElementById('btnEditar').classList.add('d-none');
+        document.getElementById('accionesEdicion').classList.remove('d-none');
+    }
+</script>

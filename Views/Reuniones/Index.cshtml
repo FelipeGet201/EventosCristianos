@@ -1,0 +1,726 @@
+﻿@using RedAJP.Globales
+@using System.Text.Json
+@model List<RedAJP.Models.Iglesia>
+
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Directorio de Reuniones";
+    var municipios = ViewBag.Municipios as List<RedAJP.Models.Municipio>;
+
+    bool p_Crear = false;
+    bool p_Editar = false;
+    if (User.Identity.IsAuthenticated)
+    {
+        p_Crear = User.TienePermiso(Parametros.Modulos.Reuniones, Parametros.Permisos.Crear);
+        p_Editar = User.TienePermiso(Parametros.Modulos.Reuniones, Parametros.Permisos.Editar);
+    }
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* --- Botón Premium con Destello (Shimmer) --- */
+    .btn-cta-web {
+        background-color: #198754; /* Verde sólido */
+        color: #ffffff !important;
+        border: none;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+        .btn-cta-web:hover {
+            background-color: #146c43;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(25, 135, 84, 0.4) !important;
+        }
+
+        /* El efecto de luz pasando más lento y suave */
+        .btn-cta-web::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 100%; /* Más ancho para un barrido más elegante */
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            /* 4 segundos en total, usando ease-in-out para que acelere y desacelere suavemente */
+            animation: shimmer-effect 4s ease-in-out infinite;
+        }
+
+    @@keyframes shimmer-effect {
+        0% {
+            left: -150%;
+        }
+
+        30% {
+            left: 150%;
+        }
+        /* Ahora tarda 1.2 segundos enteros en cruzar el botón */
+        100% {
+            left: 150%;
+        }
+        /* El resto del tiempo (2.8s) se queda en pausa */
+    }
+</style>
+<div class="fade-in mb-5 px-2 px-md-0">
+
+    <div class="text-center mt-5 mb-4">
+        <h2 class="fw-bold fs-3 fs-md-2 d-inline-block" style="color: var(--header-footer);">
+            <i class="fa-solid fa-map-location-dot me-2 text-warning"></i>Nuestras Congregaciones
+        </h2>
+        <p class="text-muted small mt-1">Encuentra la iglesia más cercana a tu localidad en el estado de Veracruz.</p>
+        @if (ViewBag.TieneBorradoresEnRiesgo != null && ViewBag.TieneBorradoresEnRiesgo)
+        {
+            <div class="alert alert-warning shadow-sm border-0 rounded-4 text-center mx-auto mt-3" style="max-width: 850px; background-color: #fff3cd;">
+                <i class="fa-solid fa-triangle-exclamation text-warning fa-2x mb-2"></i>
+                <h6 class="fw-bold mb-1 text-dark">¡Tienes páginas web en riesgo!</h6>
+                <p class="small mb-0 text-dark">
+                    Recuerda que si no publicas tu página, otro miembro de la congregación podría reclamarla y perderás tu acceso a ella.
+                    <a href="@Url.Action("Index", "IglesiasWeb")" class="fw-bold text-primary text-decoration-underline">Ir a mi Panel para publicarla ahora</a>.
+                </p>
+            </div>
+        }
+
+        <div class="row justify-content-center mt-4 mb-4">
+            <div class="col-12 col-lg-10 px-3">
+
+                <div class="row g-2 justify-content-center align-items-center mx-auto" style="max-width: 850px;">
+
+                    <div class="col-12 col-md-auto d-flex gap-2">
+
+                        <button type="button" class="btn btn-white rounded-circle shadow-sm border-0 d-flex align-items-center justify-content-center flex-shrink-0"
+                                style="width: 48px; height: 48px;"
+                                data-bs-toggle="modal" data-bs-target="#modalMapa" title="Ver mapa">
+                            <i class="fa-solid fa-earth-americas text-primary fs-5"></i>
+                        </button>
+
+                        <div class="bg-white rounded-pill shadow-sm d-flex align-items-center flex-grow-1 px-3" style="height: 48px; min-width: 200px;">
+                            <i class="fa-solid fa-location-dot text-muted me-2 opacity-50"></i>
+                            <div class="flex-grow-1" style="width: calc(100% - 25px);">
+                                <select id="selectMunicipio" class="form-select border-0 bg-transparent w-100 shadow-none text-muted p-0">
+                                    <option value="">-- Municipio --</option>
+                                    @if (municipios != null)
+                                    {
+                                        foreach (var mun in municipios)
+                                        {
+                                            <option value="@mun.Nombre.ToLower()">@mun.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        @if (p_Crear)
+                        {
+                            <a href="@Url.Action("Formulario")" class="btn btn-nautico rounded-circle shadow-sm d-flex align-items-center justify-content-center flex-shrink-0"
+                               style="width: 48px; height: 48px;" title="Nueva Iglesia">
+                                <i class="fa-solid fa-plus text-white"></i>
+                            </a>
+                        }
+                    </div>
+
+                    <div class="col-12 col-md d-flex">
+                        <div class="bg-white rounded-pill shadow-sm d-flex align-items-center w-100 px-2" style="height: 48px;">
+                            <i class="fa-solid fa-magnifying-glass text-muted ms-2 me-2 opacity-50"></i>
+                            <input type="text" id="inputBuscador" class="form-control border-0 bg-transparent shadow-none p-0" placeholder="Buscar congregación...">
+
+                            <div class="ms-2 me-1">
+                                <span class="badge rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                                      id="numVisibles"
+                                      title="Resultados encontrados"
+                                      style="background-color: #e7e7e7; width: 32px; height: 32px; font-size: 0.85rem;">
+                                    @Model.Count
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 g-md-4 px-2 mt-2" id="contenedorTarjetas">
+
+        <div id="mensajeSinResultados" class="col-12 text-center py-5 @(Model.Count > 0 ? "d-none" : "")">
+            <i class="fa-solid fa-church fa-3x text-muted opacity-25 mb-3"></i>
+            <h5 class="text-muted">No se encontraron resultados para tu búsqueda.</h5>
+        </div>
+
+        @foreach (var item in Model)
+        {
+            <div class="col-12 col-md-6 col-lg-4 tarjeta-iglesia"
+                 data-filtro="@( $"{item.Nombre} {item.Municipio} {item.Localidad} {item.Calle} {item.Colonia} sector {item.Sector} zona {item.Zona}".ToLower() )"
+                 data-municipio="@item.Municipio.ToLower()"
+                 data-nombre="@item.Nombre"
+                 data-lat="@(item.Latitud.HasValue? item.Latitud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "")"
+                 data-lng="@(item.Longitud.HasValue? item.Longitud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "")">
+
+                <div class="card h-100 border-0 shadow-sm card-iglesia">
+
+                    @if (p_Editar)
+                    {
+                        <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
+                            <a href="@Url.Action("Formulario", new { id = item.Id })" class="btn btn-warning btn-sm rounded-circle shadow-sm" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-pencil text-dark" style="font-size: 0.8rem;"></i>
+                            </a>
+                        </div>
+                    }
+
+                    <div class="card-header bg-white border-0 pt-3 px-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="pe-2">
+                                <span class="badge bg-light text-primary border mb-2"><i class="fa-solid fa-city me-1"></i>@item.Municipio</span>
+                                
+                                @if (item.Zona > 0)
+                                {
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 mb-2 ms-1" title="Zona @item.Zona">Zona: @item.Zona</span>
+                                }
+                                @if (item.Sector > 0)
+                                {
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 mb-2 ms-1" title="Sector @item.Sector">Sector: @item.Sector</span>
+                                }
+                                <h5 class="card-title fw-bold text-dark mb-0">@item.Nombre</h5>
+                                <small class="text-muted">@item.Localidad</small>
+                            </div>
+                            <i class="fa-solid fa-place-of-worship fa-2x text-warning opacity-25"></i>
+                        </div>
+                    </div>
+
+                    <div class="card-body px-4 pt-2">
+                        <hr class="my-2 opacity-10">
+                        <div class="mb-2">
+                            <p class="mb-0 small text-muted fw-bold">UBICACIÓN</p>
+                            <span class="small text-dark d-block">@item.Calle #@item.Numero, Col. @item.Colonia</span>
+                        </div>
+                        <div class="mb-2">
+                            <i class="fa-regular fa-clock text-warning me-1"></i>
+                            <span class="small fw-bold">Horarios:</span>
+                            <div class="ps-4 mt-1">
+                                @if (!string.IsNullOrEmpty(item.Horarios))
+                                {
+                                    var lineas = item.Horarios.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                                    foreach (var linea in lineas)
+                                    {
+                                        var partes = linea.Split('|');
+                                        if (partes.Length == 3)
+                                        {
+                                            <div class="d-flex align-items-baseline mb-1">
+                                                <span class="badge bg-light text-dark border me-2" style="min-width: 80px;">@partes[0].Trim()</span>
+                                                <span class="small text-muted">
+                                                    <b class="text-dark">@partes[1].Trim():</b> @partes[2].Trim()
+                                                </span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="small text-muted mb-1">@Html.Raw(linea.Replace("\\n", "<br>"))</div>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <i class="small text-muted italic">No disponibles</i>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-white border-0 px-4 pb-4 pt-0 mt-auto">
+                        <div class="row gx-2 mb-3">
+                            @if (item.TienePaginaWeb)
+                            {
+                                <div class="col-12">
+                                    <a href="@Url.Action("Index", "web", new { slug = item.Slug.ToLower() })" class="btn btn-nautico btn-sm rounded-pill w-100 py-2 shadow-sm text-uppercase fw-bold" style="font-size: 0.8rem;">
+                                        <i class="fa-solid fa-globe me-2"></i>Visitar Página Web
+                                    </a>
+                                </div>
+                            }
+                            else if (item.SoyAdministrador)
+                            {
+                                <div class="col-12 mb-2 text-center">
+                                    <div class="badge bg-warning text-dark text-wrap lh-sm w-100 py-2 border border-warning shadow-sm">
+                                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Borrador sin publicar.<br>¡Publica antes de que la reclamen!
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <a href="@Url.Action("Index", "IglesiasWeb")" class="btn btn-dark btn-sm rounded-pill w-100 py-2 shadow-sm fw-bold border-0" style="font-size: 0.8rem;">
+                                        <i class="fa-solid fa-pen-to-square me-2"></i>Continuar Edición
+                                    </a>
+                                </div>
+                            }
+                            else if (User.Identity.IsAuthenticated && item.EsMiIglesia)
+                            {
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-cta-web btn-sm rounded-pill w-100 py-2 shadow-sm fw-bold" style="font-size: 0.8rem;"
+                                            onclick="abrirModalSolicitud(@item.Id, '@Html.Raw(item.Nombre)')">
+                                        <i class="fa-solid fa-laptop-code me-2"></i>Solicitar Página Web
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="row gx-2">
+                            @if (!string.IsNullOrEmpty(item.MapaUrl))
+                            {
+                                <div class="@(!string.IsNullOrEmpty(item.FacebookUrl) ? "col-6" : "col-12")">
+                                    <a href="@item.MapaUrl" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill w-100 py-2"><i class="fa-solid fa-map me-1"></i>Mapa</a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(item.FacebookUrl))
+                            {
+                                <div class="@(!string.IsNullOrEmpty(item.MapaUrl) ? "col-6" : "col-12")">
+                                    <a href="@item.FacebookUrl" target="_blank" class="btn btn-facebook btn-sm rounded-pill text-white w-100 py-2"><i class="fa-brands fa-facebook-f me-1"></i>Facebook</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="modalSolicitarWeb" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 text-white py-3" style="background-color: var(--header-footer);">
+                <h5 class="modal-title fs-5 fw-bold"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>¡Crea tu Página Web Fácilmente!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-4">
+                    <i class="fa-solid fa-laptop-code fa-4x text-primary opacity-75 mb-3"></i>
+                    <h4 class="fw-bold text-dark" id="lblNombreIglesiaSolicitud">Nombre de la Iglesia</h4>
+                    <p class="text-muted mt-2">
+                        ¿Perteneces a esta congregación? <b>Reclama este espacio y construye su página web en unos cuantos clics.</b> ¡Es súper fácil y no necesitas conocimientos técnicos!
+                    </p>
+
+                    <div class="text-start text-muted small mb-4 bg-light-subtle border p-3 rounded-3">
+                        <strong class="d-block mb-2 text-dark"><i class="fa-solid fa-bolt text-warning me-1"></i> Ventajas y Beneficios:</strong>
+                        <ul class="mb-0 ps-3" style="line-height: 1.8;">
+                            <li class="mb-2">
+                                <b class="text-dark">Fácil Implementación:</b><br>
+                                <span class="d-block ms-2">
+                                    1. Edita la información de tu iglesia.<br>
+                                    2. Elige tu plantilla web.<br>
+                                    3. Da clic en publicar. <i>¡Así de fácil!</i>
+                                </span>
+                            </li>
+                            <li class="mb-2">
+                                <b class="text-dark">Administración Oficial:</b> Te convertirás en el dueño de la página. (Si alguien abandonó un borrador previo, este será revocado para darte el control).
+                            </li>
+                            <li>
+                                <b class="text-dark">Mayor Alcance:</b> Muestra a todos tus avisos, ubicación en Maps, fotos y videos de tu iglesia.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <input type="hidden" id="hdnIglesiaIdSolicitud" value="0" />
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-success py-2 fw-bold rounded-pill shadow-sm" id="btnConfirmarSolicitud" onclick="procesarSolicitudWeb()">
+                        <i class="fa-solid fa-rocket me-2"></i> ¡Reclamar y Empezar a Editar!
+                    </button>
+                    <button type="button" class="btn btn-light text-muted rounded-pill" data-bs-dismiss="modal">Pensarlo más tarde</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalExitoWeb" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-body p-5 text-center">
+                <div class="mb-4">
+                    <i class="fa-solid fa-circle-check text-success" style="font-size: 5rem;"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-3">¡Felicidades!</h4>
+                <p class="text-muted mb-4" id="lblMensajeExito">La página web ha sido asignada a tu cuenta correctamente.</p>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-success rounded-pill py-3 fw-bold shadow-sm text-uppercase" id="btnIrAPanel">
+                        <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Ir a mi Panel de Edición
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMapa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg" style="height: 85vh;">
+            <div class="modal-header border-0 text-white py-2" style="background-color: var(--header-footer, #0d6efd);">
+                <h5 class="modal-title fs-6 fw-bold"><i class="fa-solid fa-earth-americas me-2"></i>Mapa de Iglesias</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 position-relative">
+                <button type="button" id="btnMiUbicacion" class="btn btn-primary position-absolute shadow-sm"
+                        style="z-index: 1000; top: 10px; right: 10px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
+                        title="Mi ubicación actual">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                </button>
+                <div id="mapa-leaflet" style="width: 100%; height: 100%;"></div>
+
+                <div class="position-absolute bottom-0 start-0 m-3 bg-white p-2 rounded shadow-sm small d-none d-md-block" style="z-index: 1000; opacity: 0.9;">
+                    <i class="fa-solid fa-info-circle text-primary me-1"></i> Haz clic en los puntos para ver el nombre.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // --- 1. Activar Menú ---
+        window.addEventListener('load', function() {
+            if (typeof activarMenu === 'function') {
+                activarMenu('menu-reuniones');
+            }
+        });
+
+        // --- 2. Lógica de Filtrado Local (Sin Postback) ---
+        function aplicarFiltros() {
+            const textoBusqueda = $('#inputBuscador').val().toLowerCase().trim();
+            const municipioSeleccionado = $('#selectMunicipio').val();
+            let tarjetasVisibles = 0;
+
+            $('.tarjeta-iglesia').each(function() {
+                const tarjeta = $(this);
+                const textoFiltro = tarjeta.attr('data-filtro') || "";
+                const municipioIglesia = tarjeta.attr('data-municipio') || "";
+
+                const coincideTexto = textoFiltro.includes(textoBusqueda);
+                const coincideMunicipio = municipioSeleccionado === "" || municipioIglesia === municipioSeleccionado;
+
+                if (coincideTexto && coincideMunicipio) {
+                    tarjeta.removeClass('d-none');
+                    tarjetasVisibles++;
+                } else {
+                    tarjeta.addClass('d-none');
+                }
+            });
+
+            // Actualizamos el numerito en la barra
+            const badgeNumero = $('#numVisibles');
+            badgeNumero.text(tarjetasVisibles);
+
+            // Cambiamos el color de la bolita a gris si llega a 0
+            if(tarjetasVisibles === 0) {
+                badgeNumero.css('background-color', '#f8d7da');
+                $('#mensajeSinResultados').removeClass('d-none');
+            } else {
+                badgeNumero.css('background-color', '#e7e7e7');
+                $('#mensajeSinResultados').addClass('d-none');
+            }
+
+            // Sincronizar dinámicamente el mapa con los filtros actuales
+            actualizarMarcadoresMapa();
+        }
+
+        // --- 3. Configuración Select2 y Eventos ---
+        $(document).ready(function() {
+            $('#selectMunicipio').select2({
+                placeholder: "-- Buscar Municipio --",
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return "No se encontraron resultados";
+                    }
+                }
+            });
+
+            // Disparar filtrado al escribir o al cambiar el Select2
+            $('#inputBuscador').on('input', aplicarFiltros);
+            $('#selectMunicipio').on('select2:select select2:clear', aplicarFiltros);
+        });
+
+        // --- 4. Configuración Mapa Leaflet y Geolocalización Sincronizada ---
+        let leafMap;
+        let mapInitialized = false;
+        let userMarker;
+        let markerGroup; // Agrupador de marcadores dinámicos
+
+        function actualizarMarcadoresMapa() {
+            // Solo procesar si el mapa ya fue creado
+            if (!mapInitialized || !leafMap) return;
+
+            // Limpiar los puntos anteriores
+            markerGroup.clearLayers();
+            const bounds = [];
+
+            // Leer SOLO las tarjetas que sobrevivieron al filtro (que no tienen la clase d-none)
+            $('.tarjeta-iglesia:not(.d-none)').each(function() {
+                const lat = $(this).attr('data-lat');
+                const lng = $(this).attr('data-lng');
+                const nombre = $(this).attr('data-nombre');
+
+                if (lat && lng && lat !== '' && lng !== '') {
+                    const mLat = parseFloat(lat);
+                    const mLng = parseFloat(lng);
+
+                    const marker = L.marker([mLat, mLng])
+                        .bindPopup(`
+                            <div class="text-center">
+                                <strong class="text-primary">${nombre}</strong><br>
+                                <a href="https://www.google.com/maps/search/?api=1&query=${mLat},${mLng}" target="_blank" class="btn btn-xs btn-link p-0 mt-1" style="font-size:11px;">Ver en Google Maps</a>
+                            </div>
+                        `);
+                    markerGroup.addLayer(marker);
+                    bounds.push([mLat, mLng]);
+                }
+            });
+
+            // Auto-ajustar la cámara para enmarcar solo los puntos encontrados
+            if (bounds.length > 0) {
+                leafMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+            }
+        }
+
+        document.getElementById('modalMapa').addEventListener('shown.bs.modal', function () {
+            if (!mapInitialized) {
+                leafMap = L.map('mapa-leaflet').setView([19.1738, -96.1342], 7);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(leafMap);
+
+                // Instanciar el grupo que controlará los marcadores
+                markerGroup = L.featureGroup().addTo(leafMap);
+
+                const btnGeo = document.getElementById('btnMiUbicacion');
+                if(btnGeo){
+                    btnGeo.addEventListener('click', function() {
+                        if (!navigator.geolocation) {
+                            alert("Tu navegador no soporta geolocalización");
+                            return;
+                        }
+
+                        const iconOriginal = btnGeo.innerHTML;
+                        btnGeo.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                        btnGeo.disabled = true;
+
+                        navigator.geolocation.getCurrentPosition(
+                            function(position) {
+                                const lat = position.coords.latitude;
+                                const lng = position.coords.longitude;
+
+                                if (userMarker) {
+                                    userMarker.setLatLng([lat, lng]);
+                                } else {
+                                    const userIcon = L.divIcon({
+                                        html: '<div style="background-color: #0d6efd; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>',
+                                        className: '',
+                                        iconSize: [20, 20],
+                                        iconAnchor: [10, 10]
+                                    });
+                                    userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(leafMap)
+                                        .bindPopup('<small>Tu ubicación actual</small>');
+                                }
+
+                                leafMap.setView([lat, lng], 14);
+                                userMarker.openPopup();
+
+                                btnGeo.innerHTML = iconOriginal;
+                                btnGeo.disabled = false;
+                            },
+                            function(error) {
+                                console.error(error);
+                                alert("No se pudo obtener tu ubicación. Verifica que tengas el GPS activo y permisos concedidos.");
+                                btnGeo.innerHTML = iconOriginal;
+                                btnGeo.disabled = false;
+                            },
+                            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                        );
+                    });
+                }
+
+                mapInitialized = true;
+            }
+
+            // Recargar Leaflet y sincronizar los puntos actuales al abrir el modal
+            setTimeout(function(){
+                leafMap.invalidateSize();
+                actualizarMarcadoresMapa();
+            }, 10);
+        });
+
+        // --- 5. Lógica de Solicitud/Reclamo de Página Web ---
+        function abrirModalSolicitud(id, nombre) {
+            $('#hdnIglesiaIdSolicitud').val(id);
+            $('#lblNombreIglesiaSolicitud').text(nombre);
+            $('#modalSolicitarWeb').modal('show');
+        }
+
+        function procesarSolicitudWeb() {
+            const iglesiaId = $('#hdnIglesiaIdSolicitud').val();
+            const btn = $('#btnConfirmarSolicitud');
+            const iconOriginal = btn.html();
+
+            // Bloqueamos el botón para evitar doble clic
+            btn.html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Procesando...').prop('disabled', true);
+
+            $.ajax({
+                url: '@Url.Action("SolicitarPaginaWeb", "Reuniones")',
+                type: 'POST',
+                data: { iglesiaId: iglesiaId },
+                success: function(response) {
+                    if(response.exito) {
+                        $('#modalSolicitarWeb').modal('hide');
+
+                        // Mostrar modal de Éxito y setear mensaje
+                        $('#lblMensajeExito').text(response.mensaje);
+                        $('#modalExitoWeb').modal('show');
+
+                        // Configurar el botón de Ir al Panel
+                        $('#btnIrAPanel').off('click').on('click', function() {
+                            // Bloquear el botón para evitar reenvíos
+                            $(this).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Redirigiendo...').prop('disabled', true);
+                            window.location.href = '@Url.Action("Index", "IglesiasWeb")';
+                        });
+
+                    } else {
+                        alert(response.mensaje);
+                        btn.html(iconOriginal).prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    alert('Ocurrió un error de conexión al procesar la solicitud.');
+                    btn.html(iconOriginal).prop('disabled', false);
+                }
+            });
+        }
+    </script>
+}
+
+<style>
+    /* --- Estilos Personalizados Select2 para integrar con Bootstrap --- */
+    .select2-container--default .select2-selection--single {
+        background-color: transparent;
+        border: none;
+        height: 38px;
+        display: flex;
+        align-items: center;
+    }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #495057;
+            font-size: 0.95rem;
+            padding-left: 0;
+            line-height: normal;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+            right: 5px;
+        }
+
+    .select2-container--default.select2-container--focus .select2-selection--single {
+        border: none;
+    }
+
+    .select2-dropdown {
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #eee;
+        overflow: hidden;
+    }
+
+    .select2-search__field {
+        border-radius: 6px !important;
+    }
+
+    /* --- Estilos Generales --- */
+    .btn-white {
+        background-color: white;
+        border: 1px solid #dee2e6 !important;
+        transition: 0.3s;
+    }
+
+        .btn-white:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        }
+
+    .btn-nautico {
+        background-color: var(--header-footer);
+        color: white;
+        border: none;
+        transition: 0.3s;
+    }
+
+        .btn-nautico:hover {
+            background-color: var(--pez-azul);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+    .btn-facebook {
+        background-color: #1877F2;
+        border: none;
+        transition: 0.3s;
+    }
+
+        .btn-facebook:hover {
+            background-color: #1155cc;
+            transform: translateY(-2px);
+        }
+
+    .card-iglesia {
+        transition: all 0.3s ease;
+        border-radius: 16px;
+        border-bottom: 4px solid transparent !important;
+    }
+
+        .card-iglesia:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+            border-bottom-color: var(--acento-dorado) !important;
+        }
+
+    .leaflet-popup-content-wrapper {
+        border-radius: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    /* Diseño más cuadrado y simétrico solo para móviles */
+    @@media (max-width: 768px) {
+        .card-iglesia {
+            border-radius: 8px !important;
+            /* Menos curva, más cuadrado */
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            /* Borde sutil para enmarcar */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.04) !important;
+            min-height: 280px; /* Ayuda a darle esa proporción cuadrada */
+        }
+
+        .card-header.bg-white {
+            border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+            padding-bottom: 1rem !important;
+        }
+    }
+</style>

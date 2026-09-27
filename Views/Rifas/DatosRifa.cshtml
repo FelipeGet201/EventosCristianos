@@ -1,0 +1,322 @@
+﻿@model RedAJP.Models.RifaPublicaViewModel
+@{
+    Layout = "Principal";
+    bool esEdicion = ViewBag.IdEdicion != null && !string.IsNullOrEmpty((string)ViewBag.IdEdicion);
+    bool sorteoRealizado = Model.Estado == "Finalizada";
+    ViewData["Title"] = esEdicion ? "Editar Rifa" : "Formulario Rifa";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-rifas');
+        }
+    });
+</script>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white p-4">
+                    <h4 class="mb-0 fw-bold">
+                        <i class="fa-solid @(esEdicion ? "fa-pen-to-square" : "fa-gift") me-2 text-warning"></i>
+                        @(esEdicion ? "Editar Rifa" : "Formulario Rifa")
+                    </h4>
+                </div>
+
+                <div class="card-body p-4">
+                    <form action="@Url.Action("Guardar")" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idRifa" value="@(ViewBag.IdEdicion ?? "")" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Título</label>
+                            <input type="text" name="Titulo" class="form-control form-control-lg" placeholder="Ej. Gran Rifa Navideña" required value="@Model.Titulo" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción</label>
+                            <textarea name="Descripcion" class="form-control" rows="3" required placeholder="Escribe aquí los premios y detalles importantes...">@Model.Descripcion</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Imagen Portada</label>
+                            <div class="d-block mb-2">
+                                @if (!string.IsNullOrEmpty(Model.ImagenUrl))
+                                {
+                                    <div class="position-relative d-inline-block" id="contenedorImagenActual">
+                                        <img src="@Model.ImagenUrl" style="max-height: 150px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+                                        <span class="badge bg-success position-absolute top-0 end-0 m-1">Actual</span>
+                                    </div>
+                                    <input type="hidden" name="ImagenUrl" value="@Model.ImagenUrl" />
+                                }
+
+                                <div class="position-relative d-inline-block" id="previewNuevaImagenContainer" style="display: none !important;">
+                                    <img id="previewNuevaImagen" src="" style="max-height: 150px; border-radius: 8px; border: 2px dashed #0d6efd; box-shadow: 0 4px 8px rgba(13,110,253,0.2);" />
+                                    <span class="badge bg-primary position-absolute top-0 end-0 m-1">Nueva</span>
+                                </div>
+                            </div>
+
+                            <input type="file" id="fotoPortadaNueva" name="fotoPortadaNueva" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                            <div class="form-text small">Sube una nueva foto para reemplazar la actual. Extensiones permitidas: JPG, PNG, WEBP. (Max 10MB)</div>
+                        </div>
+
+                        <hr class="my-4 opacity-10">
+                        <h5 class="fw-bold mb-3 text-primary">Configuración Financiera y Sorteo</h5>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Costo Boleto</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-0 bg-light fw-bold">$</span>
+                                    <input type="number" name="CostoBoleto" id="inpCosto" class="form-control border-0 bg-light fw-bold" value="@(Model.CostoBoleto > 0 ? Model.CostoBoleto : 50)" min="1" step="0.01" required oninput="calcularProyeccion()" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Meta Boletos</label>
+                                <input type="number" name="MetaBoletos" id="inpMeta" class="form-control border-0 bg-light fw-bold" value="@(Model.MetaBoletos > 0 ? Model.MetaBoletos : 100)" min="@(esEdicion ? Model.MetaBoletos : 1)" placeholder="Ej. 100" required oninput="calcularProyeccion()" />
+                                @if (esEdicion)
+                                {
+                                    <div class="form-text text-warning small" style="font-size: 0.7rem;">Mínimo actual: @Model.MetaBoletos (Solo aumentar)</div>
+                                }
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Inversión Premio</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-0 bg-light fw-bold">$</span>
+                                    <input type="number" name="InversionPremio" class="form-control border-0 bg-light fw-bold" value="@(Model.InversionPremio > 0 ? Model.InversionPremio : 0)" min="0" step="0.01" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center justify-content-between">
+                            <div class="small"><i class="fa-solid fa-chart-line me-1"></i> Recaudación Estimada:</div>
+                            <div class="fs-4 fw-bold text-success" id="lblProyeccion">$0.00</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Fecha del Sorteo</label>
+                            <input type="datetime-local" name="FechaSorteo" class="form-control" value="@(Model.FechaSorteo == DateTime.MinValue ? DateTime.Now.AddDays(30).ToString("yyyy-MM-ddTHH:mm") : Model.FechaSorteo.ToString("yyyy-MM-ddTHH:mm"))" required />
+                        </div>
+
+                        @* NUEVA SECCIÓN DE ENCUESTAS *@
+                        <hr class="my-4 opacity-10">
+                        <h5 class="fw-bold mb-3 text-success"><i class="fa-solid fa-gift me-2"></i>Promociones y Folios</h5>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Asociar Encuestas (Canje de Boleto Gratis)</label>
+                            <p class="small text-muted mb-2">Selecciona las encuestas cuyos folios permitirán al usuario reclamar un (1) boleto gratuito en esta rifa.</p>
+                            <select name="EncuestasAsociadas" id="selectEncuestas" class="form-select w-100" multiple="multiple">
+                                @if (ViewBag.EncuestasDisponibles != null)
+                                {
+                                    foreach (var item in ViewBag.EncuestasDisponibles)
+                                    {
+                                        bool selected = Model.EncuestasAsociadas != null && Model.EncuestasAsociadas.Contains(int.Parse(item.Value));
+                                        <option value="@item.Value" @(selected ? "selected" : "")>@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <hr class="my-4 opacity-10">
+                        <h5 class="fw-bold mb-3"><i class="fa-solid fa-link text-success me-2"></i>Enlace Público de Compra</h5>
+                        
+                        @if (esEdicion)
+                        {
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Tu enlace público de selección de boletos:</label>
+                                <div class="input-group shadow-sm">
+                                    <input type="text" class="form-control bg-light" readonly value="@Model.EnlaceCompra" id="inpEnlaceCompra" />
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copiarTexto('@Model.EnlaceCompra', 'iconoCopiarEnlace')">
+                                        <i class="fa-regular fa-copy" id="iconoCopiarEnlace"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text small">Este enlace y su respectivo código QR se generaron automáticamente por el sistema.</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10 small">
+                                <i class="fa-solid fa-circle-info me-2"></i>El enlace de compra y su código QR para compartir se generarán automáticamente al guardar la rifa.
+                            </div>
+                        }
+
+                        <hr class="my-4 opacity-10">
+                        <h5 class="fw-bold mb-3"><i class="fa-solid fa-building-columns text-primary me-2"></i>Datos Bancarios (Opcional)</h5>
+                        <div class="form-text mb-3">Si proporcionas datos bancarios, debes llenar obligatoriamente al menos la CLABE, el Número de Cuenta o el Número de Tarjeta.</div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Banco</label>
+                                <input type="text" name="Banco" class="form-control" value="@Model.Banco" placeholder="Ej. BBVA, Banamex" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Titular de la Cuenta</label>
+                                <input type="text" name="TitularCuenta" class="form-control" value="@Model.TitularCuenta" placeholder="Nombre completo" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Cuenta CLABE</label>
+                                <input type="text" name="CuentaClabe" class="form-control" value="@Model.CuentaClabe" maxlength="18" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Número de Cuenta</label>
+                                <input type="text" name="NumeroCuenta" class="form-control" value="@Model.NumeroCuenta" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Número de Tarjeta</label>
+                                <input type="text" name="NumeroTarjeta" class="form-control" value="@Model.NumeroTarjeta" maxlength="16" />
+                            </div>
+                        </div>
+
+                        <hr class="my-4 opacity-10">
+                        <h5 class="fw-bold mb-3 text-info"><i class="fa-solid fa-eye me-2"></i>Control de Visibilidad</h5>
+                        <div class="form-check form-switch mb-4 fs-5">
+                            <input class="form-check-input" type="checkbox" role="switch" id="chkVisiblePublico" name="VisiblePublico" value="true" @(Model.VisiblePublico ? "checked" : "")>
+                            <input type="hidden" name="VisiblePublico" value="false" />
+                            <label class="form-check-label fw-bold" for="chkVisiblePublico">Visible para el público general</label>
+                            <div class="form-text small fs-6 text-muted">Si apagas este interruptor, el link externo de la rifa dejará de aceptar visitas y únicamente el equipo de administración podrá verla listada en el catálogo.</div>
+                        </div>
+
+                        @if (sorteoRealizado)
+                        {
+                            <div class="alert alert-warning border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
+                                <i class="fa-solid fa-lock fa-2x me-3 text-warning"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Edición Bloqueada por Sorteo Realizado</h6>
+                                    <small>El ganador de esta dinámica ya ha sido seleccionado. Por motivos de seguridad y auditoría financiera, la configuración de la rifa está bloqueada y no permite más alteraciones.</small>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg rounded-pill fw-bold shadow">Regresar al Panel</a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">@(esEdicion ? "Guardar Cambios" : "Publicar Rifa")</button>
+                                <a href="@Url.Action("Index")" class="btn btn-link text-muted text-decoration-none text-center mt-2">Cancelar</a>
+                                @if (esEdicion)
+                                {
+                                    <button type="button" class="btn btn-outline-danger mt-4 fw-bold rounded-pill" onclick="abrirModalEliminar()">
+                                        <i class="fa-solid fa-trash-can me-2"></i> Eliminar Dinámica Permanentemente
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (esEdicion && !sorteoRealizado)
+{
+    <form id="formEliminarRifa" action="@Url.Action("EliminarRifa", "Rifas")" method="post" style="display:none;">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idRifaEliminar" value="@(ViewBag.IdEdicion ?? "")" />
+    </form>
+
+    <div class="modal fade" id="modalConfirmarEliminacion" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 text-center">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex p-3">
+                            <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold mb-3">Atención: Acción Irrevocable</h4>
+                    <p class="text-muted mb-3">¿Estás completamente seguro de que deseas eliminar esta rifa de forma permanente?</p>
+                    <p class="text-muted small mb-4 px-2">Esta operación borrará la configuración de la rifa y todo su inventario de números. Solo procederá exitosamente si ningún boleto ha sido reservado, vendido o entregado a promotores.</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-light rounded-pill fw-bold px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger rounded-pill fw-bold px-4" onclick="ejecutarEliminacion()">Sí, eliminar definitivamente</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+        $('#selectEncuestas').select2({
+        placeholder: "Busca y selecciona encuestas...",
+        allowClear: true,
+        width: '100%'
+        });
+        });
+
+        function copiarTexto(texto, idIcono) {
+        navigator.clipboard.writeText(texto).then(() => {
+        const icono = document.getElementById(idIcono);
+        icono.className = 'fa-solid fa-check text-success';
+        setTimeout(() => { icono.className = 'fa-regular fa-copy'; }, 2000);
+        });
+        }
+
+        function calcularProyeccion() {
+        var costo = parseFloat(document.getElementById('inpCosto').value) || 0;
+        var meta = parseInt(document.getElementById('inpMeta').value) || 0;
+        var total = costo * meta;
+        var formato = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(total);
+        document.getElementById('lblProyeccion').innerText = formato;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+        calcularProyeccion();
+            
+        var sorteoYaRealizado = @(sorteoRealizado.ToString().ToLower());
+        if(sorteoYaRealizado) {
+        var inputs = document.querySelectorAll('form input, form textarea, form select');
+        inputs.forEach(function(el) {
+        el.disabled = true;
+        });
+        }
+        });
+
+        document.getElementById('fotoPortadaNueva').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (file) {
+        if (file.size > 10 * 1024 * 1024) {
+        if(typeof mostrarMensaje === 'function') {
+        mostrarMensaje('Archivo muy grande', 'La imagen seleccionada supera los 10MB. Por favor elige una imagen más ligera.', 'alerta');
+        }
+        this.value = "";
+        return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function(event) {
+        document.getElementById('previewNuevaImagen').src = event.target.result;
+        document.getElementById('previewNuevaImagenContainer').style.setProperty('display', 'inline-block', 'important');
+        var actual = document.getElementById('contenedorImagenActual');
+        if (actual) actual.style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+        } else {
+        document.getElementById('previewNuevaImagenContainer').style.setProperty('display', 'none', 'important');
+        var actual = document.getElementById('contenedorImagenActual');
+        if (actual) actual.style.display = 'inline-block';
+        }
+        });
+
+        function abrirModalEliminar() {
+        var modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminacion'));
+        modal.show();
+        }
+
+        function ejecutarEliminacion() {
+        document.getElementById('formEliminarRifa').submit();
+        }
+    </script>
+}

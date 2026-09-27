@@ -1,0 +1,53 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+@{
+    string heroBg = Model.Galeria?.FirstOrDefault()?.UrlImagen ?? "";
+}
+
+<style>
+    .masthead {
+        text-align: center;
+        padding: 5rem 0 3rem;
+        border-bottom: 4px double rgba(128, 128, 128, 0.3);
+        margin-bottom: 3rem;
+    }
+
+    .masthead-meta {
+        font-family: var(--theme-font-body);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        color: var(--theme-text-muted);
+        border-top: 1px solid rgba(128, 128, 128, 0.2);
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+        padding: 0.8rem 0;
+        margin: 2rem auto 0;
+        max-width: 600px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .hero-editorial-photo {
+        width: 100%;
+        height: 60vh;
+        min-height: 400px;
+        object-fit: cover;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+        margin-bottom: 1rem;
+    }
+</style>
+
+<header class="container fade-in-up mt-5">
+    <div class="masthead">
+        <h1 style="font-family: var(--theme-font-title); font-size: clamp(3rem, 8vw, 5.5rem); font-style: italic; color: var(--theme-primary);">
+            @(string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "Nuestra Congregación" : Model.NombreIglesia)
+        </h1>
+        <div class="masthead-meta">
+            <span>@(string.IsNullOrWhiteSpace(Model.Municipio) ? "Sede Central" : Model.Municipio)</span>
+            <span>@DateTime.Now.ToString("MMMM yyyy").ToUpper()</span>
+        </div>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(heroBg))
+    {
+        <img src="@heroBg" alt="Portada" class="hero-editorial-photo">
+    }
+</header>

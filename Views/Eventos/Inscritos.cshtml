@@ -1,0 +1,658 @@
+@model RedAJP.Models.GestionInscritosViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Gestión de Inscritos";
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+    
+    // Un asistente abandonado NO debe estar pagado (para proteger cobros en efectivo)
+    int totalAbandonadas = Model.Grupos.Sum(g => g.Asistentes.Count(a => a.EsAbandonado && !a.EsPagadoGlobal));
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') { activarMenu('menu-eventos'); }
+    });
+</script>
+
+<div class="container-fluid py-4 fade-in">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="mb-3 d-flex gap-2">
+                <a href="@Url.Action("PanelControl", "Eventos", new { sid = Model.IdEventoEncriptado })" class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Volver al Panel
+                </a>
+                <button type="button" id="btnActualizarScores" class="btn btn-sm btn-outline-warning border rounded-pill px-3 shadow-sm fw-bold" onclick="actualizarScores()">
+                    <i class="fa-solid fa-star me-1"></i> Recalcular Prioridades
+                </button>
+            </div>
+            
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">Gestión de Inscritos</h2>
+                    <p class="text-muted mb-0 fs-6">@Model.TituloEvento</p>
+                </div>
+
+                <div class="d-flex flex-column flex-md-row align-items-md-end gap-3">
+                    <div class="px-4 py-2 rounded-4 bg-danger-subtle border border-danger-subtle text-center shadow-sm">
+                        <h4 class="fw-bold text-danger mb-0 lh-1">@totalAbandonadas</h4>
+                        <small class="text-danger fw-bold text-uppercase" style="font-size: 0.65rem;">Abandonadas</small>
+                    </div>
+
+                    <div class="w-100" style="min-width: 250px;">
+                        <label class="form-label small fw-bold text-secondary mb-1">Buscar Asistente:</label>
+                        <div class="input-group rounded-pill overflow-hidden border-primary-subtle border shadow-sm">
+                            <input type="search" id="buscadorNombres" class="form-control border-0 bg-white ps-3" placeholder="Nombre..." onkeyup="filtrarRegistrosUnificado()">
+                        </div>
+                    </div>
+
+                    <div class="w-100" style="min-width: 200px;">
+                        <label class="form-label small fw-bold text-secondary mb-1">Modalidad:</label>
+                        <select class="form-select rounded-pill border-primary-subtle shadow-sm" id="filtroModalidad" onchange="filtrarRegistrosUnificado()">
+                            <option value="all">Todas (@Model.Grupos.Sum(g => g.Asistentes.Count))</option>
+                            @foreach (var grupo in Model.Grupos.OrderBy(g => g.NombreModalidad))
+                            {
+                                <option value="mod-@grupo.IdSubtipo">@grupo.NombreModalidad (@grupo.Asistentes.Count)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="w-100" style="min-width: 220px;">
+                        <label class="form-label small fw-bold text-secondary mb-1">Tipo de Registro:</label>
+                        <select class="form-select rounded-pill border-primary-subtle shadow-sm" id="filtroTipoRegistro" onchange="filtrarRegistrosUnificado()">
+                            <option value="all">Todos los registros</option>
+                            <option value="normal">Regulares (Sin traspasos)</option>
+                            <option value="traspaso-respetado">Traspasos (Costo Respetado)</option>
+                            <option value="traspaso-ajuste">Traspasos (Con Ajuste/Deuda)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Grupos != null && Model.Grupos.Any())
+    {
+        @foreach (var grupo in Model.Grupos)
+        {
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden card-modalidad" id="mod-@grupo.IdSubtipo">
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold small text-uppercase tracking-wider">
+                        <i class="fa-solid fa-layer-group me-2 text-warning"></i>@grupo.NombreModalidad
+                    </h5>
+                    <span class="badge bg-white text-dark rounded-pill">@grupo.Asistentes.Count asistentes</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 tabla-asistentes">
+                            <thead class="bg-light text-secondary small text-uppercase">
+                                <tr>
+                                    <th class="ps-4" style="width: 5%;">#</th>
+                                    <th style="width: 40%;">Asistente / Estado Interno</th>
+                                    <th class="text-center" style="width: 15%;">Estatus Pago</th>
+                                    <th class="pe-4" style="width: 40%;">Detalle Financiero</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{ int contadorFila = 1; }
+                                @foreach (var asis in grupo.Asistentes.OrderByDescending(a => a.Score))
+                                {
+                                    <tr class="fila-asistente @(asis.EsAbandonado && !asis.EsPagadoGlobal ? "bg-danger-subtle bg-opacity-10" : "")" 
+                                        data-traspaso-respetado="@asis.EsTraspasoRespetado.ToString().ToLower()" 
+                                        data-traspaso-ajuste="@asis.EsTraspasoConAjuste.ToString().ToLower()">
+                                        <td class="ps-4 text-muted small num-fila">@contadorFila</td>
+                                        <td>
+                                            <div class="d-flex flex-wrap align-items-center gap-1">
+                                                <div class="fw-bold text-dark nombre-asistente me-2">@asis.NombreCompleto</div>
+                                                
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill" style="font-size: 0.65rem;" title="Modalidad Actual">
+                                                    <i class="fa-solid fa-layer-group me-1"></i>@grupo.NombreModalidad
+                                                </span>
+
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill" style="font-size: 0.65rem;">
+                                                    @(asis.Genero == "H" ? "HOMBRE" : "MUJER")
+                                                </span>
+
+                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill" style="font-size: 0.65rem;">
+                                                    <i class="fa-solid fa-star me-1"></i>@asis.Score.ToString("0.0")
+                                                </span>
+
+                                                @if (asis.EsTraspasoRespetado)
+                                                {
+                                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-50 rounded-pill" style="font-size: 0.65rem;" title="El costo cobrado es diferente al precio oficial de este paquete">
+                                                        <i class="fa-solid fa-shuffle me-1"></i>TRASPASO (COSTO RESPETADO)
+                                                    </span>
+                                                }
+
+                                                @if (asis.EsTraspasoConAjuste)
+                                                {
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-50 rounded-pill" style="font-size: 0.65rem;" title="Tiene un ajuste o cargo extra por cambio de modalidad">
+                                                        <i class="fa-solid fa-money-bill-transfer me-1"></i>TRASPASO (CON AJUSTE)
+                                                    </span>
+                                                }
+
+                                                @if (asis.EsAbandonado && !asis.EsPagadoGlobal)
+                                                {
+                                                    <span class="badge bg-danger rounded-pill" style="font-size: 0.6rem;">ABANDONADA</span>
+                                                }
+                                            </div>
+                                            <div class="mt-1 d-flex flex-wrap align-items-center gap-2">
+                                                <button type="button" class="btn btn-link btn-xs p-0 text-decoration-none" 
+                                                        onclick="abrirModalEdicion(@asis.IdAsistente, '@asis.NombreCompleto', @grupo.IdSubtipo, @asis.Edad, '@asis.Genero')">
+                                                    <i class="fa-solid fa-user-pen me-1"></i>Editar / Cambiar Modalidad
+                                                </button>
+                                                <button type="button" class="btn btn-link btn-xs p-0 text-primary text-decoration-none fw-semibold" 
+                                                        onclick="mostrarQRInscrito(@asis.IdAsistente, '@Html.Raw(asis.NombreCompleto.Replace("'", "\\'"))', '@asis.TokenExterno', '@Html.Raw(grupo.NombreModalidad.Replace("'", "\\'"))', @asis.EsPagadoGlobal.ToString().ToLower())">
+                                                    <i class="fa-solid fa-qrcode me-1"></i>Código QR
+                                                </button>
+                                                @if (asis.EsAbandonado && !asis.EsPagadoGlobal)
+                                                {
+                                                    <button type="button" class="btn btn-link btn-xs p-0 text-danger text-decoration-none fw-bold" onclick="abrirModalBorrarAbandonada(@asis.IdAsistente, '@asis.NombreCompleto')">
+                                                        <i class="fa-solid fa-trash-can me-1"></i>Borrar
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (asis.EsPagadoGlobal) { <span class="badge bg-success-subtle text-success rounded-pill px-3">Liquidado</span> }
+                                            else { <span class="badge bg-warning-subtle text-warning rounded-pill px-3">Pendiente</span> }
+                                        </td>
+                                        <td class="pe-4">
+                                            @{
+                                                var totalMonto = asis.Pagos.Sum(p => p.Monto);
+                                                var pagadoMonto = asis.Pagos.Where(p => p.Pagado).Sum(p => p.Monto);
+                                            }
+                                            <details class="pago-details border rounded-3 bg-white shadow-sm">
+                                                <summary class="p-2 d-flex justify-content-between align-items-center cursor-pointer">
+                                                    <div class="small">
+                                                        <span class="fw-bold text-primary">@totalMonto.ToString("C0", cultura)</span>
+                                                        @if(pagadoMonto > 0) { <span class="mx-1 text-muted">|</span> <span class="text-success fw-bold">Pagado: @pagadoMonto.ToString("C0", cultura)</span> }
+                                                        
+                                                        @if(asis.EsTraspasoRespetado) { 
+                                                            <span class="mx-1 text-muted">|</span> <span class="text-info fw-bold" title="Costo Oficial Original: @asis.CostoOficialPaquete.ToString("C0", cultura)"><i class="fa-solid fa-circle-info"></i> Ajuste</span> 
+                                                        }
+                                                    </div>
+                                                    <i class="fa-solid fa-chevron-down text-muted small icon-arrow"></i>
+                                                </summary>
+                                                <div class="p-3 border-top bg-light-subtle">
+                                                    <div class="list-group list-group-flush rounded-3">
+                                                        @foreach (var pago in asis.Pagos)
+                                                        {
+                                                            <div class="list-group-item d-flex justify-content-between align-items-center border-0 py-2 bg-transparent">
+                                                                <div>
+                                                                    <div class="fw-bold small">@pago.Concepto</div>
+                                                                    
+                                                                    @if(pago.Pagado && pago.Monto == 0 && string.IsNullOrEmpty(pago.Referencia))
+                                                                    {
+                                                                        <div class="text-success fw-bold mt-1" style="font-size: 0.75rem;">
+                                                                            <i class="fa-solid fa-money-bill-1-wave me-1"></i> Liquidado en Efectivo o Cortesía
+                                                                        </div>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <div class="text-muted" style="font-size: 0.75rem;">@pago.Monto.ToString("C2", cultura) • Ref: @(pago.Referencia ?? "N/D")</div>
+                                                                    }
+                                                                </div>
+                                                                <div>
+                                                                    @if (pago.Pagado) {
+                                                                        // Si es pago en efectivo, no mostramos el botón de anular (Stripe)
+                                                                        if (pago.Monto == 0 && string.IsNullOrEmpty(pago.Referencia)) {
+                                                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill" title="Liquidado internamente"><i class="fa-solid fa-check"></i></span>
+                                                                        } else {
+                                                                            <button type="button" class="btn btn-xs btn-outline-danger border-0" onclick="abrirModalReembolso(@pago.IdCuenta, '@pago.Concepto', '@pago.Monto.ToString("C2", cultura)')">
+                                                                                <i class="fa-solid fa-rotate-left"></i>
+                                                                            </button>
+                                                                        }
+                                                                    } else { 
+                                                                        <i class="fa-solid fa-clock text-muted opacity-50"></i> 
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </details>
+                                        </td>
+                                    </tr>
+                                    contadorFila++;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="modal fade" id="modalEditarNombre" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow border-0">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold">Opciones del Asistente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form action="@Url.Action("EditarDatosBasicos", "Eventos")" method="post" class="mb-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sid" value="@Model.IdEventoEncriptado" />
+                    <input type="hidden" name="idAsistente" id="edit_idAsistente_nombre" />
+    
+                    <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-id-card text-primary me-2"></i>Editar Datos Generales</h6>
+    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary mb-1">Nombre Completo</label>
+                        <input type="text" class="form-control shadow-sm" name="nuevoNombre" id="edit_nombre" required />
+                    </div>
+    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Edad</label>
+                            <input type="number" class="form-control shadow-sm" name="nuevaEdad" id="edit_edad" min="1" max="120" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Género</label>
+                            <select class="form-select shadow-sm" name="nuevoGenero" id="edit_genero" required>
+                                <option value="H">Hombre</option>
+                                <option value="M">Mujer</option>
+                            </select>
+                        </div>
+                    </div>
+    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary fw-bold px-3">Actualizar Datos</button>
+                    </div>
+                </form>
+                <hr class="my-4 border-secondary opacity-25">
+                <form action="@Url.Action("CambiarModalidadAsistente", "Eventos")" method="post" id="formCambioModalidad">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sid" value="@Model.IdEventoEncriptado" />
+                    <input type="hidden" name="idAsistente" id="edit_idAsistente_modalidad" />
+                    <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-exchange-alt me-2"></i>Cambiar Modalidad</h6>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nueva Modalidad:</label>
+                        <select class="form-select border-danger-subtle shadow-sm" name="idNuevoSubtipo" id="select_nueva_modalidad" required>
+                            @if(ViewBag.TodasModalidades != null) { foreach (var mod in ViewBag.TodasModalidades) { <option value="@mod.Id_Subtipo">@mod.Nombre - @mod.Costo.ToString("C2", cultura)</option> } }
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mb-4 p-3 bg-danger-subtle border border-danger border-opacity-50 rounded-3 shadow-sm">
+                        <input class="form-check-input ms-0 me-3 mt-1" type="checkbox" name="respetarCosto" value="true" id="chkRespetarCosto" onchange="toggleAlertaFinanciera()" style="float: left;">
+                        <label class="form-check-label d-block ms-4" for="chkRespetarCosto">
+                            <strong class="text-danger">Respetar costo original</strong><br>
+                            <small class="text-dark" id="lblAlertaFinanciera"><i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Si está apagado, se recalculará la deuda.</small>
+                        </label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-danger fw-bold rounded-pill shadow-sm" onclick="mostrarConfirmacionModalidad()">Aplicar Cambio</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarCambioModalidad" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow border-0">
+            <div class="modal-header bg-warning text-dark border-0">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Confirmar Acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-exchange-alt fa-3x text-warning mb-3"></i>
+                <h5 class="fw-bold text-dark">¿Cambiar modalidad?</h5>
+                <p class="text-muted small">Esta acción afectará saldos financieros y cupos.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarCambio" class="btn btn-warning rounded-pill px-4 fw-bold" onclick="procesarCambioModalidad()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalBorrarAbandonada" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow border-0">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title fw-bold">Eliminar Inscripción</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="@Url.Action("EliminarInscripcionAbandonada", "Eventos")" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body text-center p-4">
+                    <input type="hidden" name="sid" value="@Model.IdEventoEncriptado" />
+                    <input type="hidden" name="idAsistente" id="ghost_idAsistente" />
+                    <i class="fa-solid fa-trash-can fa-4x text-danger opacity-25 mb-3"></i>
+                    <h5 class="fw-bold">¿Eliminar a <span id="ghost_nombre" class="text-danger"></span>?</h5>
+                    <p class="text-muted small">Se liberará el cupo si no existen pagos registrados.</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalReembolso" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow border-0">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title fw-bold">Anular Pago</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="@Url.Action("AnularPagoIndividual", "Eventos")" method="post" onsubmit="this.btnSubmit.disabled=true;">
+                @Html.AntiForgeryToken()
+                <div class="modal-body text-center p-4">
+                    <input type="hidden" name="sid" value="@Model.IdEventoEncriptado" />
+                    <input type="hidden" name="idCuenta" id="refund_idCuenta" />
+                    <i class="fa-solid fa-triangle-exclamation fa-3x text-danger mb-3"></i>
+                    <h5 class="fw-bold">¿Confirmas la anulación?</h5>
+                    <p class="text-muted"><strong id="refund_concepto"></strong> por <strong id="refund_monto"></strong></p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" name="btnSubmit" class="btn btn-danger rounded-pill px-4">Anular</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .cursor-pointer { cursor: pointer; }
+    .pago-details summary::-webkit-details-marker { display: none; }
+    .pago-details summary { list-style: none; }
+    .pago-details[open] .icon-arrow { transform: rotate(180deg); }
+    .icon-arrow { transition: transform 0.2s ease; }
+    .btn-xs { padding: 0.1rem 0.3rem; font-size: 0.7rem; }
+    .tracking-wider { letter-spacing: 0.05em; }
+</style>
+
+<script>
+    function actualizarScores() {
+        if(confirm('¿Deseas recalcular los puntajes de prioridad de todos los asistentes?')) {
+            const btn = document.getElementById('btnActualizarScores');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Calculando...';
+            btn.disabled = true;
+            const formData = new FormData();
+            formData.append('idEvento', '@Model.IdEvento');
+            fetch('@Url.Action("ApiActualizarPuntajesAlojamientos", "Eventos")', { method: 'POST', body: formData })
+            .then(r => r.json()).then(d => { alert(d.mensaje); location.reload(); })
+            .catch(e => { alert('Error en la petición'); btn.disabled = false; });
+        }
+    }
+
+    function filtrarRegistrosUnificado() {
+        const valSelectMod = document.getElementById('filtroModalidad').value;
+        const valSelectTipo = document.getElementById('filtroTipoRegistro').value;
+        const textoBuscador = document.getElementById('buscadorNombres').value.toLowerCase().trim();
+        
+        const grupos = document.querySelectorAll('.card-modalidad');
+        grupos.forEach(grupo => {
+            let mostrarGrupo = (valSelectMod === 'all' || grupo.id === valSelectMod);
+            
+            if (mostrarGrupo) {
+                let filas = grupo.querySelectorAll('.fila-asistente');
+                let visible = false;
+                
+                filas.forEach(fila => {
+                    let nombre = fila.querySelector('.nombre-asistente').innerText.toLowerCase();
+                    
+                    // Atributos de traspaso
+                    let esRespetado = fila.getAttribute('data-traspaso-respetado') === 'true';
+                    let esAjuste = fila.getAttribute('data-traspaso-ajuste') === 'true';
+
+                    // Lógica de coincidencia de los filtros
+                    let cumpleTexto = (textoBuscador === "" || nombre.includes(textoBuscador));
+                    let cumpleTipo = true;
+
+                    if (valSelectTipo === 'normal') {
+                        cumpleTipo = !esRespetado && !esAjuste;
+                    } else if (valSelectTipo === 'traspaso-respetado') {
+                        cumpleTipo = esRespetado;
+                    } else if (valSelectTipo === 'traspaso-ajuste') {
+                        cumpleTipo = esAjuste;
+                    }
+
+                    if (cumpleTexto && cumpleTipo) { 
+                        fila.style.display = '';
+                        visible = true; 
+                    } else { 
+                        fila.style.display = 'none';
+                    }
+                });
+                grupo.style.display = visible ? 'block' : 'none';
+            } else { 
+                grupo.style.display = 'none';
+            }
+        });
+    }
+
+    function abrirModalEdicion(id, nombre, idSub, edad, genero) {
+        document.getElementById('edit_idAsistente_nombre').value = id;
+        document.getElementById('edit_nombre').value = nombre;
+    
+        document.getElementById('edit_edad').value = edad;
+        document.getElementById('edit_genero').value = genero;
+
+        document.getElementById('edit_idAsistente_modalidad').value = id;
+        document.getElementById('select_nueva_modalidad').value = idSub;
+        document.getElementById('chkRespetarCosto').checked = false;
+        toggleAlertaFinanciera();
+    
+        new bootstrap.Modal(document.getElementById('modalEditarNombre')).show();
+    }
+
+    function toggleAlertaFinanciera() {
+        let act = document.getElementById('chkRespetarCosto').checked;
+        document.getElementById('lblAlertaFinanciera').innerHTML = act ? "<i class='fa-solid fa-circle-check text-success me-1'></i> Se respetará la deuda actual."
+        : "<i class='fa-solid fa-triangle-exclamation text-danger me-1'></i> Se recalculará la deuda según el nuevo costo.";
+    }
+
+    function mostrarConfirmacionModalidad() {
+        bootstrap.Modal.getInstance(document.getElementById('modalEditarNombre')).hide();
+        new bootstrap.Modal(document.getElementById('modalConfirmarCambioModalidad')).show();
+    }
+
+    function procesarCambioModalidad() { document.getElementById('formCambioModalidad').submit(); }
+
+    function abrirModalReembolso(id, c, m) {
+        document.getElementById('refund_idCuenta').value = id;
+        document.getElementById('refund_concepto').innerText = c;
+        document.getElementById('refund_monto').innerText = m;
+        new bootstrap.Modal(document.getElementById('modalReembolso')).show();
+    }
+
+    function abrirModalBorrarAbandonada(id, n) {
+        document.getElementById('ghost_idAsistente').value = id;
+        document.getElementById('ghost_nombre').innerText = n;
+        new bootstrap.Modal(document.getElementById('modalBorrarAbandonada')).show();
+    }
+
+    function crearTarjetaCompositeQR(qrCanvas, nombre, esPagado, subtexto) {
+        var scale = 2; // Para que se vea nítido en pantallas de alta densidad
+        var w = 400;
+        var h = 480;
+        var canvas = document.createElement('canvas');
+        canvas.width = w * scale;
+        canvas.height = h * scale;
+        var ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale); // Todo el dibujo se hace en coordenadas relativas a w y h
+
+        // Fondo Blanco
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, w, h);
+
+        // Borde elegante exterior
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(2, 2, w - 4, h - 4);
+
+        // Header banner tenue (verde o rojo)
+        ctx.fillStyle = esPagado ? '#F0FDF4' : '#FEF2F2';
+        ctx.fillRect(4, 4, w - 8, 85);
+
+        // Insignia Pequeña: ✔️ o ❌
+        ctx.save();
+        if (esPagado) {
+            ctx.fillStyle = '#16A34A';
+            ctx.beginPath();
+            ctx.arc(40, 46, 22, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✓', 40, 46);
+        } else {
+            ctx.fillStyle = '#DC2626';
+            ctx.beginPath();
+            ctx.arc(40, 46, 22, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✕', 40, 46);
+        }
+        ctx.restore();
+
+        // Nombre Completo de la persona (Multilínea sin recortar)
+        ctx.fillStyle = '#0F172A';
+        var fontSize = 16;
+        var nombreTexto = (nombre || 'ASISTENTE').trim();
+        if (nombreTexto.length > 35) fontSize = 13;
+        else if (nombreTexto.length > 25) fontSize = 14;
+
+        ctx.font = 'bold ' + fontSize + 'px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+
+        var palabras = nombreTexto.split(' ');
+        var lineas = [];
+        var lineaAct = '';
+        var maxAnchoTexto = 300;
+
+        for (var i = 0; i < palabras.length; i++) {
+            var prueba = lineaAct + (lineaAct ? ' ' : '') + palabras[i];
+            if (ctx.measureText(prueba).width <= maxAnchoTexto) {
+                lineaAct = prueba;
+            } else {
+                lineas.push(lineaAct);
+                lineaAct = palabras[i];
+            }
+        }
+        if (lineaAct) lineas.push(lineaAct);
+
+        var startY = 16;
+        for (var i = 0; i < lineas.length; i++) {
+            ctx.fillText(lineas[i], 76, startY + (i * (fontSize + 2)));
+        }
+        
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = esPagado ? '#15803D' : '#B91C1C';
+        ctx.fillText(esPagado ? '✓ PAGADO / LIQUIDADO' : '✕ PAGO PENDIENTE', 76, startY + (lineas.length * (fontSize + 2)) + 6);
+
+        // Línea separadora
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(10, 89);
+        ctx.lineTo(w - 10, 89);
+        ctx.stroke();
+
+        // Dibujar QR en el centro
+        var qrSize = 300;
+        var qrX = (w - qrSize) / 2;
+        var qrY = 105;
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+        // Pie de página
+        ctx.fillStyle = '#64748B';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        if (subtexto) {
+            ctx.fillText(subtexto, w / 2, h - 26);
+        }
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = '#334155';
+        ctx.fillText('CÓDIGO DE ACCESO OFICIAL - RED AJP', w / 2, h - 10);
+
+        return canvas;
+    }
+
+    function mostrarQRInscrito(idAsistente, nombre, tokenExterno, modalidad, esPagado) {
+        var container = document.getElementById('qrCodeContainerInscrito');
+        container.innerHTML = '';
+
+        var tempDiv = document.createElement('div');
+        tempDiv.style.display = 'none';
+        document.body.appendChild(tempDiv);
+
+        var urlCompleto = window.location.origin + '@Url.Action("Pagar", "Eventos")' + '?token=' + (tokenExterno || idAsistente);
+
+        new QRCode(tempDiv, {
+            text: urlCompleto,
+            width: 600, // Doble resolución para nitidez
+            height: 600,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+
+        setTimeout(() => {
+            var rawCanvas = tempDiv.querySelector('canvas');
+            var btnDownload = document.getElementById('btnDownloadQRInscrito');
+            if (rawCanvas) {
+                var finalCanvas = crearTarjetaCompositeQR(rawCanvas, nombre, !!esPagado, 'ID: #' + idAsistente + ' - ' + modalidad);
+                finalCanvas.style.maxWidth = '100%';
+                finalCanvas.style.height = 'auto';
+                finalCanvas.style.borderRadius = '16px';
+                finalCanvas.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+
+                container.innerHTML = '';
+                container.appendChild(finalCanvas);
+
+                btnDownload.href = finalCanvas.toDataURL("image/png");
+                btnDownload.download = (esPagado ? 'QR_PAGADO_' : 'QR_PENDIENTE_') + idAsistente + '_' + nombre.replace(/ /g, '_') + '.png';
+                btnDownload.style.display = 'inline-block';
+            } else {
+                btnDownload.style.display = 'none';
+            }
+            if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+        }, 250);
+
+        new bootstrap.Modal(document.getElementById('modalQRInscrito')).show();
+    }
+</script>
+
+<!-- Librería para generar códigos QR -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- Modal QR Inscrito -->
+<div class="modal fade" id="modalQRInscrito" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;"> <!-- Aumentado ancho -->
+        <div class="modal-content border-0 rounded-4 shadow p-4 p-md-5"> <!-- Aumentado margen (padding) -->
+            <div class="modal-header border-0 pb-0 px-0">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-qrcode me-2 text-primary"></i>Código de Acceso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-3">
+                <div class="d-inline-block w-100 mb-3" id="qrCodeContainerInscrito">
+                    <!-- Aquí se inyecta el canvas de la tarjeta QR -->
+                </div>
+
+                <a id="btnDownloadQRInscrito" class="btn btn-primary rounded-pill w-100 fw-bold shadow-sm py-2 fs-6" style="display:none;">
+                    <i class="fa-solid fa-download me-2"></i>Descargar QR
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

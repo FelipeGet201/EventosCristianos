@@ -1,0 +1,467 @@
+﻿@using RedAJP.Models
+@model RedAJP.Models.CuponViewModel
+@{
+    ViewData["Title"] = (Model.Id_Cupon == 0 ? "Nuevo" : "Editar") + " Cupón";
+    Layout = "Principal";
+
+    var listaEventos = ViewBag.ListaEventos as List<dynamic> ?? new List<dynamic>();
+    var todosUsuarios = ViewBag.TodosUsuarios as List<dynamic> ?? new List<dynamic>();
+
+    // Serializamos la lista actual para inicializar JS
+    var jsonIdsIniciales = System.Text.Json.JsonSerializer.Serialize(Model.IdsUsuariosAutorizados ?? new List<int>());
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-gestion');
+            activarMenu('submenu-cupones');
+        }
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+<style>
+    /* Corrección para que Select2 no rompa el diseño en móviles */
+    .select2-container {
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    /* CLASE CRÍTICA: Permite que el contenedor del select se encoja si el texto es muy largo */
+    .flex-fix-select2 {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+</style>
+
+<div class="container py-5 fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <form action="@Url.Action("Guardar")" method="post" id="formCupon">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id_Cupon" value="@Model.Id_Cupon" />
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h3 class="fw-bold mb-0">@ViewData["Title"]</h3>
+                        @if (Model.Id_Cupon > 0)
+                        {
+                            <div class="small text-muted mt-1">
+                                <i class="fa-solid fa-history me-1"></i> Usado <strong>@Model.Conteo_Usados</strong> veces.
+                            </div>
+                        }
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+                        <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow" onclick="validarYEnviar()">
+                            <i class="fa-solid fa-save me-2"></i>Guardar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+
+                    <div class="col-md-7">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white p-3 border-bottom">
+                                <h6 class="fw-bold text-primary mb-0"><i class="fa-solid fa-tag me-2"></i>Datos del Cupón</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Código Promocional</label>
+                                    <div class="input-group">
+                                        <input type="text" id="txtCodigo" name="Codigo" class="form-control form-control-lg font-monospace text-uppercase"
+                                               placeholder="Ej. VERANO2026" value="@Model.Codigo" required maxlength="50" />
+                                        <button type="button" class="btn btn-outline-secondary" onclick="generarAleatorio()" title="Generar Aleatorio"><i class="fa-solid fa-shuffle"></i></button>
+                                    </div>
+                                    <div class="form-text">Sin espacios. Se convertirá a mayúsculas automáticamente.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Descripción Interna</label>
+                                    <textarea name="Descripcion" class="form-control" rows="2" placeholder="Notas sobre la campaña...">@Model.Descripcion</textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Inicio Vigencia</label>
+                                        <input type="datetime-local" id="txtFechaInicio" name="Fecha_Inicio" class="form-control"
+                                               value="@Model.Fecha_Inicio.ToString("yyyy-MM-ddTHH:mm")" required />
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Fin Vigencia</label>
+                                        <input type="datetime-local" id="txtFechaFin" name="Fecha_Fin" class="form-control"
+                                               value="@Model.Fecha_Fin.ToString("yyyy-MM-ddTHH:mm")" required />
+                                    </div>
+                                </div>
+
+                                <div class="form-check form-switch p-3 bg-light rounded border mt-2">
+                                    <input class="form-check-input" type="checkbox" id="chkActivo" name="Activo" value="true" @(Model.Activo ? "checked" : "")>
+                                    <input type="hidden" name="Activo" value="false" />
+                                    <label class="form-check-label fw-bold" for="chkActivo">Cupón Habilitado</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm rounded-4">
+                            <div class="card-header bg-white p-3 border-bottom">
+                                <h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-coins me-2"></i>Reglas de Descuento</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-muted">TIPO DE DESCUENTO</label>
+                                        <select class="form-select" name="Tipo_Descuento" id="selTipo" onchange="toggleReglas()">
+                                            <!option value="1" @(Model.Tipo_Descuento == 1 ? "selected" : "")>Porcentaje (%)</!option>
+                                            <!option value="2" @(Model.Tipo_Descuento == 2 ? "selected" : "")>Monto Fijo ($)</!option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-muted">VALOR</label>
+                                        <input type="number" step="0.01" name="Valor" class="form-control fw-bold" value="@Model.Valor" required />
+                                    </div>
+                                </div>
+
+                                <div id="panelTope" class="bg-success bg-opacity-10 p-3 rounded border border-success border-opacity-25 mb-3">
+                                    <label class="form-label fw-bold text-success small">TOPE MÁXIMO DE DESCUENTO ($)</label>
+                                    <input type="number" step="0.01" name="Tope_Maximo_Descuento" class="form-control"
+                                           value="@Model.Tope_Maximo_Descuento" placeholder="Opcional: Sin límite" />
+                                    <div class="form-text text-success small">Ej: 50% de descuento pero solo hasta $200 pesos.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Compra Mínima Requerida ($)</label>
+                                    <input type="number" step="0.01" name="Monto_Minimo_Compra" class="form-control" value="@Model.Monto_Minimo_Compra" />
+                                    <div class="form-text">El "Piso" para que aplique el cupón. 0 = Sin mínimo.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5">
+
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white p-3 border-bottom">
+                                <h6 class="fw-bold text-primary mb-0"><i class="fa-solid fa-earth-americas me-2"></i>Alcance y Restricciones</h6>
+                            </div>
+                            <div class="card-body p-4">
+
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted d-block mb-2">APLICA EN:</label>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="chkTienda" name="Aplica_Tienda" value="true" @(Model.Aplica_Tienda ? "checked" : "")>
+                                        <input type="hidden" name="Aplica_Tienda" value="false" />
+                                        <label class="form-check-label" for="chkTienda">Tienda Online</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="chkEventos" name="Aplica_Eventos" value="true" @(Model.Aplica_Eventos ? "checked" : "") onchange="toggleEventos()">
+                                        <input type="hidden" name="Aplica_Eventos" value="false" />
+                                        <label class="form-check-label" for="chkEventos">Eventos / Boletos</label>
+                                    </div>
+                                </div>
+
+                                <div id="panelEventoEspecifico" class="border-top pt-3 mt-3">
+                                    <label class="form-label fw-bold small">Restringir a Evento Específico (Opcional)</label>
+                                    <select name="Id_Evento_Restringido" class="form-select form-select-sm">
+                                        <option value="">-- Todos los Eventos --</option>
+                                        @foreach (dynamic ev in listaEventos)
+                                        {
+                                            <!option value="@ev.Id" @(Model.Id_Evento_Restringido == ev.Id ? "selected" : "")>@ev.Titulo</!option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="border-top pt-3 mt-3 bg-warning bg-opacity-10 p-2 rounded">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="chkPersonal" onchange="togglePersonal()">
+                                        <label class="form-check-label fw-bold small text-dark" for="chkPersonal">Restringir a Usuarios Específicos</label>
+                                    </div>
+
+                                    <div id="panelPersonal" style="display:none;">
+                                        <div class="alert alert-warning small mb-2 p-2 lh-1">
+                                            <i class="fa-solid fa-circle-info me-1"></i>
+                                            El <strong>Límite de Usos</strong> se calculará automáticamente (1 cupón por persona). Solo usuarios verificados.
+                                        </div>
+
+                                        <div class="d-flex align-items-center mb-2" style="width: 100%;">
+
+                                            <div class="flex-grow-1 flex-fix-select2">
+                                                <select class="form-select" id="cboUsuariosCupón">
+                                                    <option value="">-- Buscar Usuario --</option>
+                                                    @foreach (dynamic u in todosUsuarios)
+                                                    {
+                                                        <option value="@u.Id" data-verificado="@u.Verificado.ToString().ToLower()">
+                                                            @u.Nombre (@u.Email) @(u.Verificado ? "✅" : "⚠️")
+                                                        </option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <div class="ms-2 flex-shrink-0">
+                                                <button type="button" class="btn btn-secondary px-3" onclick="agregarUsuarioCupón()" title="Agregar a la lista">
+                                                    <i class="fa-solid fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="border rounded bg-white p-0 overflow-auto shadow-sm" style="max-height: 180px;">
+                                            <ul class="list-group list-group-flush" id="listaUsuariosCupón">
+                                            </ul>
+                                        </div>
+
+                                        <div id="containerInputsUsuarios"></div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white p-3 border-bottom">
+                                <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-boxes-stacked me-2"></i>Inventario</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <label class="form-label fw-bold">Límite Total de Usos</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" id="txtLimite" name="Limite_Usos" class="form-control form-control-lg text-center fw-bold" value="@Model.Limite_Usos" required min="1" />
+                                    <span class="input-group-text">Cupones</span>
+                                </div>
+                                <div class="small text-muted" id="msgAyudaLimite">
+                                    <i class="fa-solid fa-circle-info me-1"></i> Total de veces que el código puede ser canjeado.
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAlerta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3 text-warning bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Atención</h5>
+                <p class="text-muted mb-4" id="txtMsgAlerta">Mensaje...</p>
+                <button type="button" class="btn btn-dark rounded-pill px-4" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        // Inicializamos el array con datos del servidor
+        var arrUsuariosCupón = @Html.Raw(jsonIdsIniciales);
+        var select2Iniciado = false;
+
+        $(document).ready(function() {
+            toggleReglas();
+            toggleEventos();
+
+            // Render inicial de la lista
+            renderizarLista();
+
+            // Si hay usuarios, activamos el check
+            if (arrUsuariosCupón.length > 0) {
+                document.getElementById('chkPersonal').checked = true;
+                togglePersonal();
+            }
+
+            // LÓGICA DE FECHAS (Inicio + 1 Día)
+            var txtInicio = document.getElementById('txtFechaInicio');
+            var txtFin = document.getElementById('txtFechaFin');
+
+            if (txtInicio && txtFin) {
+                txtInicio.addEventListener('change', function() {
+                    var valInicio = this.value;
+                    if (valInicio) {
+                        var fechaObj = new Date(valInicio);
+
+                        // Sumar 1 día (24 horas) - CORREGIDO
+                        fechaObj.setDate(fechaObj.getDate() + 1);
+
+                        // Ajuste de zona horaria para mantener el formato local correcto
+                        var localDate = new Date(fechaObj.getTime() - (fechaObj.getTimezoneOffset() * 60000));
+
+                        txtFin.value = localDate.toISOString().slice(0, 16);
+                    }
+                });
+            }
+        });
+
+        // ------------------------------------------
+        // LÓGICA DE LISTA DE USUARIOS
+        // ------------------------------------------
+
+        function togglePersonal() {
+            var chk = document.getElementById('chkPersonal');
+            var panel = document.getElementById('panelPersonal');
+
+            if (chk.checked) {
+                panel.style.display = 'block';
+                iniciarSelect2();
+                actualizarLimite();
+            } else {
+                panel.style.display = 'none';
+                var inputLimite = document.getElementById('txtLimite');
+                inputLimite.removeAttribute('readonly');
+            }
+        }
+
+        function iniciarSelect2() {
+            if (!select2Iniciado) {
+                $('#cboUsuariosCupón').select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    dropdownParent: $('#panelPersonal'), // Mejora la ubicación del dropdown en móviles
+                    placeholder: '-- Buscar Usuario --',
+                    allowClear: true
+                });
+                select2Iniciado = true;
+            }
+        }
+
+        function agregarUsuarioCupón() {
+            var cbo = document.getElementById('cboUsuariosCupón');
+            var id = parseInt(cbo.value);
+
+            if (!id) {
+                mostrarAlerta("Selecciona un usuario primero.");
+                return;
+            }
+
+            if (arrUsuariosCupón.includes(id)) {
+                mostrarAlerta("Este usuario ya está en la lista.");
+                return;
+            }
+
+            var option = cbo.options[cbo.selectedIndex];
+            if (option.getAttribute('data-verificado') === 'false') {
+                mostrarAlerta("⛔ No permitido: El usuario seleccionado no tiene su correo verificado.");
+                return;
+            }
+
+            arrUsuariosCupón.push(id);
+            renderizarLista();
+            actualizarLimite();
+
+            $('#cboUsuariosCupón').val(null).trigger('change');
+        }
+
+        function removerUsuarioCupón(id) {
+            arrUsuariosCupón = arrUsuariosCupón.filter(x => x !== id);
+            renderizarLista();
+            actualizarLimite();
+        }
+
+        function renderizarLista() {
+            var ul = document.getElementById('listaUsuariosCupón');
+            var containerInputs = document.getElementById('containerInputsUsuarios');
+            var cbo = document.getElementById('cboUsuariosCupón');
+
+            ul.innerHTML = '';
+            containerInputs.innerHTML = '';
+
+            arrUsuariosCupón.forEach(id => {
+                var nombreTexto = "Usuario ID " + id;
+                var opt = cbo.querySelector(`option[value="${id}"]`);
+                if(opt) nombreTexto = opt.text;
+
+                var li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center py-2 px-3';
+                // HTML responsivo para la lista
+                li.innerHTML = `
+                    <div class="d-flex align-items-center text-truncate" style="max-width: 85%;">
+                        <i class="fa-solid fa-user-check me-2 text-success flex-shrink-0"></i>
+                        <span class="small fw-bold text-truncate">${nombreTexto}</span>
+                    </div>
+                    <button type="button" class="btn btn-sm text-danger p-0 border-0 flex-shrink-0" onclick="removerUsuarioCupón(${id})">
+                        <i class="fa-solid fa-xmark fa-lg"></i>
+                    </button>
+                `;
+                ul.appendChild(li);
+
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'IdsUsuariosAutorizados';
+                input.value = id;
+                containerInputs.appendChild(input);
+            });
+        }
+
+        function actualizarLimite() {
+            var inputLimite = document.getElementById('txtLimite');
+            var msg = document.getElementById('msgAyudaLimite');
+
+            if (arrUsuariosCupón.length > 0) {
+                inputLimite.value = arrUsuariosCupón.length;
+                inputLimite.setAttribute('readonly', true);
+                inputLimite.classList.add('bg-light');
+                msg.innerHTML = '<i class="fa-solid fa-lock text-warning me-1"></i> Calculado automáticamente por la lista de usuarios.';
+            } else {
+                inputLimite.removeAttribute('readonly');
+                inputLimite.classList.remove('bg-light');
+                msg.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i> Total de veces que el código puede ser canjeado.';
+            }
+        }
+
+        function toggleReglas() {
+            var tipo = document.getElementById('selTipo').value;
+            var panelTope = document.getElementById('panelTope');
+            if (tipo == "1") {
+                panelTope.style.display = 'block';
+            } else {
+                panelTope.style.display = 'none';
+                panelTope.querySelector('input').value = '';
+            }
+        }
+
+        function toggleEventos() {
+            var chk = document.getElementById('chkEventos');
+            var panel = document.getElementById('panelEventoEspecifico');
+            if (chk.checked) {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+                panel.querySelector('select').value = "";
+            }
+        }
+
+        function generarAleatorio() {
+            var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            var result = "";
+            for (var i = 0; i < 8; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('txtCodigo').value = result;
+        }
+
+        function validarYEnviar() {
+            var chkPersonal = document.getElementById('chkPersonal');
+
+            if (chkPersonal.checked && arrUsuariosCupón.length === 0) {
+                mostrarAlerta("Activaste 'Restringir a Usuarios' pero la lista está vacía.");
+                return;
+            }
+
+            document.getElementById('formCupon').submit();
+        }
+
+        function mostrarAlerta(mensaje) {
+            document.getElementById('txtMsgAlerta').innerText = mensaje;
+            var myModal = new bootstrap.Modal(document.getElementById('modalAlerta'));
+            myModal.show();
+        }
+    </script>
+}

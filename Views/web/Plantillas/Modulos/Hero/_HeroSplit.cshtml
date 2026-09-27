@@ -1,0 +1,141 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<style>
+    .hero-split {
+        display: flex;
+        flex-direction: column;
+        min-height: 80vh;
+        background: var(--theme-surface);
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    }
+    @Html.Raw("@") media (min-width: 992px) {
+        .hero-split {
+            flex-direction: row;
+            height: 85vh;
+        }
+    }
+
+    .hero-split-info {
+        flex: 1;
+        padding: 4rem 2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    @Html.Raw("@") media (min-width: 992px) {
+        .hero-split-info {
+            padding: 0 5%;
+        }
+    }
+
+    .hero-split-map {
+        flex: 1;
+        min-height: 400px;
+        background: var(--theme-bg);
+        position: relative;
+        border-left: 1px solid rgba(128, 128, 128, 0.2); /* Borde sutil */
+    }
+
+        .hero-split-map iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            filter: contrast(1.1);
+        }
+
+    .split-badge {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(128, 128, 128, 0.1);
+        color: var(--theme-accent);
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-family: var(--theme-font-body);
+        font-weight: 800;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        margin-bottom: 2rem;
+    }
+
+    .split-title {
+        color: var(--theme-primary);
+        font-family: var(--theme-font-title);
+        font-weight: 800;
+        font-size: clamp(2.5rem, 5vw, 4.5rem);
+        margin-bottom: 1.5rem;
+        line-height: 1.1;
+    }
+
+    .split-btn {
+        background-color: var(--theme-accent);
+        color: var(--theme-bg); /* Contraste con el color de acento */
+        border: none;
+        border-radius: 50px;
+        padding: 14px 30px;
+        font-family: var(--theme-font-title);
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s;
+    }
+
+        .split-btn:hover {
+            background-color: var(--theme-primary);
+            color: var(--theme-bg);
+        }
+</style>
+
+<section class="hero-split fade-in-up">
+    <div class="hero-split-info">
+        <div class="split-badge align-self-start">
+            <i class="fa-solid fa-map-pin me-2"></i> Encuéntranos
+        </div>
+
+        <h1 class="split-title">@(string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "Punto de Encuentro" : Model.NombreIglesia)</h1>
+
+        <div class="mb-5" style="font-family: var(--theme-font-body);">
+            <p class="fs-5 fw-bold mb-1" style="color: var(--theme-primary);">
+                @(string.IsNullOrWhiteSpace(Model.DireccionCompleta) ? "Dirección no registrada" : Model.DireccionCompleta)
+            </p>
+            <p class="fs-5" style="color: var(--theme-text-muted);">
+                @(string.IsNullOrWhiteSpace(Model.Municipio) ? "" : Model.Municipio)
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3">
+            @if (!string.IsNullOrWhiteSpace(Model.MapaUrl))
+            {
+                <a href="@Model.MapaUrl" target="_blank" class="split-btn">
+                    <i class="fa-solid fa-location-arrow me-2"></i> Iniciar Ruta
+                </a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+            {
+                <a href="https://wa.me/52@(Model.Whatsapp)" target="_blank" class="split-btn" style="background: transparent; border: 2px solid rgba(128, 128, 128, 0.3); color: var(--theme-text-main);">
+                    <i class="fa-brands fa-whatsapp me-2" style="color: #25d366;"></i> Escribir Directo
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="hero-split-map">
+        @if (Model.Latitud.HasValue && Model.Longitud.HasValue)
+        {
+            <iframe src="https://maps.google.com/maps?q=@Model.Latitud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),@Model.Longitud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)&z=15&output=embed" frameborder="0" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.MapaUrl) && Model.MapaUrl.Contains("google"))
+        {
+            <iframe src="@Model.MapaUrl" frameborder="0" allowfullscreen></iframe>
+        }
+        else
+        {
+            <div class="d-flex flex-column align-items-center justify-content-center h-100 w-100" style="background: var(--theme-bg);">
+                <i class="fa-solid fa-map-marked-alt fs-1 opacity-50 mb-3" style="color: var(--theme-text-muted);"></i>
+                <span class="fs-5 fw-bold" style="color: var(--theme-text-muted); font-family: var(--theme-font-body);">Cartografía no disponible</span>
+            </div>
+        }
+    </div>
+</section>

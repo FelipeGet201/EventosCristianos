@@ -1,0 +1,452 @@
+﻿@model RedAJP.Models.EncuestaResultadosViewModel
+@{
+    Layout = "Principal";
+    ViewData["Title"] = "Resultados: " + Model.Titulo;
+    bool tieneArchivos = Model.Preguntas.Any(x => x.Tipo == "Archivo");
+}
+
+<script>
+    window.addEventListener('load', function() {
+        if (typeof activarMenu === 'function') {
+            activarMenu('menu-herramientas');
+            activarMenu('submenu-encuestas');
+        }
+    });
+</script>
+
+<div class="container py-4 fade-in">
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+        <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <a href="@Url.Action("Index")" class="text-decoration-none text-muted small fw-bold hover-scale d-inline-block mb-1">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Volver
+                </a>
+                <h3 class="fw-bold text-dark m-0">@Model.Titulo</h3>
+                <span class="text-muted small font-monospace">ID: @Model.Id • Clave: @Model.ClaveUrl</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+
+                <div class="text-end border-end pe-3">
+                    <h2 class="fw-bold text-primary mb-0">@Model.TotalRespuestas</h2>
+                    <span class="small text-muted text-uppercase fw-bold">Participantes</span>
+                </div>
+
+                @if (tieneArchivos)
+                {
+                    <div class="text-end border-end pe-3">
+                        <h2 class="fw-bold text-info mb-0">@Model.EspacioTotalOcupadoMB.ToString("0.0") <span class="fs-6">MB</span></h2>
+                        <span class="small text-muted text-uppercase fw-bold">Espacio</span>
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold shadow-sm hover-scale" data-bs-toggle="modal" data-bs-target="#modalGestion">
+                        <i class="fa-solid fa-list-check"></i> <span class="d-none d-md-inline">Gestionar</span>
+                    </button>
+
+                    <a href="@Url.Action("ExportarExcel", new { id = Model.Id })" class="btn btn-success rounded-pill fw-bold shadow-sm hover-scale">
+                        <i class="fa-solid fa-file-excel"></i> <span class="d-none d-md-inline">Excel</span>
+                    </a>
+
+                    @if (tieneArchivos && Model.EspacioTotalOcupadoMB > 0)
+                    {
+                        <a href="@Url.Action("DescargarTodoZip", new { id = Model.Id })" class="btn btn-primary rounded-pill fw-bold shadow-sm hover-scale" title="Descargar Todo">
+                            <i class="fa-solid fa-file-zipper"></i> <span class="d-none d-md-inline">ZIP</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (tieneArchivos && Model.EspacioTotalOcupadoMB > 0)
+        {
+            <div class="card-footer bg-warning bg-opacity-10 border-0 m-2 rounded-3 p-3">
+                <div class="d-flex align-items-start">
+                    <i class="fa-solid fa-triangle-exclamation text-warning mt-1 me-3"></i>
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1">Política de Almacenamiento</h6>
+                        <p class="small text-muted mb-0">
+                            Los archivos adjuntos ocupan espacio en el servidor. Se recomienda descargarlos y eliminar los antiguos individualmente para liberar espacio.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @* --- ALERTA DE ANONIMATO --- *@
+    @if (ViewBag.EsAnonima != null && (bool)ViewBag.EsAnonima)
+    {
+        <div class="alert alert-success border-0 shadow-sm rounded-4 d-flex align-items-center mb-4 p-4">
+            <i class="fa-solid fa-user-secret fa-3x me-4 opacity-75 text-success"></i>
+            <div>
+                <h6 class="fw-bold mb-1 text-success">Encuesta Anónima</h6>
+                <p class="mb-0 small text-dark opacity-75">Los nombres y correos de los participantes han sido ocultos por el sistema para proteger su identidad y privacidad.</p>
+            </div>
+        </div>
+    }
+
+    @if (Model.TotalRespuestas == 0)
+    {
+        <div class="text-center py-5">
+            <div class="mb-3 text-muted opacity-25"><i class="fa-solid fa-chart-simple fa-4x"></i></div>
+            <h5 class="fw-bold text-muted">Aún no hay respuestas</h5>
+            <p class="small text-muted">Comparte el link para comenzar a recibir datos.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var p in Model.Preguntas)
+            {
+                <div class="col-md-6 @(p.Tipo == "Texto" || p.Tipo == "Parrafo" || p.Tipo == "Fecha" || p.Tipo == "Archivo" ? "col-12" : "")">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-light text-primary border mb-2">Pregunta @p.Orden</span>
+                                <h6 class="fw-bold text-dark mb-0">@p.Texto</h6>
+                            </div>
+                            @if (p.Tipo == "Archivo")
+                            {
+                                <span class="badge bg-info text-white">@p.ArchivosRecibidos?.Count archivos</span>
+                            }
+                        </div>
+                        <div class="card-body p-4">
+
+                            @* --- 1. RENDERIZADO: ARCHIVOS (TABLA ESPECÍFICA) --- *@
+                            @if (p.Tipo == "Archivo")
+                            {
+                                if (p.ArchivosRecibidos != null && p.ArchivosRecibidos.Any())
+                                {
+                                    <div class="table-responsive rounded-3 border mt-2">
+                                        <table class="table table-hover align-middle mb-0 small">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 40%">Archivo</th>
+                                                    <th style="width: 30%">Subido por</th>
+                                                    <th class="text-end" style="width: 30%">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var arc in p.ArchivosRecibidos)
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="me-2 text-primary fs-4">
+                                                                    @if (arc.Extension == ".pdf")
+                                                                    {
+                                                                        <i class="fa-solid fa-file-pdf"></i>
+                                                                    }
+                                                                    else if (arc.Extension == ".jpg" || arc.Extension == ".png" || arc.Extension == ".jpeg")
+                                                                    {
+                                                                        <i class="fa-solid fa-file-image"></i>
+                                                                    }
+                                                                    else if (arc.Extension == ".xlsx" || arc.Extension == ".xls")
+                                                                    {
+                                                                        <i class="fa-solid fa-file-excel text-success"></i>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <i class="fa-solid fa-file-lines"></i>
+                                                                    }
+                                                                </div>
+                                                                <div class="text-truncate" style="max-width: 200px;">
+                                                                    <div class="fw-bold text-dark text-truncate" title="@arc.NombreOriginal">@arc.NombreOriginal</div>
+                                                                    <div class="text-muted" style="font-size: 0.65rem;">@arc.TamanoMB MB • @arc.Fecha.ToString("dd/MM/yy")</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span class="text-dark fw-bold" style="font-size: 0.8rem;">@arc.Autor</span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <div class="btn-group">
+                                                                <a href="@arc.UrlDescarga" class="btn btn-sm btn-primary text-white shadow-sm" title="Descargar" target="_blank">
+                                                                    <i class="fa-solid fa-download me-1"></i> Bajar
+                                                                </a>
+                                                                <button type="button" class="btn btn-sm btn-light border text-danger"
+                                                                        onclick="confirmarBorradoArchivo(@arc.IdArchivo, '@arc.NombreOriginal', @Model.Id)"
+                                                                        title="Eliminar solo el archivo (Liberar espacio)">
+                                                                    <i class="fa-regular fa-trash-can"></i>
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center py-5 bg-light rounded-3 mt-2 border border-dashed">
+                                        <i class="fa-regular fa-folder-open text-muted fs-2 mb-2"></i>
+                                        <p class="text-muted small mb-0">No se han recibido archivos aún.</p>
+                                    </div>
+                                }
+                            }
+
+                            @* --- 2. RENDERIZADO: BARRAS (Para Opciones, SiNo, Casillas) --- *@
+                            else if (p.ConteoOpciones.Any())
+                            {
+                                foreach (var opt in p.ConteoOpciones)
+                                {
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="fw-bold text-dark">@opt.Etiqueta</span>
+                                            <span class="text-muted">@opt.Cantidad (@opt.Porcentaje.ToString("0")%)</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px; border-radius: 4px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: @opt.Porcentaje.ToString("0").Replace(",", ".")%"></div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+
+                            @* --- 3. RENDERIZADO: PROMEDIOS (Estrellas, Emojis, Rangos) --- *@
+                            else if (p.Tipo == "RatingStar" || p.Tipo == "RatingEmoji" || p.Tipo == "RangoNumerico")
+                            {
+                                <div class="text-center py-3">
+                                    <div class="display-4 fw-bold text-warning">@p.Promedio.ToString("0.0")</div>
+                                    <div class="small text-muted text-uppercase fw-bold">Promedio General</div>
+
+                                    @if (p.Tipo == "RatingStar")
+                                    {
+                                        <div class="text-warning mt-2 fs-5">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                if (i <= Math.Round(p.Promedio))
+                                                {
+                                                    <i class="fa-solid fa-star"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="fa-regular fa-star"></i>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                    else if (p.Tipo == "RatingEmoji")
+                                    {
+                                        <div class="mt-2 fs-1">
+                                            @if (p.Promedio < 1.8)
+                                            {
+                                                <span>😡</span>
+                                            }
+                                            else if (p.Promedio < 2.6)
+                                            {
+                                                <span>☹️</span>
+                                            }
+                                            else if (p.Promedio < 3.4)
+                                            {
+                                                <span>😐</span>
+                                            }
+                                            else if (p.Promedio < 4.2)
+                                            {
+                                                <span>🙂</span>
+                                            }
+                                            else
+                                            {
+                                                <span>🤩</span>
+                                            }
+                                        </div>
+                                    }
+                                    else if (p.Tipo == "RangoNumerico")
+                                    {
+                                        <div class="progress mt-3 mx-auto" style="height: 6px; max-width: 200px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: @((p.Promedio * 10).ToString("0").Replace(",", "."))%"></div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            @* --- 4. RENDERIZADO: TEXTO (Comentarios) --- *@
+                            else if (p.UltimasRespuestas.Any())
+                            {
+                                <div class="bg-light rounded-3 p-3 overflow-auto" style="max-height: 300px;">
+                                    <ul class="list-unstyled m-0">
+                                        @foreach (var txt in p.UltimasRespuestas)
+                                        {
+                                            <li class="mb-2 pb-2 border-bottom border-white">
+                                                <i class="fa-solid fa-quote-left text-muted opacity-25 me-2 small"></i>
+                                                <span class="fst-italic text-dark small">@txt.Texto</span>
+                                                <div class="text-end text-muted opacity-50" style="font-size: 0.65rem;">
+                                                    @txt.Autor • @txt.Fecha.ToString("dd MMM")
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="modalGestion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark">Gestionar Registros</h5>
+                    <p class="text-muted small mb-0">Revise las respuestas y elimine registros incorrectos o de prueba.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                @if (Model.ListaParticipantes.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light small text-uppercase text-muted">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Participante</th>
+                                    <th>Iglesia</th>
+                                    <th>Detalles</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.ListaParticipantes)
+                                {
+                                    <tr>
+                                        <td class="small text-muted">@item.Fecha.ToString("dd/MM/yy HH:mm")</td>
+                                        <td>
+                                            <div class="fw-bold text-dark small">@item.Autor</div>
+                                            <div class="small text-muted">@item.Email</div>
+                                            @if (item.EsInterno)
+                                            {
+                                                <span class="badge bg-primary-subtle text-primary" style="font-size:0.6rem">Usuario Logueado</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="small text-dark">
+                                                @if (item.Iglesia != "No especificada")
+                                                {
+                                                    <i class="fa-solid fa-church text-secondary me-1"></i> 
+                                                    @item.Iglesia
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted opacity-50">-</span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary border-0" type="button" data-bs-toggle="collapse" data-bs-target="#det_@item.IdRespuesta">
+                                                <i class="fa-solid fa-eye me-1"></i> Ver Respuestas
+                                            </button>
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-danger hover-scale px-3 rounded-pill"
+                                                    onclick="confirmarBorradoCompleto(@item.IdRespuesta, '@item.Autor')"
+                                                    title="Eliminar TODAS las respuestas de este usuario">
+                                                <i class="fa-regular fa-trash-can me-1"></i> Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="collapse bg-light border-bottom border-top" id="det_@item.IdRespuesta">
+                                        <td colspan="5" class="p-3">
+                                            <div class="d-flex align-items-start gap-2">
+                                                <i class="fa-solid fa-turn-up fa-rotate-90 text-primary mt-1"></i>
+                                                <div class="w-100">
+                                                    <h6 class="small fw-bold text-primary mb-2">Resumen de respuestas:</h6>
+
+                                                    <ul class="list-unstyled mb-0 small text-muted">
+                                                        @foreach (var linea in item.PreviewRespuestas)
+                                                        {
+                                                            <li class="mb-1 border-bottom border-white pb-1">
+                                                                @Html.Raw(linea)
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">No hay registros para mostrar.</div>
+                }
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-dark rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarDel" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow-lg text-center p-4">
+            <div class="mb-3 text-danger animate__animated animate__headShake">
+                <i class="fa-solid fa-triangle-exclamation fa-3x"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-2">¿Eliminar Registro Completo?</h6>
+            <p class="text-muted small mb-4">
+                Se borrarán todas las respuestas de <strong id="lblAutorDel">...</strong> permanentemente.
+            </p>
+            <form action="@Url.Action("EliminarRespuestaCompleta")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idRespuesta" id="hidIdRespuesta" />
+                <input type="hidden" name="idEncuesta" value="@Model.Id" />
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-danger rounded-pill fw-bold shadow-sm">Sí, Eliminar Todo</button>
+                    <button type="button" class="btn btn-light rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarDelArchivo" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow-lg text-center p-4">
+            <div class="mb-3 text-warning animate__animated animate__pulse">
+                <i class="fa-solid fa-file-circle-xmark fa-3x"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-2">¿Eliminar solo el archivo?</h6>
+            <p class="text-muted small mb-4">
+                Se borrará <strong id="lblArchivoDel">...</strong> para liberar espacio. La respuesta del usuario quedará registrada pero sin adjunto.
+            </p>
+            <form action="@Url.Action("EliminarArchivoIndividual")" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idArchivo" id="hidIdArchivo" />
+                <input type="hidden" name="idEncuesta" id="hidIdEncuestaArchivo" />
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-warning rounded-pill fw-bold shadow-sm">Sí, Liberar Espacio</button>
+                    <button type="button" class="btn btn-light rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmarBorradoCompleto(id, autor) {
+        document.getElementById('hidIdRespuesta').value = id;
+        document.getElementById('lblAutorDel').innerText = autor;
+        var modalSmall = new bootstrap.Modal(document.getElementById('modalConfirmarDel'));
+        modalSmall.show();
+    }
+
+    function confirmarBorradoArchivo(idArchivo, nombreArchivo, idEncuesta) {
+        document.getElementById('hidIdArchivo').value = idArchivo;
+        document.getElementById('hidIdEncuestaArchivo').value = idEncuesta;
+        document.getElementById('lblArchivoDel').innerText = nombreArchivo;
+        var modalSmall = new bootstrap.Modal(document.getElementById('modalConfirmarDelArchivo'));
+        modalSmall.show();
+    }
+</script>

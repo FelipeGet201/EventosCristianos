@@ -1,0 +1,243 @@
+﻿@{
+    Layout = "Principal";
+    ViewData["Title"] = "Estadísticas";
+}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container py-4 fade-in">
+    <div class="mb-4">
+        <div class="row align-items-center mb-3 g-3">
+            <div class="col-12 col-md-5">
+                <h2 class="fw-bold mb-0" style="color: var(--header-footer, #002b36);">
+                    <i class="fa-solid fa-chart-pie me-2 text-warning"></i>Estadísticas
+                </h2>
+                <span class="text-dark opacity-75 small fw-semibold">Resumen de integrantes en las iglesias</span>
+            </div>
+            
+            <div class="col-12 col-md-7 d-flex justify-content-md-end">
+                <a href="@Url.Action("ExportarReporteMaestro")" class="btn btn-success rounded-pill py-2 px-4 fw-bold shadow">
+                    <i class="fa-solid fa-file-excel me-2 fs-5"></i>Descargar Reporte
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100 card-iglesia" style="border-radius: 15px;">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-dark"><i class="fa-solid fa-church text-primary me-2"></i>Iglesias con más integrantes</h5>
+                    <p class="small text-muted mb-0">Las iglesias que tienen más personas registradas.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="chartIglesias" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100 card-iglesia" style="border-radius: 15px;">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-dark"><i class="fa-solid fa-users text-info me-2"></i>Edades de los integrantes</h5>
+                    <p class="small text-muted mb-0">Cuántas personas hay en cada grupo de edad.</p>
+                </div>
+                <div class="card-body px-4 pb-4 d-flex justify-content-center">
+                    <div style="max-width: 300px; width: 100%;">
+                        <canvas id="chartEdades"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100 card-iglesia" style="border-radius: 15px;">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-dark"><i class="fa-solid fa-map-location-dot text-warning me-2"></i>Integrantes por Localidad</h5>
+                    <p class="small text-muted mb-0">Las localidades o ciudades con más personas.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="chartLocalidades" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100 card-iglesia" style="border-radius: 15px;">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-dark"><i class="fa-solid fa-child-reaching text-success me-2"></i>Promedio de edad por iglesia</h5>
+                    <p class="small text-muted mb-0">Iglesias ordenadas de las más jóvenes a las mayores.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="chartPromedios" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100 card-iglesia" style="border-radius: 15px;">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-dark"><i class="fa-solid fa-layer-group text-danger me-2"></i>Integrantes por Sector</h5>
+                    <p class="small text-muted mb-0">Personas registradas en cada sector.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="chartSectores" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100 card-iglesia" style="border-radius: 15px;">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-dark"><i class="fa-solid fa-chart-area text-secondary me-2"></i>Integrantes por Zona</h5>
+                    <p class="small text-muted mb-0">Personas registradas en cada zona.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="chartZonas" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.addEventListener('load', function() {
+            if (typeof activarMenu === 'function') {
+                activarMenu('menu-estadisticas');
+            }
+        });
+
+        const dataIglesias = @Html.Raw(ViewBag.JsonIglesias ?? "[]");
+        const dataLocalidades = @Html.Raw(ViewBag.JsonLocalidades ?? "[]");
+        const dataEdades = @Html.Raw(ViewBag.JsonEdades ?? "[]");
+        const dataPromedios = @Html.Raw(ViewBag.JsonPromedios ?? "[]");
+        const dataSectores = @Html.Raw(ViewBag.JsonSectores ?? "[]");
+        const dataZonas = @Html.Raw(ViewBag.JsonZonas ?? "[]");
+
+        const colorPalette = ['#0d6efd', '#198754', '#ffc107', '#0dcaf0', '#d63384', '#6f42c1', '#fd7e14', '#20c997'];
+
+        if(dataIglesias.length > 0) {
+            new Chart(document.getElementById('chartIglesias'), {
+                type: 'bar',
+                data: {
+                    labels: dataIglesias.map(x => x.Nombre),
+                    datasets: [{
+                        label: 'Total de personas',
+                        data: dataIglesias.map(x => x.Total),
+                        backgroundColor: '#0d6efd',
+                        borderRadius: 4
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        if(dataEdades.length > 0) {
+            new Chart(document.getElementById('chartEdades'), {
+                type: 'doughnut',
+                data: {
+                    labels: dataEdades.map(x => x.Rango),
+                    datasets: [{
+                        data: dataEdades.map(x => x.Total),
+                        backgroundColor: colorPalette.slice(0, dataEdades.length),
+                        borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        if(dataLocalidades.length > 0) {
+            new Chart(document.getElementById('chartLocalidades'), {
+                type: 'bar',
+                data: {
+                    labels: dataLocalidades.map(x => x.Nombre),
+                    datasets: [{
+                        label: 'Total de personas',
+                        data: dataLocalidades.map(x => x.Total),
+                        backgroundColor: '#ffc107',
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        if(dataPromedios.length > 0) {
+            new Chart(document.getElementById('chartPromedios'), {
+                type: 'line',
+                data: {
+                    labels: dataPromedios.map(x => x.Iglesia),
+                    datasets: [{
+                        label: 'Edad Promedio (Años)',
+                        data: dataPromedios.map(x => x.Promedio),
+                        borderColor: '#198754',
+                        backgroundColor: '#198754',
+                        pointRadius: 5,
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0 } } }
+            });
+        }
+
+        if(dataSectores.length > 0) {
+            new Chart(document.getElementById('chartSectores'), {
+                type: 'bar',
+                data: {
+                    labels: dataSectores.map(x => x.Nombre),
+                    datasets: [{
+                        label: 'Total de personas',
+                        data: dataSectores.map(x => x.Total),
+                        backgroundColor: '#dc3545',
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        if(dataZonas.length > 0) {
+            new Chart(document.getElementById('chartZonas'), {
+                type: 'bar',
+                data: {
+                    labels: dataZonas.map(x => x.Nombre),
+                    datasets: [{
+                        label: 'Total de personas',
+                        data: dataZonas.map(x => x.Total),
+                        backgroundColor: '#6c757d',
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    </script>
+
+    <style>
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-iglesia {
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent !important;
+        }
+        
+        .card-iglesia:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+            border-bottom-color: var(--acento-dorado, #ffc107) !important;
+        }
+    </style>
+}

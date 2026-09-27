@@ -1,0 +1,104 @@
+﻿@model RedAJP.Models.IglesiaWebPublicaViewModel
+
+<footer style="background-color: var(--theme-primary); color: var(--theme-bg); padding: 5rem 0 2rem; border-top: 4px solid var(--theme-accent);">
+    <div class="container">
+        <div class="row g-5 mb-5">
+            <div class="col-lg-4">
+                <h4 class="fw-bold mb-4 text-uppercase" style="font-family: var(--theme-font-title); color: var(--theme-accent);">
+                    @(string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "Iglesia" : Model.NombreIglesia)
+                </h4>
+
+                <div class="d-flex mb-3" style="font-family: var(--theme-font-body); opacity: 0.9;">
+                    <i class="fa-solid fa-map-pin fs-5 me-3 mt-1" style="color: var(--theme-accent);"></i>
+                    <div>
+                        <p class="mb-0 fw-bold" style="color: inherit;">Dirección</p>
+                        <p class="small mb-0">@(string.IsNullOrWhiteSpace(Model.DireccionCompleta) ? "No registrada" : Model.DireccionCompleta)</p>
+                        <p class="small mb-0">@Model.Municipio</p>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mt-4" style="font-family: var(--theme-font-body); opacity: 0.9;">
+                    @if (!string.IsNullOrWhiteSpace(Model.Telefono))
+                    {
+                        <a href="tel:@Model.Telefono" style="color: inherit;" class="text-decoration-none"><i class="fa-solid fa-phone me-2" style="color: var(--theme-accent);"></i> @Model.Telefono</a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Whatsapp))
+                    {
+                        <a href="https://wa.me/52@(Model.Whatsapp)" style="color: inherit;" class="text-decoration-none"><i class="fa-brands fa-whatsapp me-2" style="color: #25d366;"></i> WhatsApp</a>
+                    }
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <h5 class="fw-bold mb-4" style="font-family: var(--theme-font-title); color: inherit;">Horarios Generales</h5>
+                <ul class="list-unstyled mb-0" style="font-family: var(--theme-font-body);">
+                    @if (!string.IsNullOrWhiteSpace(Model.Horarios))
+                    {
+                        var lineas = Model.Horarios.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var linea in lineas)
+                        {
+                            var partes = linea.Split(" | ");
+                            if (partes.Length == 3)
+                            {
+                                <li class="mb-3 pb-2 border-bottom border-light border-opacity-25" style="border-color: rgba(128, 128, 128, 0.2) !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-bold">@partes[0]</span>
+                                        <span class="badge" style="background-color: var(--theme-accent); color: var(--theme-bg);">@partes[1]</span>
+                                    </div>
+                                    <small class="opacity-75 d-block">@partes[2]</small>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="small mb-2 opacity-75">@linea</li>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <li class="opacity-75">Horarios no registrados.</li>
+                    }
+                </ul>
+            </div>
+
+            <div class="col-lg-4">
+                <h5 class="fw-bold mb-4" style="font-family: var(--theme-font-title); color: inherit;">Ubicación y Redes</h5>
+                <div class="d-flex gap-3 mb-4">
+                    @if (!string.IsNullOrWhiteSpace(Model.FacebookUrl))
+                    {
+                        <a href="@Model.FacebookUrl" target="_blank" style="color: inherit;" class="fs-4 opacity-75"><i class="fa-brands fa-facebook"></i></a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.InstagramUrl))
+                    {
+                        <a href="@Model.InstagramUrl" target="_blank" style="color: inherit;" class="fs-4 opacity-75"><i class="fa-brands fa-instagram"></i></a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.YoutubeUrl))
+                    {
+                        <a href="@Model.YoutubeUrl" target="_blank" style="color: inherit;" class="fs-4 opacity-75"><i class="fa-brands fa-youtube"></i></a>
+                    }
+                </div>
+                <div class="ratio ratio-16x9 rounded-4 overflow-hidden shadow-sm" style="border: 1px solid rgba(128, 128, 128, 0.2);">
+                    @if (Model.Latitud.HasValue && Model.Longitud.HasValue)
+                    {
+                        <iframe src="https://maps.google.com/maps?q=@Model.Latitud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),@Model.Longitud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)&z=15&output=embed" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Model.MapaUrl))
+                    {
+                        <div class="d-flex align-items-center justify-content-center p-3" style="background: rgba(128, 128, 128, 0.1);">
+                            <a href="@Model.MapaUrl" target="_blank" class="btn btn-outline-light rounded-pill btn-sm" style="color: inherit; border-color: inherit;">Ver en Google Maps</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center justify-content-center small opacity-50">Mapa no disponible</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center pt-4 border-top" style="border-color: rgba(128, 128, 128, 0.2) !important; font-family: var(--theme-font-body); font-size: 0.85rem; opacity: 0.7;">
+            © @DateTime.Now.Year @(string.IsNullOrWhiteSpace(Model.NombreIglesia) ? "Iglesia" : Model.NombreIglesia). Todos los derechos reservados.<br>
+            Creado en plataforma Alianza Juvenil.
+        </div>
+    </div>
+</footer>
