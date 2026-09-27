@@ -100,11 +100,11 @@ namespace RedAJP.Controllers
                                 else
                                 {
                                     // Comparamos texto plano Se comentó pues ya no se usa pero podria mas adelante..
-                                    //if (hashBD == password)
-                                    //{
-                                    //    passValido = true;
-                                    //    necesitaMigracion = true; // Marcar para encriptar
-                                    //}
+                                    if (hashBD == password)
+                                    {
+                                        passValido = true;
+                                        necesitaMigracion = true; // Marcar para encriptar
+                                    }
                                 }
 
                                 if (passValido)

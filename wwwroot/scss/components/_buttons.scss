@@ -5,41 +5,22 @@
 @import '../abstracts/variables';
 @import '../abstracts/mixins';
 
-// Botón Principal Institucional
-.btn-nautico, .btn-custom-primary {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
-  color: #ffffff !important;
-  box-shadow: $shadow-sm;
-}
-
-.btn-custom-secondary {
-  background-color: var(--secondary) !important;
+// Botones Principales de Paneles (+ Crear Evento, + Registrar Movimiento, etc.)
+.btn-nautico, .btn-custom-primary, .btn-primary {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%) !important;
   border-color: var(--secondary) !important;
-  color: #ffffff !important;
-  box-shadow: $shadow-sm;
-}
-
-.btn-custom-amber {
-  background-color: var(--secondary) !important;
-  border-color: var(--secondary) !important;
-  color: #ffffff !important;
-}
-
-// Sobreescrituras elegantes de botones estándar de Bootstrap
-.btn-primary {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
   color: #ffffff !important;
   border-radius: $border-radius-pill;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: $shadow-sm;
   transition: $transition-base;
 
   &:hover, &:focus {
-    background-color: var(--primary-dark) !important;
-    border-color: var(--primary-dark) !important;
+    background: linear-gradient(135deg, var(--secondary-dark) 0%, var(--secondary) 100%) !important;
+    border-color: var(--secondary-dark) !important;
+    color: #ffffff !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
   }
 }
 

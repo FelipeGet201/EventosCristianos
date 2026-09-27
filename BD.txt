@@ -1,4 +1,4 @@
-﻿-- =================================================================
+-- =================================================================
 -- SCRIPT BASE DE DATOS OPTIMIZADO Y UNIFICADO (EDICION DEFINITIVA)
 -- Motor: PostgreSQL
 -- Zona Horaria: America/Mexico_City
@@ -708,8 +708,7 @@ CREATE TABLE "Sist_Comunidad_Mensajes" (
     "Fecha_Creacion" TIMESTAMP NOT NULL DEFAULT NOW(),
     "Fecha_Expiracion" TIMESTAMP NULL,
     CONSTRAINT "FK_Comunidad_Mensajes_Usuario" FOREIGN KEY ("Id_Usuario_Autor") REFERENCES "Sist_Usuarios"("Id_Usuario") ON DELETE CASCADE,
-    CONSTRAINT "FK_Comunidad_Mensajes_Tipo" FOREIGN KEY ("Tipo_Mensaje") REFERENCES "Sist_Comunidad_Tipos_Mensaje"("Clave") ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT "Sist_Comunidad_Mensajes_Destinatario_check" CHECK ("Destinatario" IN ('Directiva', 'Todos', 'Especificos'))
+    CONSTRAINT "FK_Comunidad_Mensajes_Tipo" FOREIGN KEY ("Tipo_Mensaje") REFERENCES "Sist_Comunidad_Tipos_Mensaje"("Clave") ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 CREATE TABLE "Sist_Comunidad_Respuestas" (

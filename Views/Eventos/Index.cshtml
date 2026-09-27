@@ -11,27 +11,6 @@
         --card-radius: 16px;
     }
 
-    .btn-hero-info {
-        background: rgba(255, 255, 255, 0.1); /* Fondo semitransparente */
-        border: 1px solid rgba(255, 255, 255, 0.5); /* Borde sutil */
-        color: white !important; /* Texto blanco por defecto */
-        font-weight: 700;
-        font-size: 0.9rem;
-        border-radius: 50px;
-        padding: 0.5rem 1.5rem;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-    }
-
-        .btn-hero-info:hover {
-            background: white; /* Fondo blanco */
-            color: #212529 !important; /* TEXTO NEGRO OSCURO FIJO (Bootstrap dark) */
-            border-color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
     /* TARJETA DESTACADA (Compacta & Hero) */
     .card-hero {
         background: var(--hero-gradient);
@@ -308,12 +287,10 @@
         @if (esAdmin)
         {
             <div class="col-md-6 col-12 d-flex justify-content-md-end justify-content-between align-items-center gap-3">
-                <form method="get" action="@Url.Action("Index", "Eventos")" class="mb-0">
-                    <div class="form-check form-switch mb-0 d-flex align-items-center gap-2 px-0">
-                        <input class="form-check-input" type="checkbox" role="switch" id="chkPasados" name="mostrarPasados" value="true" @(ViewBag.MostrarPasados == true ? "checked" : "") onchange="this.form.submit()" style="width: 2.8rem; height: 1.4rem; cursor: pointer; border-color: #666; margin-left: 0;">
-                        <label class="form-check-label text-muted small fw-bold mt-1" for="chkPasados" style="cursor: pointer; user-select: none;">Visualizar pasados</label>
-                    </div>
-                </form>
+                <div class="form-check form-switch mb-0 d-flex align-items-center gap-2 px-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="chkPasados" @(ViewBag.MostrarPasados == true ? "checked" : "") onchange="window.location.href = '@Url.Action("Index", "Eventos")' + (this.checked ? '?mostrarPasados=true' : '');" style="width: 2.8rem; height: 1.4rem; cursor: pointer; border-color: #666; margin-left: 0;">
+                    <label class="form-check-label text-muted small fw-bold mt-1" for="chkPasados" style="cursor: pointer; user-select: none;">Visualizar pasados</label>
+                </div>
 
                 <a href="@Url.Action("Editor", "Eventos", new { sid = "" })" class="btn btn-primary rounded-pill px-4 shadow-sm">
                     <i class="fa-solid fa-plus me-2"></i> <span class="d-none d-sm-inline">Crear Evento</span>

@@ -1133,6 +1133,7 @@ namespace RedAJP.Controllers
             bool esAdmin = User.TienePermiso(Modulo, PermisoAdmin);
             ViewBag.EsAdmin = esAdmin;
             bool verPasados = esAdmin && mostrarPasados;
+            ViewBag.MostrarPasados = verPasados;
 
             try
             {

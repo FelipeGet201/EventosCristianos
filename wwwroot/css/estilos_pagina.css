@@ -18,8 +18,8 @@
   --texto-header: #FFFFFF;
   --acento-dorado: #F59E0B;
   --acento-coral: #D98A2B;
-  --hero-gradient: linear-gradient(135deg, #0A3A35 0%, #0D9488 50%, #E05A2B 100%);
-  --card-header-bg: linear-gradient(135deg, #0A3A35 0%, #E05A2B 100%);
+  --hero-gradient: linear-gradient(135deg, #B84318 0%, #E05A2B 50%, #F97316 100%);
+  --card-header-bg: linear-gradient(135deg, #B84318 0%, #E05A2B 100%);
 }
 
 [data-theme=aventurero] {
@@ -38,8 +38,8 @@
   --texto-muted: #6B7280;
   --texto-header: #FFFFFF;
   --acento-dorado: #F59E0B;
-  --hero-gradient: linear-gradient(135deg, #0A3A35 0%, #0D9488 50%, #E05A2B 100%);
-  --card-header-bg: linear-gradient(135deg, #0A3A35 0%, #E05A2B 100%);
+  --hero-gradient: linear-gradient(135deg, #B84318 0%, #E05A2B 50%, #F97316 100%);
+  --card-header-bg: linear-gradient(135deg, #B84318 0%, #E05A2B 100%);
 }
 
 [data-theme=moderno] {
@@ -152,39 +152,21 @@ a:hover {
   text-decoration: underline;
 }
 
-.btn-nautico, .btn-custom-primary {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
-  color: #ffffff !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-}
-
-.btn-custom-secondary {
-  background-color: var(--secondary) !important;
+.btn-nautico, .btn-custom-primary, .btn-primary {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%) !important;
   border-color: var(--secondary) !important;
-  color: #ffffff !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-}
-
-.btn-custom-amber {
-  background-color: var(--secondary) !important;
-  border-color: var(--secondary) !important;
-  color: #ffffff !important;
-}
-
-.btn-primary {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
   color: #ffffff !important;
   border-radius: 50px;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.25s ease-in-out;
 }
-.btn-primary:hover, .btn-primary:focus {
-  background-color: var(--primary-dark) !important;
-  border-color: var(--primary-dark) !important;
+.btn-nautico:hover, .btn-nautico:focus, .btn-custom-primary:hover, .btn-custom-primary:focus, .btn-primary:hover, .btn-primary:focus {
+  background: linear-gradient(135deg, var(--secondary-dark) 0%, var(--secondary) 100%) !important;
+  border-color: var(--secondary-dark) !important;
+  color: #ffffff !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
 }
 
 .btn-secondary {
@@ -321,9 +303,9 @@ a:hover {
   }
 }
 .btn-hero-info {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  color: #072B27 !important;
   font-weight: 700;
   font-size: 0.9rem;
   border-radius: 50px;
@@ -332,17 +314,25 @@ a:hover {
   text-decoration: none !important;
   display: inline-flex;
   align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.btn-hero-info i, .btn-hero-info span, .btn-hero-info * {
+  color: #072B27 !important;
 }
 .btn-hero-info:hover {
-  background: #ffffff;
-  color: #1E293B !important;
-  border-color: #ffffff;
+  background: #f8fafc !important;
+  color: #000000 !important;
+}
+.btn-hero-info:hover i, .btn-hero-info:hover span, .btn-hero-info:hover * {
+  color: #000000 !important;
+}
+.btn-hero-info:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .btn-status-register {
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%) !important;
+  background: linear-gradient(135deg, #072B27 0%, #0F4C42 100%) !important;
   color: #ffffff !important;
   border: none !important;
   font-weight: 700 !important;
@@ -353,7 +343,7 @@ a:hover {
   text-decoration: none !important;
 }
 .btn-status-register:hover {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+  background: linear-gradient(135deg, #041F1C 0%, #072B27 100%) !important;
   color: #ffffff !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);

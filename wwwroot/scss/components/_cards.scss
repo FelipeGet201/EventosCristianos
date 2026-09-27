@@ -98,11 +98,11 @@
   40%, 100% { left: 150%; }
 }
 
-// Botón de Info en el Hero
+// Botón de Info en el Hero (Blanco Cristal con texto e icono oscuros)
 .btn-hero-info {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  color: #072B27 !important;
   font-weight: 700;
   font-size: 0.9rem;
   border-radius: $border-radius-pill;
@@ -111,19 +111,26 @@
   text-decoration: none !important;
   display: inline-flex;
   align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  i, span, * {
+    color: #072B27 !important;
+  }
 
   &:hover {
-    background: #ffffff;
-    color: #1E293B !important;
-    border-color: #ffffff;
+    background: #f8fafc !important;
+    color: #000000 !important;
+    i, span, * {
+      color: #000000 !important;
+    }
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   }
 }
 
-// Botones de Estado en el Hero (Inscribirse, Pagar, etc.)
+// Botones de Estado en el Hero (Inscribirse -> Verde Esmeralda Noche)
 .btn-status-register {
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%) !important;
+  background: linear-gradient(135deg, #072B27 0%, #0F4C42 100%) !important;
   color: #ffffff !important;
   border: none !important;
   font-weight: 700 !important;
@@ -134,7 +141,7 @@
   text-decoration: none !important;
 
   &:hover {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+    background: linear-gradient(135deg, #041F1C 0%, #072B27 100%) !important;
     color: #ffffff !important;
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
