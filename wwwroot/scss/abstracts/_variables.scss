@@ -11,21 +11,21 @@ $active-theme: 'aventurero' !default;
 // --- 2. DEFINICIÓN DEL MAPA COMPLETO DE TEMAS JUVENILES ---
 $themes: (
   'aventurero': (
-    'primary': #D96B43,          // Terracota Atardecer
-    'primary-dark': #8C3A1D,     // Terracota Oscuro
-    'primary-light': #F2994A,    // Naranja Atardecer
-    'secondary': #E5A93C,        // Dorado Sol
-    'secondary-dark': #B58311,
+    'primary': #E05A2B,          // Terracota Atardecer Vibrante
+    'primary-dark': #B84318,     // Terracota Oscuro
+    'primary-light': #F97316,    // Naranja Atardecer
+    'secondary': #F59E0B,        // Dorado Sol
+    'secondary-dark': #D97706,
     'bg-body': #FAF6F0,          // Crema Marfil Cálido
     'bg-surface': #F4EAD9,       // Beige Crema Suave
     'bg-card': #FFFFFF,          // Blanco Marfil
-    'bg-header': #2C4A3E,        // Verde Bosque Profundo
-    'bg-footer': #1E3A2E,        // Pie Verde Selva
-    'text-main': #2C221E,        // Texto Principal Oscuro Cálido
-    'text-muted': #7E6B63,       // Arcilla Neutra
+    'bg-header': #0A3A35,        // Verde Esmeralda Menta Profundo (Fresco y Juvenil)
+    'bg-footer': #072B27,        // Pie Esmeralda Noche
+    'text-main': #1F2937,        // Texto Principal Oscuro Cálido
+    'text-muted': #6B7280,       // Gris Suave
     'text-header': #FFFFFF,      // Texto sobre Encabezado
-    'hero-gradient': 'linear-gradient(135deg, #1E3A2E 0%, #274C3D 45%, #D96B43 100%)',
-    'card-header-bg': 'linear-gradient(135deg, #274C3D 0%, #D96B43 100%)'
+    'hero-gradient': 'linear-gradient(135deg, #0A3A35 0%, #0D9488 50%, #E05A2B 100%)',
+    'card-header-bg': 'linear-gradient(135deg, #0A3A35 0%, #E05A2B 100%)'
   ),
   'moderno': (
     'primary': #0EA5E9,          // Azul Cian Eléctrico
@@ -43,40 +43,6 @@ $themes: (
     'text-header': #FFFFFF,      // Texto Blanco
     'hero-gradient': 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0EA5E9 100%)',
     'card-header-bg': 'linear-gradient(135deg, #0F172A 0%, #0EA5E9 100%)'
-  ),
-  'salvia': (
-    'primary': #C86D51,          // Terracota Suave
-    'primary-dark': #A44C32,     // Arcilla Profunda
-    'primary-light': #E08E75,    // Coral Pastel
-    'secondary': #EAB308,        // Miel Cálida
-    'secondary-dark': #CA8A04,
-    'bg-body': #FDFBF7,          // Crema Hueso Suave
-    'bg-surface': #F5EFE6,       // Beige Lino
-    'bg-card': #FFFFFF,          // Blanco Lino
-    'bg-header': #2C4A3E,        // Verde Salvia Menta
-    'bg-footer': #1E3A34,        // Verde Selva Oscuro
-    'text-main': #271E19,        // Chocolate Profundo
-    'text-muted': #6E5F57,       // Marrón Suave
-    'text-header': #FFFFFF,      // Texto Blanco
-    'hero-gradient': 'linear-gradient(135deg, #1E3A34 0%, #2C4A3E 50%, #C86D51 100%)',
-    'card-header-bg': 'linear-gradient(135deg, #2C4A3E 0%, #C86D51 100%)'
-  ),
-  'noche': (
-    'primary': #8B5CF6,          // Violeta Neón Alabanza
-    'primary-dark': #6D28D9,     // Púrpura Profundo
-    'primary-light': #A78BFA,    // Lavanda Neón
-    'secondary': #EC4899,        // Rosa Neón Acento
-    'secondary-dark': #DB2777,
-    'bg-body': #0F172A,          // Fondo Pizarra Oscuro Noche
-    'bg-surface': #1E293B,       // Tarjetas / Superficies Pizarra
-    'bg-card': #1E293B,          // Tarjetas Oscuras
-    'bg-header': #0B0F19,        // Encabezado Noche Profunda
-    'bg-footer': #0B0F19,        // Pie Noche Profunda
-    'text-main': #F8FAFC,        // Texto Blanco Pizarra
-    'text-muted': #94A3B8,       // Gris Pizarra Claro
-    'text-header': #FFFFFF,      // Texto Blanco
-    'hero-gradient': 'linear-gradient(135deg, #4C1D95 0%, #8B5CF6 50%, #EC4899 100%)',
-    'card-header-bg': 'linear-gradient(135deg, #4C1D95 0%, #8B5CF6 100%)'
   )
 );
 
