@@ -6,55 +6,60 @@
 @import '../abstracts/mixins';
 
 .card {
-  background-color: $bg-card;
+  background-color: var(--bg-card) !important;
   border: $border-subtle;
   border-radius: $border-radius-md;
   box-shadow: $shadow-sm;
   transition: $transition-base;
   overflow: hidden;
+  color: var(--texto-principal) !important;
 
   &.card-hover:hover, &:hover {
     box-shadow: $shadow-md;
-    border-color: rgba($color-amber-accent, 0.4);
+    border-color: rgba(0, 0, 0, 0.15);
   }
 
   .card-header {
-    background: linear-gradient(135deg, $color-primary-dark 0%, $color-primary 100%);
+    background-color: var(--bg-surface);
     border-bottom: $border-subtle;
     font-weight: 700;
-    color: $text-light !important;
-    padding: 1.25rem 1.5rem;
+    color: var(--texto-principal);
+    padding: 1rem 1.25rem;
 
     h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
-      color: $text-light !important;
+      color: var(--texto-principal);
+    }
+
+    .text-muted, small {
+      color: var(--texto-muted);
     }
   }
 
   .card-footer {
-    background-color: rgba($bg-surface, 0.3);
+    background-color: rgba(0, 0, 0, 0.03);
     border-top: $border-subtle;
     padding: 0.75rem 1.25rem;
   }
 
   .card-title {
-    color: $text-main;
+    color: var(--texto-principal) !important;
     font-weight: 700;
   }
 }
 
 // TARJETA DESTACADA (Compacta & Hero con Brillo Disimulado)
 .card-hero {
-  background: linear-gradient(135deg, #4A1212 0%, #6C1919 45%, #8C2323 100%);
-  border: 1px solid rgba($color-secondary, 0.35);
+  background: var(--hero-gradient) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: $border-radius-lg;
-  color: $text-light;
+  color: #ffffff !important;
   box-shadow: $shadow-lg;
   overflow: hidden;
   position: relative;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 
   h1, h2, h3, h4, h5, h6 {
-    color: $text-light !important;
+    color: #ffffff !important;
   }
 
   // Brillo disimulado de izquierda a derecha (Shimmer Sweep)
@@ -69,7 +74,7 @@
       90deg, 
       transparent 0%, 
       rgba(255, 255, 255, 0.02) 20%, 
-      rgba($color-secondary, 0.22) 50%, 
+      rgba(255, 255, 255, 0.25) 50%, 
       rgba(255, 255, 255, 0.02) 80%, 
       transparent 100%
     );
@@ -80,11 +85,11 @@
 
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 16px 36px rgba(74, 18, 18, 0.25);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
   }
 
   &.locked {
-    border-left: 5px solid $color-amber-accent;
+    border-left: 5px solid var(--secondary);
   }
 }
 
@@ -97,7 +102,7 @@
 .btn-hero-info {
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.35);
-  color: $text-light !important;
+  color: #ffffff !important;
   font-weight: 700;
   font-size: 0.9rem;
   border-radius: $border-radius-pill;
@@ -109,7 +114,7 @@
 
   &:hover {
     background: #ffffff;
-    color: $text-main !important;
+    color: #1E293B !important;
     border-color: #ffffff;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -118,21 +123,21 @@
 
 // Botones de Estado en el Hero (Inscribirse, Pagar, etc.)
 .btn-status-register {
-  background: linear-gradient(135deg, $color-secondary 0%, $color-secondary-dark 100%) !important;
-  color: $text-main !important;
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%) !important;
+  color: #ffffff !important;
   border: none !important;
   font-weight: 700 !important;
   border-radius: $border-radius-pill !important;
   padding: 0.55rem 1.5rem !important;
-  box-shadow: 0 4px 14px rgba($color-secondary, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   transition: $transition-fast !important;
   text-decoration: none !important;
 
   &:hover {
-    background: linear-gradient(135deg, lighten($color-secondary, 10%) 0%, $color-secondary 100%) !important;
-    color: $text-main !important;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+    color: #ffffff !important;
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba($color-secondary, 0.45);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   }
 }
 

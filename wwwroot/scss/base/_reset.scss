@@ -11,31 +11,63 @@
   --primary-dark: #{$color-primary-dark};
   --primary-light: #{$color-primary-light};
   --secondary: #{$color-secondary};
+  --secondary-dark: #{$color-secondary-dark};
   --amber-accent: #{$color-amber-accent};
   --bg-body: #{$bg-body};
+  --bg-surface: #{$bg-surface};
   --bg-card: #{$bg-card};
+  --bg-header: #{$bg-header};
+  --bg-footer: #{$bg-footer};
   --header-footer: #{$bg-header};
   --texto-principal: #{$text-main};
-  --texto-arena: #{$text-light};
+  --texto-muted: #{$text-muted};
+  --texto-arena: #FAF4EB;
+  --texto-header: #{map-get($theme-map, 'text-header')};
   --acento-dorado: #{$color-secondary};
   --acento-coral: #{$color-amber-accent};
+  --hero-gradient: #{$hero-gradient};
+  --card-header-bg: #{map-get($theme-map, 'card-header-bg')};
+}
+
+// Bucle SASS para generar selectores de temas dinámicos [data-theme="..."]
+@each $theme-name, $theme-map in $themes {
+  [data-theme="#{$theme-name}"] {
+    --primary: #{map-get($theme-map, 'primary')};
+    --primary-dark: #{map-get($theme-map, 'primary-dark')};
+    --primary-light: #{map-get($theme-map, 'primary-light')};
+    --secondary: #{map-get($theme-map, 'secondary')};
+    --secondary-dark: #{map-get($theme-map, 'secondary-dark')};
+    --bg-body: #{map-get($theme-map, 'bg-body')};
+    --bg-surface: #{map-get($theme-map, 'bg-surface')};
+    --bg-card: #{map-get($theme-map, 'bg-card')};
+    --bg-header: #{map-get($theme-map, 'bg-header')};
+    --bg-footer: #{map-get($theme-map, 'bg-footer')};
+    --header-footer: #{map-get($theme-map, 'bg-header')};
+    --texto-principal: #{map-get($theme-map, 'text-main')};
+    --texto-muted: #{map-get($theme-map, 'text-muted')};
+    --texto-header: #{map-get($theme-map, 'text-header')};
+    --acento-dorado: #{map-get($theme-map, 'secondary')};
+    --hero-gradient: #{map-get($theme-map, 'hero-gradient')};
+    --card-header-bg: #{map-get($theme-map, 'card-header-bg')};
+  }
 }
 
 html {
-  background-color: $bg-body;
+  background-color: var(--bg-body) !important;
   overscroll-behavior-y: none;
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: $bg-body;
-  color: $text-main;
+  background-color: var(--bg-body) !important;
+  color: var(--texto-principal) !important;
   font-family: $font-family-base;
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 // Resets y focus states globales
@@ -45,11 +77,12 @@ body {
 
 .nav-link:focus, .nav-link:active, .btn:focus,
 .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.2rem rgba($color-primary, 0.18) !important;
-  border-color: rgba($color-primary, 0.5) !important;
+  box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.18) !important;
+  border-color: var(--primary) !important;
 }
 
 ::selection {
-  background-color: rgba($color-primary, 0.2);
-  color: $color-primary-dark;
+  background-color: rgba(14, 165, 233, 0.2);
+  color: var(--primary-dark);
 }
+

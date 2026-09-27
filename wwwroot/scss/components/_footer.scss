@@ -5,18 +5,19 @@
 @import '../abstracts/variables';
 
 footer {
-  background-color: $bg-footer !important;
-  color: rgba($text-light, 0.85);
-  border-top: 3px solid $color-amber-accent;
+  background-color: var(--bg-footer) !important;
+  color: var(--texto-arena) !important;
+  border-top: 3px solid var(--secondary);
   padding: 1.5rem 0;
   margin-top: auto;
   font-size: 0.9rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 
   a {
-    color: $color-secondary;
+    color: var(--secondary) !important;
 
     &:hover {
-      color: #F2C85C;
+      color: #ffffff !important;
       text-decoration: none;
     }
   }

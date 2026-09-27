@@ -6,13 +6,14 @@
 @import '../abstracts/mixins';
 
 .navbar {
-  background-color: $bg-header !important;
+  background-color: var(--bg-header) !important;
   box-shadow: $shadow-md;
-  border-bottom: 3px solid $color-amber-accent;
+  border-bottom: 3px solid var(--primary);
   padding: 0.75rem 1rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 
   .navbar-brand {
-    color: $text-light !important;
+    color: var(--texto-header) !important;
     font-weight: 800;
     font-size: 1.35rem;
     text-decoration: none !important;
@@ -22,21 +23,21 @@
 
     &:hover, &:focus, &:active {
       text-decoration: none !important;
-      color: $color-secondary !important;
+      color: var(--secondary) !important;
     }
 
     i {
       text-decoration: none !important;
-      color: $color-secondary !important;
+      color: var(--secondary) !important;
     }
 
     span {
-      color: $color-secondary;
+      color: var(--texto-header);
       text-decoration: none !important;
       display: inline-block;
 
       &.nombre-largo {
-        color: $color-secondary !important;
+        color: var(--texto-header) !important;
         font-weight: 800;
         font-size: 1.35rem;
       }
@@ -44,8 +45,8 @@
   }
 
   .nav-link {
-    color: rgba($text-light, 0.95) !important;
-    font-weight: 600 !important;
+    color: var(--texto-header) !important;
+    font-weight: 700 !important;
     font-size: 0.95rem !important;
     padding: 0.5rem 0.95rem !important;
     border-radius: $border-radius-pill;
@@ -57,45 +58,65 @@
 
     i {
       font-size: 1.05rem !important;
-      color: $color-secondary !important;
+      color: var(--secondary) !important;
     }
 
     span {
       font-size: 0.95rem !important;
-      font-weight: 600 !important;
+      font-weight: 700 !important;
       text-decoration: none !important;
-      color: $text-light;
+      color: var(--texto-header) !important;
     }
 
-    &:hover, &.active {
-      color: $color-secondary !important;
-      background-color: rgba(255, 255, 255, 0.12);
+    &:hover {
+      color: #ffffff !important;
+      background-color: rgba(255, 255, 255, 0.18) !important;
       text-decoration: none !important;
 
-      span {
-        color: $color-secondary !important;
+      i, span {
+        color: #ffffff !important;
+      }
+    }
+
+    &.active {
+      color: #ffffff !important;
+      background-color: var(--primary) !important;
+      box-shadow: $shadow-sm;
+      text-decoration: none !important;
+
+      i, span {
+        color: #ffffff !important;
       }
     }
   }
 
   .dropdown-menu {
-    background-color: $bg-card;
-    border: $border-subtle;
+    background-color: var(--bg-card) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: $shadow-md;
     border-radius: $border-radius-md;
     padding: 0.5rem;
 
     .dropdown-item {
-      color: $text-main;
+      color: var(--texto-principal) !important;
       border-radius: $border-radius-sm;
-      font-weight: 500;
+      font-weight: 600;
       padding: 0.5rem 1rem;
       transition: $transition-fast;
       text-decoration: none !important;
 
+      i {
+        color: var(--primary);
+        margin-right: 0.5rem;
+      }
+
       &:hover {
-        background-color: rgba($color-primary, 0.1);
-        color: $color-primary-dark;
+        background-color: rgba(14, 165, 233, 0.12);
+        color: var(--primary);
+
+        i {
+          color: var(--primary);
+        }
       }
     }
   }

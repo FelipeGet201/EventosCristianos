@@ -206,11 +206,11 @@
         }
     </style>
     <header>
-        <nav class="navbar navbar-expand-lg navbar-nautica navbar-dark sticky-top shadow-sm">
+        <nav class="navbar navbar-expand-lg navbar-light sticky-top shadow-sm">
             <div class="container">
 
                 <a class="navbar-brand d-flex align-items-center py-2 me-auto text-decoration-none" href="@Url.Action("Index", "Home")">
-                    <i class="fa-solid fa-cross fa-2x me-2" style="color: var(--acento-dorado);"></i>
+                    <i class="fa-solid fa-cross fa-2x me-2" style="color: var(--primary, #8C2323);"></i>
                     <span class="fw-bold tracking-wide nombre-largo text-decoration-none">Eventos Cristianos</span>
                 </a>
 
@@ -388,11 +388,11 @@
                                 <a class="nav-link dropdown-toggle user-avatar-btn" href="#" id="menu-usuario" role="button" data-bs-toggle="dropdown" style="min-width: auto;">
 
                                     <div class="rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm"
-                                         style="width: 30px; height: 30px; background-color: var(--acento-dorado); color: var(--header-footer, #4A1212) !important; font-weight: 800; font-size: 0.95rem; line-height: 1; flex-shrink: 0;">
+                                         style="width: 30px; height: 30px; background-color: var(--primary, #8C2323); color: #ffffff !important; font-weight: 800; font-size: 0.95rem; line-height: 1; flex-shrink: 0;">
                                         @inicialUsuario
                                     </div>
 
-                                    <span class="nombre-usuario-texto small fw-bold text-truncate" style="max-width: 150px; color: var(--acento-dorado);">
+                                    <span class="nombre-usuario-texto small fw-bold text-truncate" style="max-width: 150px; color: var(--primary-dark, #4A1212);">
                                         @User.Identity.Name
                                     </span>
                                 </a>

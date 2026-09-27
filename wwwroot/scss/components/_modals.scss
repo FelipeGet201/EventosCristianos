@@ -5,7 +5,8 @@
 @import '../abstracts/variables';
 
 .modal-content {
-  background-color: $bg-card;
+  background-color: var(--bg-card) !important;
+  color: var(--texto-principal) !important;
   border: none;
   border-radius: $border-radius-lg;
   box-shadow: $shadow-lg;
@@ -13,13 +14,13 @@
 }
 
 .modal-header {
-  background-color: $bg-header;
-  color: $text-light;
-  border-bottom: 2px solid $color-amber-accent;
+  background: var(--card-header-bg) !important;
+  color: #ffffff;
+  border-bottom: 2px solid var(--secondary);
   padding: 1.25rem 1.5rem;
 
   .modal-title {
-    color: $text-light !important;
+    color: #ffffff !important;
     font-weight: 700;
   }
 
@@ -30,30 +31,30 @@
 
 .modal-body {
   padding: 1.5rem;
-  color: $text-main;
+  color: var(--texto-principal) !important;
 }
 
 .modal-footer {
-  background-color: rgba($bg-surface, 0.4);
+  background-color: rgba(0, 0, 0, 0.03);
   border-top: $border-subtle;
   padding: 1rem 1.5rem;
 }
 
 // =========================================================================
-// INTEGRACIÓN Y ESTILIZADO DE SWEETALERT2 (Paleta Segando la Mies 2.0)
+// INTEGRACIÓN Y ESTILIZADO DE SWEETALERT2
 // =========================================================================
 .swal2-popup {
-  background: $bg-card !important;
-  border: 1px solid rgba($color-secondary, 0.35) !important;
+  background: var(--bg-card) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
   border-radius: $border-radius-lg !important;
   box-shadow: $shadow-lg !important;
   padding: 1.8rem 1.5rem !important;
   font-family: $font-family-base !important;
-  color: $text-main !important;
+  color: var(--texto-principal) !important;
 }
 
 .swal2-title {
-  color: $color-primary-dark !important;
+  color: var(--primary-dark) !important;
   font-family: $font-family-heading !important;
   font-weight: 800 !important;
   font-size: 1.6rem !important;
@@ -61,33 +62,33 @@
 }
 
 .swal2-html-container {
-  color: $text-main !important;
+  color: var(--texto-principal) !important;
   font-size: 1.05rem !important;
   line-height: 1.6 !important;
 }
 
 .swal2-confirm.btn-swal-confirm {
-  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%) !important;
-  color: $text-light !important;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+  color: #ffffff !important;
   border: none !important;
   border-radius: $border-radius-pill !important;
   font-weight: 700 !important;
   padding: 0.65rem 2rem !important;
   font-size: 0.95rem !important;
-  box-shadow: 0 4px 14px rgba($color-primary, 0.3) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
   transition: $transition-fast !important;
   cursor: pointer !important;
 
   &:hover {
-    background: linear-gradient(135deg, $color-primary-dark 0%, #4A1212 100%) !important;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 20px rgba($color-primary, 0.4) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
   }
 }
 
 .swal2-cancel.btn-swal-cancel {
-  background: $bg-surface !important;
-  color: $text-main !important;
+  background: var(--bg-surface) !important;
+  color: var(--texto-principal) !important;
   border: 1px solid $border-subtle-color !important;
   border-radius: $border-radius-pill !important;
   font-weight: 600 !important;
@@ -97,8 +98,8 @@
   cursor: pointer !important;
 
   &:hover {
-    background: rgba($color-secondary, 0.2) !important;
-    color: $text-main !important;
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: var(--texto-principal) !important;
   }
 }
 

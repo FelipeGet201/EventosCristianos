@@ -5,43 +5,45 @@
 @import '../abstracts/variables';
 
 .table {
-  color: $text-main;
-  background-color: $bg-card;
-  border-color: $border-subtle-color;
+  color: var(--texto-principal) !important;
+  background-color: var(--bg-card) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: $border-radius-md;
   overflow: hidden;
 
   thead {
-    background-color: $color-primary-dark;
-    color: $text-light;
+    background-color: var(--bg-header) !important;
+    color: var(--texto-header) !important;
 
     th {
-      border-bottom: 2px solid $color-amber-accent;
+      border-bottom: 3px solid var(--primary);
       font-weight: 700;
       text-transform: uppercase;
       font-size: 0.82rem;
       letter-spacing: 0.04em;
       padding: 0.9rem 1rem;
-      color: $text-light;
-      background-color: $color-primary-dark;
+      color: var(--texto-header) !important;
+      background: transparent !important; // Fondo transparente para continuidad limpia
     }
   }
 
   tbody tr {
     transition: $transition-fast;
+    color: var(--texto-principal) !important;
 
     &:hover {
-      background-color: rgba($color-secondary, 0.12) !important;
+      background-color: rgba(14, 165, 233, 0.06) !important;
     }
   }
 
   td {
     padding: 0.85rem 1rem;
     vertical-align: middle;
+    color: var(--texto-principal) !important;
   }
 }
 
 .table-striped > tbody > tr:nth-of-type(odd) > * {
-  background-color: rgba($bg-surface, 0.35);
-  color: $text-main;
+  background-color: rgba(0, 0, 0, 0.02);
+  color: var(--texto-principal) !important;
 }

@@ -8,7 +8,7 @@
 
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: $font-family-heading;
-  color: $text-main;
+  color: var(--texto-principal);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -29,29 +29,29 @@ h2, .h2 { font-size: 1.75rem; }
 h3, .h3 { font-size: 1.4rem; }
 
 p {
-  color: $text-main;
+  color: var(--texto-principal);
   line-height: 1.6;
 }
 
 .text-muted {
-  color: $text-muted !important;
+  color: var(--texto-muted) !important;
 }
 
 .text-gold {
-  color: $text-gold !important;
+  color: var(--secondary) !important;
 }
 
 .text-primary-custom {
-  color: $color-primary !important;
+  color: var(--primary) !important;
 }
 
 a {
-  color: $color-primary;
+  color: var(--primary);
   text-decoration: none;
   transition: $transition-fast;
 
   &:hover {
-    color: $color-primary-dark;
+    color: var(--primary-dark);
     text-decoration: underline;
   }
 }

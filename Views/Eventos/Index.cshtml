@@ -1,4 +1,4 @@
-﻿@model RedAJP.Models.CalendarioViewModel
+@model RedAJP.Models.CalendarioViewModel
 @{
     Layout = "Principal";
     ViewData["Title"] = "Calendario de Actividades";
@@ -8,7 +8,6 @@
 <style>
     /* --- VARIABLES & UTILIDADES --- */
     :root {
-        --hero-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
         --card-radius: 16px;
     }
 
@@ -316,7 +315,7 @@
                     </div>
                 </form>
 
-                <a href="@Url.Action("Editor", "Eventos", new { sid = "" })" class="btn btn-dark rounded-pill px-4 shadow-sm">
+                <a href="@Url.Action("Editor", "Eventos", new { sid = "" })" class="btn btn-primary rounded-pill px-4 shadow-sm">
                     <i class="fa-solid fa-plus me-2"></i> <span class="d-none d-sm-inline">Crear Evento</span>
                 </a>
             </div>

@@ -5,61 +5,67 @@
 @import '../abstracts/variables';
 @import '../abstracts/mixins';
 
-// Botón Principal Institucional (Reemplazo moderno de .btn-nautico)
+// Botón Principal Institucional
 .btn-nautico, .btn-custom-primary {
-  @include button-variant($color-primary, $text-light, $color-primary-dark, $text-light);
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
   box-shadow: $shadow-sm;
 }
 
 .btn-custom-secondary {
-  @include button-variant($color-secondary, $text-main, $color-secondary-dark, $text-light);
+  background-color: var(--secondary) !important;
+  border-color: var(--secondary) !important;
+  color: #ffffff !important;
   box-shadow: $shadow-sm;
 }
 
 .btn-custom-amber {
-  @include button-variant($color-amber-accent, $text-light, #C97D1A, $text-light);
+  background-color: var(--secondary) !important;
+  border-color: var(--secondary) !important;
+  color: #ffffff !important;
 }
 
 // Sobreescrituras elegantes de botones estándar de Bootstrap
 .btn-primary {
-  background-color: $color-primary !important;
-  border-color: $color-primary !important;
-  color: $text-light !important;
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
   border-radius: $border-radius-pill;
   font-weight: 600;
   transition: $transition-base;
 
   &:hover, &:focus {
-    background-color: $color-primary-dark !important;
-    border-color: $color-primary-dark !important;
+    background-color: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba($color-primary, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 }
 
 .btn-secondary {
-  background-color: $color-secondary !important;
-  border-color: $color-secondary !important;
-  color: $text-main !important;
+  background-color: var(--secondary) !important;
+  border-color: var(--secondary) !important;
+  color: #ffffff !important;
   border-radius: $border-radius-pill;
   font-weight: 600;
 
   &:hover {
-    background-color: $color-secondary-dark !important;
-    border-color: $color-secondary-dark !important;
-    color: $text-light !important;
+    background-color: var(--secondary-dark) !important;
+    border-color: var(--secondary-dark) !important;
+    color: #ffffff !important;
   }
 }
 
 .btn-outline-primary {
-  color: $color-primary !important;
-  border-color: $color-primary !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
   border-radius: $border-radius-pill;
   font-weight: 600;
 
   &:hover {
-    background-color: $color-primary !important;
-    color: $text-light !important;
+    background-color: var(--primary) !important;
+    color: #ffffff !important;
   }
 }
 
