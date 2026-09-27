@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -15,10 +15,12 @@ namespace RedAJP.Controllers
     public class ComunidadController : GlobalController
     {
         private readonly string _cadenaConexion;
+        private readonly IConfiguration _configuration;
         private Parametros.Modulo Modulo = Parametros.Modulos.Comunidad;
 
         public ComunidadController(IConfiguration configuration)
         {
+            _configuration = configuration;
             _cadenaConexion = configuration.GetConnectionString("MiConexion");
         }
 
@@ -899,6 +901,11 @@ namespace RedAJP.Controllers
 
                             await Funciones.RegistrarBitacora(conexion, idUser, Modulo, Parametros.AccionesBitacora.Crear, $"Creó un nuevo Mensaje en la Comunidad #{idMensajeNuevo}", ip, trans);
                             await trans.CommitAsync();
+
+                            // 7. Disparar alerta de correo (Fire and forget para no detener al usuario)
+                            string autor = User.Identity.Name ?? "Un Miembro";
+                            string htmlCorreo = $"<h3>Nuevo Mensaje en la Comunidad</h3><p><strong>Autor:</strong> {(modelo.Es_Anonimo ? "Anónimo" : autor)}</p><p><strong>Tipo:</strong> {modelo.Tipo_Mensaje}</p><p><strong>Destinatario:</strong> {modelo.Destinatario}</p><p><strong>Contenido del mensaje:</strong></p><p>{modelo.Contenido}</p>";
+                            _ = Funciones.EnviarAlertaPorBaseDatos(_configuration, "NUEVO_MENSAJE_COMUNIDAD", "Nuevo mensaje en la Comunidad", htmlCorreo);
 
                             MostrarMensaje("Mensaje Creado", estadoInicial == "APR" ? "Tu mensaje ha sido publicado con éxito en el muro privado." : "Tu mensaje ha sido enviado y está pendiente de aprobación.", TipoMensaje.Exito);
                         }
