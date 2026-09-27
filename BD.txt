@@ -64,6 +64,9 @@ DROP TABLE IF EXISTS "Fin_Proyectos" CASCADE;
 DROP TABLE IF EXISTS "Fin_Traspasos" CASCADE;
 DROP TABLE IF EXISTS "Fin_Caja_Historial" CASCADE;
 DROP TABLE IF EXISTS "Fin_Caja" CASCADE;
+DROP TABLE IF EXISTS "Rifas_Ventas" CASCADE;
+DROP TABLE IF EXISTS "Rifas" CASCADE;
+DROP TABLE IF EXISTS "Tienda_Pedidos" CASCADE;
 DROP TABLE IF EXISTS "Rec_Archivos" CASCADE;
 DROP TABLE IF EXISTS "Sist_Grupos_Miembros" CASCADE;
 DROP TABLE IF EXISTS "Sist_Grupos_Whatsapp" CASCADE;
@@ -298,6 +301,37 @@ CREATE TABLE "Fin_Proyectos_Caja" (
     "Es_Traspaso_General" BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+CREATE TABLE "Rifas" (
+    "Id_Rifa" SERIAL PRIMARY KEY,
+    "Titulo" VARCHAR(200) NOT NULL,
+    "Fecha_Creacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Rifas_Ventas" (
+    "Id_Venta" SERIAL PRIMARY KEY,
+    "Id_Rifa" INT NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
+    "Id_Usuario_Comprador" INT NULL REFERENCES "Sist_Usuarios"("Id_Usuario") ON DELETE SET NULL,
+    "Total_Neto" NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    "Estado" VARCHAR(50) DEFAULT 'Pagado',
+    "ValidadoXCaja" BOOLEAN DEFAULT FALSE,
+    "CuentaPrincipalBanco" BOOLEAN DEFAULT TRUE,
+    "Fecha_Pago" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "Ref_Pasarela_Id" VARCHAR(255) NULL,
+    "Ref_Stripe" VARCHAR(255) NULL
+);
+
+CREATE TABLE "Tienda_Pedidos" (
+    "Id_Pedido" SERIAL PRIMARY KEY,
+    "Id_Usuario_Solicita" INT NULL REFERENCES "Sist_Usuarios"("Id_Usuario") ON DELETE SET NULL,
+    "Total_Neto" NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    "Id_Estatus" INT NOT NULL DEFAULT 30,
+    "ValidadoXCaja" BOOLEAN DEFAULT FALSE,
+    "CuentaPrincipalBanco" BOOLEAN DEFAULT TRUE,
+    "Fecha_Solicitud" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "Ref_Pasarela" VARCHAR(255) NULL,
+    "External_Reference" VARCHAR(255) NULL
+);
+
 -- =================================================================
 -- 5. MODULO EVENTOS Y ALOJAMIENTO
 -- =================================================================
@@ -341,6 +375,11 @@ CREATE TABLE "Eventos_Catalogo" (
     "Clave_Cuenta_Bancaria" VARCHAR(50) DEFAULT 'DEFAULT',
     "Es_Privado" BOOLEAN DEFAULT FALSE,
     "Id_Grupo_Usuarios" INTEGER NULL,
+    "Usa_Cuenta_Personalizada" BOOLEAN DEFAULT FALSE,
+    "Banco_Custom" VARCHAR(100) NULL,
+    "Titular_Custom" VARCHAR(150) NULL,
+    "Clabe_Custom" VARCHAR(50) NULL,
+    "Cuenta_Custom" VARCHAR(50) NULL,
     "Id_Encuesta_Requisito" INT NULL REFERENCES "Encuestas_Catalogo"("Id_Encuesta") ON DELETE SET NULL
 );
 
@@ -838,6 +877,9 @@ ALTER TABLE "Fin_Caja_Historial" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Fin_Traspasos" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Fin_Proyectos" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Fin_Proyectos_Caja" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Rifas" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Rifas_Ventas" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Tienda_Pedidos" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Eventos_Catalogo" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Eventos_Subtipos" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Eventos_Preguntas" ENABLE ROW LEVEL SECURITY;

@@ -29,7 +29,7 @@ namespace RedAJP.Controllers
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return LocalRedirect(returnUrl);
 
-                return RedirectToAction("Index", "Tienda");
+                return RedirectToAction("Index", "Eventos");
             }
 
             // Pasamos la URL a la vista para esconderla en el formulario
@@ -258,7 +258,7 @@ namespace RedAJP.Controllers
         /// <returns>Retorna la vista de recuperación</returns>
         public IActionResult Recuperar()
         {
-            if (User.Identity!.IsAuthenticated) return RedirectToAction("Index", "Tienda");
+            if (User.Identity!.IsAuthenticated) return RedirectToAction("Index", "Eventos");
             return View();
         }
 
