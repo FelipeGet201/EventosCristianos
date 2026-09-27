@@ -1,4 +1,4 @@
-﻿@model RedAJP.Models.Usuario
+@model RedAJP.Models.Usuario
 
 @{
     Layout = "Principal";
@@ -56,32 +56,7 @@
 
                         <div class="col-12 mb-3">
                             
-                            @if (ViewBag.RequiereVinculacion == true)
-                            {
-                                if (ViewBag.EstadoSolIglesia == "PEN")
-                                {
-                                    <div class="alert alert-warning py-2 mb-3 border border-warning shadow-sm"><i class="fa-solid fa-clock me-2"></i> Tu solicitud de vinculación está en <strong>revisión</strong>.</div>
-                                }
-                                else if (ViewBag.EstadoSolIglesia == "RCH")
-                                {
-                                    <div class="alert alert-danger py-2 mb-3 border border-danger shadow-sm"><i class="fa-solid fa-circle-xmark me-2"></i> Tu solicitud fue <strong>rechazada</strong>: @ViewBag.MotivoRchIglesia</div>
-                                }
-                                else if (string.IsNullOrEmpty(ViewBag.NombreIglesia as string))
-                                {
-                                    <div class="alert alert-secondary py-2 mb-3"><i class="fa-solid fa-triangle-exclamation me-2"></i> Aún no estás vinculado a una iglesia.</div>
-                                }
-                            }
 
-                            <div class="d-flex flex-wrap gap-2">
-                                
-                                @* 1. BADGE DE LA IGLESIA (SIEMPRE PRIMERO) *@
-                                @if (!string.IsNullOrEmpty(ViewBag.NombreIglesia as string))
-                                {
-                                    <span class="badge rounded-pill shadow-sm"
-                                          style="background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%); font-size: 0.9rem; padding: 0.7em 1.4em; border: 1px solid rgba(255,255,255,0.2);">
-                                        <i class="fa-solid fa-church me-2"></i>@ViewBag.NombreIglesia
-                                    </span>
-                                }
 
                                 @* 2. BADGES DE LOS GRUPOS (DINÁMICOS) *@
                                 @if (ViewBag.GruposUsuario != null)

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using RedAJP.Models;
@@ -58,13 +58,7 @@ namespace RedAJP.Controllers
                         }
                     }
 
-                    // 3. OBTENER NOMBRE DE IGLESIA Y VERIFICAR SI YA CAMBIÓ SU NOMBRE
-                    using (var cmdIglesia = new NpgsqlCommand(@"SELECT i.nombre FROM ""Sist_Usuarios"" u JOIN iciar_iglesias i ON u.""Id_Iglesia_Asignada"" = i.id WHERE u.""Id_Usuario"" = @id", conexion))
-                    {
-                        cmdIglesia.Parameters.AddWithValue("@id", idUsuario);
-                        var resIglesia = await cmdIglesia.ExecuteScalarAsync();
-                        ViewBag.NombreIglesia = resIglesia?.ToString() ?? "";
-                    }
+                    // 3. VERIFICAR SI YA CAMBIÓ SU NOMBRE
 
                     using (var cmdNombre = new NpgsqlCommand(@"SELECT COUNT(*) FROM ""Sist_Bitacora"" WHERE ""Id_Usuario"" = @id AND ""Detalle"" LIKE '%Actualizó su nombre%'", conexion))
                     {
@@ -328,155 +322,7 @@ namespace RedAJP.Controllers
             return RedirectToAction("Index");
         }
 
-        // ==========================================
-        // 1. LISTADO DE DISEÑOS (Con Stock)
-        // ==========================================
-        public async Task<IActionResult> MisDisenos()
-        {
-            var modelo = new MisDisenosViewModel();
-            var idUser = int.Parse(User.FindFirst("IdUsuario").Value);
 
-            try
-            {
-                using (var conexion = new NpgsqlConnection(_cadenaConexion))
-                {
-                    await conexion.OpenAsync();
-
-                    // CORRECCIÓN: Calculamos el Stock sumando las variantes en 'Tienda_Productos_Medidas'
-                    // Si no tiene variantes, devolvemos 0 (o null, y el modelo lo maneja)
-                    string sql = @"
-                        SELECT s.""Id_Solicitud"", s.""Id_Producto_Base"", s.""Imagen_Previo_Url"", 
-                               s.""Fecha_Creacion"", s.""Id_Estatus_Diseno"", s.""Comentarios_Admin"",
-                               p.""Nombre_Comercial"",
-                               
-                               -- Subconsulta para obtener Stock Total
-                               (SELECT COALESCE(SUM(m.""Stock""), 0) 
-                                FROM ""Tienda_Productos_Medidas"" m 
-                                WHERE m.""Id_Producto"" = p.""Id_Producto"") as ""StockTotal""
-
-                        FROM ""Tienda_Solicitudes_Diseno"" s
-                        JOIN ""Tienda_Productos_Venta"" p ON s.""Id_Producto_Base"" = p.""Id_Producto""
-                        WHERE s.""Id_Usuario"" = @uid
-                        ORDER BY s.""Fecha_Creacion"" DESC";
-
-                    using (var cmd = new NpgsqlCommand(sql, conexion))
-                    {
-                        cmd.Parameters.AddWithValue("@uid", idUser);
-                        using (var r = await cmd.ExecuteReaderAsync())
-                        {
-                            while (r.Read())
-                            {
-                                modelo.Lista.Add(new MisDisenosItem
-                                {
-                                    Id_Solicitud = (int)r["Id_Solicitud"],
-                                    Id_Producto_Base = (int)r["Id_Producto_Base"],
-                                    Nombre_Producto = r["Nombre_Comercial"].ToString(),
-                                    Imagen_Previo_Url = r["Imagen_Previo_Url"]?.ToString(),
-                                    Fecha = (DateTime)r["Fecha_Creacion"],
-                                    Id_Estatus = (int)r["Id_Estatus_Diseno"],
-                                    Comentarios_Admin = r["Comentarios_Admin"]?.ToString(),
-
-                                    // Asignamos el Stock calculado
-                                    StockBase = Convert.ToInt32(r["StockTotal"])
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MostrarMensaje("Error", "Error al cargar diseños: " + ex.Message, TipoMensaje.Error);
-            }
-
-            return View(modelo);
-        }
-
-        // ==========================================
-        // 2. CANCELAR / ELIMINAR SOLICITUD (CON VALIDACIÓN DE USO)
-        // ==========================================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelarSolicitud(int idSolicitud)
-        {
-            var idUser = int.Parse(User.FindFirst("IdUsuario").Value);
-            string ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-
-            try
-            {
-                using (var conexion = new NpgsqlConnection(_cadenaConexion))
-                {
-                    await conexion.OpenAsync();
-
-                    // 1. VALIDAR PROPIEDAD
-                    var cmdCheck = new NpgsqlCommand(@"SELECT ""Id_Estatus_Diseno"" FROM ""Tienda_Solicitudes_Diseno"" 
-                                                       WHERE ""Id_Solicitud"" = @id AND ""Id_Usuario"" = @uid", conexion);
-                    cmdCheck.Parameters.AddWithValue("@id", idSolicitud);
-                    cmdCheck.Parameters.AddWithValue("@uid", idUser);
-
-                    object res = await cmdCheck.ExecuteScalarAsync();
-
-                    if (res == null)
-                    {
-                        MostrarMensaje("Error", "El diseño no existe o no te pertenece.", TipoMensaje.Error);
-                        return RedirectToAction("MisDisenos");
-                    }
-
-                    // 2. [NUEVO] VALIDAR QUE NO ESTÉ EN USO (CARRITO O PEDIDOS)
-                    // Verificamos si existe en 'Tienda_Carrito' O en 'Tienda_Detalles_Pedido'
-                    string sqlUso = @"
-                        SELECT (
-                            (SELECT COUNT(*) FROM ""Tienda_Carrito"" WHERE ""Id_Solicitud_Diseno"" = @id) +
-                            (SELECT COUNT(*) FROM ""Tienda_Detalles_Pedido"" WHERE ""Id_Solicitud_Diseno"" = @id)
-                        ) as TotalUso";
-
-                    using (var cmdUso = new NpgsqlCommand(sqlUso, conexion))
-                    {
-                        cmdUso.Parameters.AddWithValue("@id", idSolicitud);
-                        long totalUso = (long)await cmdUso.ExecuteScalarAsync();
-
-                        if (totalUso > 0)
-                        {
-                            MostrarMensaje("No se puede eliminar",
-                                "Este diseño está asociado a un pedido realizado o lo tienes actualmente en tu carrito. Si deseas borrarlo, quítalo primero del carrito.",
-                                TipoMensaje.Alerta);
-                            return RedirectToAction("MisDisenos");
-                        }
-                    }
-
-                    int estatus = (int)res;
-
-                    // 3. ELIMINAR (Solo si pasó las validaciones)
-                    using (var trans = await conexion.BeginTransactionAsync())
-                    {
-                        try
-                        {
-                            await Funciones.RegistrarBitacora(
-                                conexion, idUser, Parametros.Modulos.TiendaConfig, Parametros.AccionesBitacora.EliminaDiseño,
-                                $"Usuario eliminó diseño {idSolicitud} (Estatus {estatus})", ip, trans);
-
-                            var cmdDel = new NpgsqlCommand(@"DELETE FROM ""Tienda_Solicitudes_Diseno"" WHERE ""Id_Solicitud"" = @id", conexion, trans);
-                            cmdDel.Parameters.AddWithValue("@id", idSolicitud);
-                            await cmdDel.ExecuteNonQueryAsync();
-
-                            await trans.CommitAsync();
-                            MostrarMensaje("Eliminado", "Tu diseño ha sido eliminado correctamente.", TipoMensaje.Exito);
-                        }
-                        catch
-                        {
-                            await trans.RollbackAsync();
-                            throw;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MostrarMensaje("Error", "No se pudo eliminar: " + ex.Message, TipoMensaje.Error);
-            }
-
-            return RedirectToAction("MisDisenos");
-        }
 
         [HttpGet]
         [AllowAnonymous]

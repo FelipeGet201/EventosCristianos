@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -21,7 +21,6 @@ namespace RedAJP.Controllers
         public string sNombreConceptoDonacion = "[Aportación Recibida por Transferencia]";
         public string sAmbiente = "";
         public string sPrefijoTransfer = "AJP22901";
-        public int nMisPaginasWeb = 0;
         public class CuentaBancariaInfo
         {
             public string Banco { get; set; }
@@ -306,27 +305,7 @@ namespace RedAJP.Controllers
             {
                 var user = context.HttpContext.User;
 
-                // Leemos el valor directamente del claim "nWebs" que creamos en el Login
-                var nWebsClaim = User.FindFirst("nWebs");
 
-                // Asignamos el valor a la variable global y al ViewBag
-                nMisPaginasWeb = nWebsClaim != null ? int.Parse(nWebsClaim.Value) : 0;
-                ((Controller)context.Controller).ViewBag.nMisPaginasWeb = nMisPaginasWeb;
-
-                ((Controller)context.Controller).ViewBag.RequiereVinculacion = user.FindFirst("RequiereVinculacion")?.Value == "True";
-                ((Controller)context.Controller).ViewBag.EstadoSolIglesia = user.FindFirst("EstadoSolIglesia")?.Value;
-                ((Controller)context.Controller).ViewBag.MotivoRchIglesia = user.FindFirst("MotivoRchIglesia")?.Value;
-
-
-                 bool bOcultarMascota = false;
-                //La mascota bOcultarMascota se oculta si RequiereVinculacion es true y EstadoSolIglesia es "Pendiente" o "Rechazada"
-                bOcultarMascota = user.FindFirst("RequiereVinculacion")?.Value == "True" &&
-                (
-                    user.FindFirst("EstadoSolIglesia")?.Value == null ||
-                    user.FindFirst("EstadoSolIglesia")?.Value == "PEN" ||
-                    user.FindFirst("EstadoSolIglesia")?.Value == "RCH"
-                );
-                ((Controller)context.Controller).ViewBag.bOcultarMascota = bOcultarMascota;
             }
 
             await next();

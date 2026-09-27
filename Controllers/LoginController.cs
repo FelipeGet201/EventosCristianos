@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
@@ -147,13 +147,7 @@ namespace RedAJP.Controllers
 
                     if (usuarioEncontrado)
                     {
-                        // Consultamos el conteo de páginas UNA SOLA VEZ aquí
-                        int nWebs = 0;
-                        using (var cmdWebs = new NpgsqlCommand("SELECT COUNT(*) FROM iciar_iglesias_administradores WHERE usuario_id = @uid", conexion))
-                        {
-                            cmdWebs.Parameters.AddWithValue("@uid", int.Parse(idUser));
-                            nWebs = Convert.ToInt32(await cmdWebs.ExecuteScalarAsync());
-                        }
+
 
                         // 3. AUTO-REPARACIÓN (Migración Silenciosa)
                         // Si el usuario tenía clave de texto plano, la encriptamos ahora mismo
@@ -169,31 +163,10 @@ namespace RedAJP.Controllers
                             }
                         }
 
-                        // --- LÓGICA DE VINCULACIÓN A IGLESIA ---
-                        bool requiereVinculacion = string.IsNullOrEmpty(idIglesiaAsignada) || idIglesiaAsignada == "0";
-                        string estadoSol = "";
-                        string motivoSol = "";
 
-                        if (requiereVinculacion)
-                        {
-                            // Buscamos si tiene una solicitud reciente en el "Purgatorio"
-                            using (var cmdSol = new NpgsqlCommand("SELECT estado, motivo_rechazo FROM iciar_iglesias_solicitudes WHERE usuario_id = @uid ORDER BY fecha_solicitud DESC LIMIT 1", conexion))
-                            {
-                                cmdSol.Parameters.AddWithValue("@uid", int.Parse(idUser));
-                                using (var readerSol = await cmdSol.ExecuteReaderAsync())
-                                {
-                                    if (readerSol.Read())
-                                    {
-                                        estadoSol = readerSol["estado"]?.ToString();
-                                        motivoSol = readerSol["motivo_rechazo"]?.ToString();
-                                    }
-                                }
-                            }
-                        }
                         // 4. CARGAR PERMISOS
                         var claims = new List<Claim>
                         {
-                            new Claim("nWebs", nWebs.ToString()),
                             new Claim("SelloSeguridad", sello),
                             new Claim(ClaimTypes.Name, nombre),
                             new Claim(ClaimTypes.Email, email),
@@ -235,18 +208,13 @@ namespace RedAJP.Controllers
                             }
                         }
 
-                        claims.Add(new Claim("RequiereVinculacion", requiereVinculacion.ToString()));
-                        if (!string.IsNullOrEmpty(estadoSol)) claims.Add(new Claim("EstadoSolIglesia", estadoSol));
-                        if (!string.IsNullOrEmpty(motivoSol)) claims.Add(new Claim("MotivoRchIglesia", motivoSol));
+
 
                         // 5. LOGIN EXITOSO
                         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-                        if (!requiereVinculacion)
-                        {
-                            MostrarMensaje("¡HOLA!", $"Bienvenido, {nombre}", TipoMensaje.Exito);
-                        }
+                        MostrarMensaje("¡HOLA!", $"Bienvenido, {nombre}", TipoMensaje.Exito);
 
                         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                         {
@@ -254,7 +222,7 @@ namespace RedAJP.Controllers
                         }
 
                         TempData["ResetMascota"] = "true";
-                        return RedirectToAction("Index", "Tienda");
+                        return RedirectToAction("Index", "Eventos");
                     }
                 }
             }

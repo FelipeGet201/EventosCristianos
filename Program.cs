@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+Ôªøusing Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using QuestPDF.Infrastructure;
@@ -11,7 +11,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================================================
-// 1. CONFIGURACI”N BASE
+// 1. CONFIGURACI√ìN BASE
 // ============================================================
 if (builder.Environment.IsDevelopment())
 {
@@ -20,7 +20,7 @@ if (builder.Environment.IsDevelopment())
 builder.Configuration.AddEnvironmentVariables();
 
 // ============================================================
-// 2. RECONSTRUCCI”N DE LLAVE Y RUTAS
+// 2. RECONSTRUCCI√ìN DE LLAVE Y RUTAS
 // ============================================================
 static string GetInternalResourcePrefix() => "2026_02_16@AJP_";
 
@@ -32,7 +32,7 @@ string encFileName = $"appsettings.{envSuffix}.data";
 string encFilePath = Path.Combine(builder.Environment.ContentRootPath, encFileName);
 
 // ============================================================
-// 3. DESENCRIPTACI”N (MODO RESILIENTE / FALLO SILENCIOSO)
+// 3. DESENCRIPTACI√ìN (MODO RESILIENTE / FALLO SILENCIOSO)
 // ============================================================
 // No matamos la app si falta el archivo o la llave
 if (File.Exists(encFilePath) && !string.IsNullOrEmpty(publicPart))
@@ -63,14 +63,14 @@ if (File.Exists(encFilePath) && !string.IsNullOrEmpty(publicPart))
             // Inyectamos los secretos en memoria
             builder.Configuration.AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(decryptedJson)));
 
-            // Log interno (se ver· si activas stdout en web.config)
-            Console.WriteLine($"--> [B⁄NKER] Carga exitosa: {envSuffix}");
+            // Log interno (se ver√° si activas stdout en web.config)
+            Console.WriteLine($"--> [B√öNKER] Carga exitosa: {envSuffix}");
         }
     }
     catch (Exception ex)
     {
-        // FALLO SILENCIOSO: Solo registramos el error, pero no lanzamos excepciÛn
-        Console.WriteLine($"--> [B⁄NKER ERROR]: {ex.Message}");
+        // FALLO SILENCIOSO: Solo registramos el error, pero no lanzamos excepci√≥n
+        Console.WriteLine($"--> [B√öNKER ERROR]: {ex.Message}");
     }
 }
 
@@ -78,13 +78,13 @@ if (File.Exists(encFilePath) && !string.IsNullOrEmpty(publicPart))
 // 4. SERVICIOS
 // ============================================================
 
-// 1. CONFIGURACI”N DE DATA PROTECTION (Evita el Error 400)
-// 1. Configuramos la persistencia b·sica (Funciona en Windows y Linux)
+// 1. CONFIGURACI√ìN DE DATA PROTECTION (Evita el Error 400)
+// 1. Configuramos la persistencia b√°sica (Funciona en Windows y Linux)
 var dataProtection = builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "Keys")))
     .SetApplicationName("RedAJP_Produccion");
 
-// 2. Aplicamos la encriptaciÛn nativa SOLO si el servidor es Windows (SmarterASP)
+// 2. Aplicamos la encriptaci√≥n nativa SOLO si el servidor es Windows (SmarterASP)
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
     dataProtection.ProtectKeysWithDpapi(true);
@@ -138,9 +138,9 @@ app.Use(async (context, next) =>
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// EL PORTERO: Filtro Geogr·fico
-// Si este middleware usa la base de datos y la conexiÛn fallÛ, 
-// aquÌ es donde ver·s el error al navegar.
+// EL PORTERO: Filtro Geogr√°fico
+// Si este middleware usa la base de datos y la conexi√≥n fall√≥, 
+// aqu√≠ es donde ver√°s el error al navegar.
 app.UseMiddleware<FiltroGeograficoMiddleware>();
 
 app.UseRouting();
@@ -150,6 +150,6 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Login}/{action=Index}/{id?}");
-app.MapHub<RedAJP.Hubs.ChatTianguisHub>("/chatTianguisHub");
+
 app.MapHub<RedAJP.Hubs.EventosHub>("/eventosHub");
 app.Run();

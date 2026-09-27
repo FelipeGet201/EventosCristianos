@@ -17,23 +17,16 @@
 
     bool bOcultarMascotaVista = ViewBag.bOcultarMascota != null && ViewBag.bOcultarMascota == true;
     bool p_Caja = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Leer);
-    bool p_Rifas = User.TienePermiso(Parametros.Modulos.Rifas, Parametros.Permisos.Leer);
-    bool p_RifasPersonales = User.TienePermiso(Parametros.Modulos.RifasPersonales, Parametros.Permisos.Leer);
     bool p_Usuarios = User.TienePermiso(Parametros.Modulos.Usuarios, Parametros.Permisos.Leer);
     bool p_Grupos = User.TienePermiso(Parametros.Modulos.Grupos, Parametros.Permisos.Leer);
     bool p_Roles = User.TienePermiso(Parametros.Modulos.Roles, Parametros.Permisos.Leer);
-    bool p_TiendaConfig = User.TienePermiso(Parametros.Modulos.TiendaConfig, Parametros.Permisos.Leer);
-    bool p_Devoluciones = User.TienePermiso(Parametros.Modulos.Devoluciones, Parametros.Permisos.Editar);
     bool p_ValidaTransferencias = User.TienePermiso(Parametros.Modulos.Eventos, Parametros.Permisos.Admin);
-    bool p_ValidaDonaciones = User.TienePermiso(Parametros.Modulos.Caja, Parametros.Permisos.Crear);
-    bool p_Entregas = User.TienePermiso(Parametros.Modulos.Entregas, Parametros.Permisos.Leer);
     bool p_Visitas = User.TienePermiso(Parametros.Modulos.Visitas, Parametros.Permisos.Leer);
     bool p_Encuestas = User.TienePermiso(Parametros.Modulos.Encuestas, Parametros.Permisos.Leer);
     bool p_GeneradorQR = User.TienePermiso(Parametros.Modulos.GeneradorQR, Parametros.Permisos.Leer);
     bool p_Biblioteca = User.TienePermiso(Parametros.Modulos.Biblioteca, Parametros.Permisos.Leer);
     bool p_Cupones = User.TienePermiso(Parametros.Modulos.Cupones, Parametros.Permisos.Leer);
     bool p_AlertasCorreos = User.TienePermiso(Parametros.Modulos.AlertasCorreos, Parametros.Permisos.Leer);
-    bool p_PuedeAutorizarSolicIglesias = User.TienePermiso(Parametros.Modulos.Reuniones, Parametros.Permisos.Editar);
     bool p_Colores = User.TienePermiso(Parametros.Modulos.Colores, Parametros.Permisos.Leer);
     bool p_Comunidad = User.TienePermiso(Parametros.Modulos.Comunidad, Parametros.Permisos.Leer);
     bool p_PuedeVerDatosStripe = User.TienePermiso(Parametros.Modulos.CuentasStripe, Parametros.Permisos.Leer);
@@ -42,20 +35,13 @@
     bool esMiembro = User.Identity!.IsAuthenticated;
     bool p_Material = esMiembro;
     bool p_Formatos = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Leer); ;
-    bool verMenuHerramientas = p_Visitas || p_Material || p_Formatos || p_Encuestas || p_GeneradorQR || p_Colores || p_Biblioteca;
-    bool verMenuGestion = p_Caja || p_Rifas || p_Usuarios || p_Grupos || p_Roles || p_TiendaConfig || p_Devoluciones  || p_ValidaTransferencias || p_ValidaDonaciones || p_Cupones || p_AlertasCorreos || p_PuedeAutorizarSolicIglesias || p_PuedeVerEstadisticas;
+    bool verMenuHerramientas = p_Visitas || p_Material || p_Formatos || p_Encuestas || p_GeneradorQR || p_Colores || p_Biblioteca || p_Cupones;
+    bool verMenuGestion = p_Caja || p_Usuarios || p_Grupos || p_Roles || p_ValidaTransferencias || p_AlertasCorreos || p_PuedeVerEstadisticas || p_PuedeVerDatosStripe;
 
     string inicialUsuario = esMiembro ? User.Identity.Name.Substring(0, 1).ToUpper() : "U";
 
     int nContadorAlertasGestion = 0;
     int nContadorAlertasMovilAgrup = 0;
-
-    int nDiseñosPendientes = 0;
-    if (esMiembro && p_TiendaConfig)
-    {
-        nDiseñosPendientes = await SolicitudesSvc.ObtenerContadorPendientesAsync();
-    }
-    nContadorAlertasGestion += nDiseñosPendientes;
 
     int nTransferenciasPendientes = 0;
     if (esMiembro && p_ValidaTransferencias)
@@ -64,60 +50,7 @@
     }    
     nContadorAlertasGestion += nTransferenciasPendientes;
 
-    int nEntregasPendientes = 0;
-    if (esMiembro && p_Entregas)
-    {
-        nEntregasPendientes = await SolicitudesSvc.ObtenerContadorEntregasAsync();
-    }
-    nContadorAlertasGestion += nEntregasPendientes;
-
-    int nDonacionesPendientes = 0;
-    if (esMiembro && p_ValidaDonaciones)
-    {
-        nDonacionesPendientes = await SolicitudesSvc.ObtenerContadorDonacionesPendientesAsync(nIdUsuario);
-    }
-    nContadorAlertasGestion += nDonacionesPendientes;
-
-    int nVinculacionesPendientes = 0;
-    if (esMiembro && p_PuedeAutorizarSolicIglesias)
-    {
-        nVinculacionesPendientes = await SolicitudesSvc.ObtenerContadorVinculacionesPendientesAsync();
-    }
-    nContadorAlertasGestion += nVinculacionesPendientes;
-
-    int nObjetosCarrito = 0;
-    int nAlertasComprasCliente = 0;
-    int nMensajesComunidad = 0;
-    if (esMiembro)
-    {
-        // Buscamos el ID en la cookie encriptada
-        var claimId = User.FindFirst("IdUsuario");
-        // 3. Solo si encontramos el ID, llamamos a la base de datos
-        if (claimId != null)
-        {
-            nObjetosCarrito = await SolicitudesSvc.ObtenerContadorCarritoAsync(int.Parse(claimId.Value));
-            nAlertasComprasCliente = await SolicitudesSvc.ObtenerContadorAlertasClienteAsync(int.Parse(claimId.Value));
-            
-            if (p_Comunidad)
-            {
-                bool esAdminComunidad = User.TienePermiso(Parametros.Modulos.Comunidad, Parametros.Permisos.Admin);
-                nMensajesComunidad = await SolicitudesSvc.ObtenerContadorMensajesComunidadAsync(int.Parse(claimId.Value), esAdminComunidad);
-            }
-        }
-    }
-
-    // CONTADORES PARA RIFAS PERSONALES
-    int nAlertasRifasPersonales = 0;
-    if (esMiembro && p_RifasPersonales)
-    {
-        int nRifasAsignadas = await SolicitudesSvc.ObtenerContadorRifasAsignadasAsync(nIdUsuario);
-        int nPagosPendientesRifas = await SolicitudesSvc.ObtenerContadorRifasPagosPendientesAsync(nIdUsuario);
-        
-        nAlertasRifasPersonales = nRifasAsignadas + nPagosPendientesRifas;
-    }
-    // Sumamos al candado principal de Gestión
-    nContadorAlertasGestion += nAlertasRifasPersonales;
-    nContadorAlertasMovilAgrup = nContadorAlertasGestion + nAlertasComprasCliente + nMensajesComunidad;
+    nContadorAlertasMovilAgrup = nContadorAlertasGestion;
 }
 
 <!DOCTYPE html>
@@ -126,7 +59,7 @@
     <meta charset="utf-8" />
     <meta name="theme-color" content="#002b36">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>@ViewData["Title"] - ICIAR | AJP</title>
+    <title>@ViewData["Title"] - Eventos Cristianos</title>
     <link rel="icon" type="image/png" href="~/Images/favicon.ico">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -140,7 +73,7 @@
 {
     <div id="mascota-flotante" class="mascota-oculta-inicial" role="button" aria-label="Dar ofrenda" data-reset="@TempData["ResetMascota"]">
 
-        <div class="mensaje-mascota"><strong>!Hola Pescador!</strong> <br> Te invitamos a apoyar la Obra de Dios. ¿Te animas?</div>
+        <div class="mensaje-mascota"><strong>¡Hola!</strong> <br> Te invitamos a apoyar la Obra de Dios. ¿Te animas?</div>
 
         <button class="boton-cerrar-mascota" aria-label="Cerrar mascota">×</button>
 
@@ -315,32 +248,14 @@
             <div class="container">
 
                 <a class="navbar-brand d-flex align-items-center py-2 me-auto" href="@Url.Action("Index", "Home")">
-                    <img src="~/Images/logo_ajp.jpg" alt="Logo" height="50" class="me-2 rounded-circle">
+                    <img src="~/Images/ixoye.png" alt="Logo" height="50" class="me-2 rounded-circle" onerror="this.src='/Images/favicon.ico'">
     
-                    <span class="fw-bold tracking-wide ajp-corto">AJP</span>
+                    <span class="fw-bold tracking-wide nombre-corto">EC</span>
     
-                    <span class="fw-bold tracking-wide ajp-largo">Alianza Juvenil Los Pescadores</span>
+                    <span class="fw-bold tracking-wide nombre-largo">Eventos Cristianos</span>
                 </a>
 
-                @if (esMiembro)
-                {
-                    <div class="d-flex align-items-center d-lg-none ms-2">
-                        <a class="nav-link p-0" id="menuCarrito" href="@Url.Action("Carrito", "Tienda")">
-                            <div class="social-buoy position-relative" style="width: 40px;height: 40px;background: linear-gradient(135deg, var(--pez-azul) 0%, #00838f 100%);border: 1px solid rgba(255, 255, 255, 0.25);box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);display: flex;align-items: center;justify-content: center;">
 
-                                <i class="fa-solid fa-cart-shopping" style="color: white !important; font-size: 1rem;"></i>
-
-                                @if (nObjetosCarrito > 0)
-                                {
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" style="font-size: 0.6rem;">
-                                        @nObjetosCarrito
-                                        <span class="visually-hidden">artículos en carrito</span>
-                                    </span>
-                                }
-                            </div>
-                        </a>
-                    </div>
-                }
 
                 <button class="navbar-toggler position-relative" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir navegación" style="margin-right: 1rem;">
                     <span class="navbar-toggler-icon"></span>
@@ -380,52 +295,20 @@
                                 </a>
                             </li>
                         }
-                            <li class="nav-item border-start-lg">
-                            <a class="nav-link" id="menu-donaciones" href="@Url.Action("Index", "Donaciones")">
-                                <i class="fa-solid fas fa-hand-holding-heart"></i> <span>Donaciones</span>
-                            </a>
-                        </li> 
                         @if (esMiembro && p_Comunidad)
                         {
                             <li class="nav-item border-start-lg">
                                 <a class="nav-link" id="menu-comunidad" href="@Url.Action("Index", "Comunidad")">
-                                    <i class="fa-solid far fa-envelope position-relative">
-                                        @if (nMensajesComunidad > 0)
-                                        {
-                                            <span class="badge-dinamico">@nMensajesComunidad</span>
-                                        }
-                                    </i> 
+                                    <i class="fa-solid far fa-envelope"></i> 
                                     <span>Comunidad</span>
                                 </a>
                             </li>
                         }
-                        <li class="nav-item border-start-lg">
-                            <a class="nav-link" id="menu-tienda" href="@Url.Action("Index", "Tienda")">
-                                <i class="fa-solid fa-store"></i> <span>Tienda</span>
-                            </a>
-                        </li>
                     </ul>
 
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
                         @if (esMiembro)
                         {
-                            <div class="d-none d-lg-block">
-                                <a class="nav-link p-0" id="menuCarrito" href="@Url.Action("Carrito", "Tienda")">
-                                    <div class="social-buoy position-relative" style="width: 40px;height: 40px;background: linear-gradient(135deg, var(--pez-azul) 0%, #00838f 100%);border: 1px solid rgba(255, 255, 255, 0.25);box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);display: flex;align-items: center;justify-content: center;">
-
-                                        <i class="fa-solid fa-cart-shopping" style="color: white !important; font-size: 1rem;"></i>
-
-                                        @if (nObjetosCarrito > 0)
-                                        {
-                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" style="font-size: 0.6rem;">
-                                                @nObjetosCarrito
-                                                <span class="visually-hidden">artículos en carrito</span>
-                                            </span>
-                                        }
-                                    </div>
-                                </a>
-                            </div>
-
                             @if (verMenuHerramientas)
                             {
                                 <li class="nav-item dropdown border-start-lg">
@@ -447,7 +330,7 @@
                                         }
                                         @if (p_Formatos)
                                         {
-                                            <li><a class="dropdown-item" id="submenu-formatos" href="@Url.Action("Index", "Formatos")"><i class="fa-solid fas fa-file-video"></i> Videos y Formatos AJP</a></li>
+                                            <li><a class="dropdown-item" id="submenu-formatos" href="@Url.Action("Index", "Formatos")"><i class="fa-solid fas fa-file-video"></i> Videos y Formatos</a></li>
                                         }
                                         @if (p_Encuestas)
                                         {
@@ -457,9 +340,13 @@
                                         {
                                             <li><a class="dropdown-item" id="submenu-qr" href="@Url.Action("Index", "CodigosQR")"><i class="fa-solid fa-solid fa-qrcode"></i> Generador QR</a></li>
                                         }
+                                        @if (p_Cupones)
+                                        {
+                                            <li><a class="dropdown-item" id="submenu-cupones" href="@Url.Action("Index", "Cupones")"><i class="fa-solid fa-ticket"></i> Cupones de Descuento</a></li>
+                                        }
                                         @if (p_Colores)
                                         {
-                                            <li><a class="dropdown-item" id="submenu-colores" href="@Url.Action("Index", "Colores")"><i class="fa-solid fa-solid fas fa-palette"></i> Catálogo de Colores AJP</a></li>
+                                            <li><a class="dropdown-item" id="submenu-colores" href="@Url.Action("Index", "Colores")"><i class="fa-solid fa-solid fas fa-palette"></i> Catálogo de Colores</a></li>
                                         }
                                         else
                                         {
@@ -483,136 +370,38 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end">
 
-                                        @if (p_Caja || p_Rifas)
+                                        @if (p_Caja)
                                         {
-                                            if (p_Caja)
-                                            {
-                                                <li><a class="dropdown-item" id="submenu-caja" href="@Url.Action("Index", "Caja")"><i class="fa-solid fa-sack-dollar"></i> Caja</a></li>
-                                            }
-                                            if (p_Rifas)
-                                            {
-                                                <li><a class="dropdown-item" id="submenu-rifas" href="@Url.Action("Index", "Rifas")"><i class="fa-solid fa-ticket"></i> Rifas AJP</a></li>
-                                            }
-                                            if (p_RifasPersonales)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item" id="submenu-rifaspersonales" href="@Url.Action("Index", "RifasPersonales")">
-                                                        <span><i class="fa-solid fas fa-hand-holding-usd"></i> Rifas Personales</span>
-                                                        @if (nAlertasRifasPersonales > 0)
-                                                        {
-                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nAlertasRifasPersonales</span>
-                                                        }
-                                                    </a>
-                                                </li>
-                                            }
-
-                                            // LOGICA DEL SEPARADOR: Solo se muestra si hay permisos en los bloques siguientes
-                                            if (p_Entregas || p_TiendaConfig || p_Usuarios || p_Grupos || p_Roles)
-                                            {
-                                                <li><hr class="dropdown-divider"></li>
-                                            }
+                                            <li><a class="dropdown-item" id="submenu-caja" href="@Url.Action("Index", "Caja")"><i class="fa-solid fa-sack-dollar"></i> Caja</a></li>
                                         }
 
-                                        @if (p_Entregas || p_TiendaConfig || p_Cupones)
+                                        @if (p_ValidaTransferencias)
                                         {
-                                            if (p_Entregas)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item" id="submenu-entregasadmin" href="@Url.Action("EntregasAdmin", "Tienda")">
-                                                        <span><i class="fa-solid fa-truck-fast"></i> Entregas y Pedidos</span>
-                                                        @if (nEntregasPendientes > 0)
-                                                        {
-                                                            <span class="badge rounded-pill bg-warning text-dark ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nEntregasPendientes</span>
-                                                        }
-                                                    </a>
-                                                </li>
-                                            }
-
-                                            if (p_Cupones)
-                                            {
-                                                <li><a class="dropdown-item" id="submenu-cupones" href="@Url.Action("Index", "Cupones")"><i class="fa-solid fas fa-gift"></i> Cupones</a></li>
-                                            }
-
-                                            if (p_TiendaConfig)
-                                            {
-                                                <li><a class="dropdown-item" id="submenu-categorias" href="@Url.Action("Categorias", "TiendaConfig")"><i class="fa-solid fa-tags"></i> Categorías</a></li>
-                                                <li><a class="dropdown-item" id="submenu-catalogotienda" href="@Url.Action("Index", "TiendaProductos")"><i class="fa-solid fa-shirt"></i> Catálogo</a></li>
-                                                <li>
-                                                    <a class="dropdown-item" id="submenu-solicitudes" href="@Url.Action("Solicitudes", "TiendaDisenos")">
-                                                        <span><i class="fa-solid fa-palette"></i> Solicitudes</span>
-                                                        @if (nDiseñosPendientes > 0)
-                                                        {
-                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nDiseñosPendientes</span>
-                                                        }
-                                                    </a>
-                                                </li>
-                                            }
-                                            // LOGICA DEL SEPARADOR 2: Solo si hay usuarios o roles abajo
-                                            if (p_ValidaTransferencias || p_ValidaDonaciones || p_Usuarios || p_Grupos || p_Roles)
-                                            {
-                                                <li><hr class="dropdown-divider"></li>
-                                            }
+                                            <li>
+                                                <a class="dropdown-item" id="submenu-transferencias" href="@Url.Action("Autorizaciones", "Eventos")">
+                                                    <span><i class="far fa-money-bill-alt"></i> Transferencias</span>
+                                                    @if (nTransferenciasPendientes > 0)
+                                                    {
+                                                        <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nTransferenciasPendientes</span>
+                                                    }
+                                                </a>
+                                            </li>
                                         }
 
-                                        @if (p_Devoluciones || p_ValidaTransferencias || p_ValidaDonaciones)
+                                        @if (p_PuedeVerEstadisticas)
                                         {
-                                            if (p_Devoluciones)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item" id="submenu-devoluciones" href="@Url.Action("Index", "Devoluciones")">
-                                                        <span><i class="fas fa-reply"></i> Devoluciones</span>
-                                                    </a>
-                                                </li>
-                                            }
-                                            if (p_ValidaTransferencias)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item" id="submenu-transferencias" href="@Url.Action("Autorizaciones", "Eventos")">
-                                                        <span><i class="far fa-money-bill-alt"></i> Transferencias</span>
-                                                        @if (nTransferenciasPendientes > 0)
-                                                        {
-                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nTransferenciasPendientes</span>
-                                                        }
-                                                    </a>
-                                                </li>
-                                            }
-                                            if (p_ValidaDonaciones)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item" id="submenu-autorizacion-donaciones" href="@Url.Action("Autorizaciones", "Donaciones")">
-                                                        <span><i class="fas fa-hand-holding-heart"></i> Donaciones</span>
-                                                        @if (nDonacionesPendientes > 0)
-                                                        {
-                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nDonacionesPendientes</span>
-                                                        }
-                                                    </a>
-                                                </li>
-                                            }
-                                            if (p_PuedeAutorizarSolicIglesias)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item" id="submenu-autorizacion-vinculacion" href="@Url.Action("Autorizaciones", "Vinculacion")">
-                                                        <span><i class="fas fa-clipboard-check"></i> Solicitudes de Iglesias</span>
-                                                        @if (nVinculacionesPendientes > 0)
-                                                        {
-                                                            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.7rem; padding: 0.35em 0.65em;">@nVinculacionesPendientes</span>
-                                                        }
-                                                    </a>
-                                                </li>
-                                            }
-                                            if (p_PuedeVerEstadisticas)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item" id="submenu-estadisticas" href="@Url.Action("Index", "Estadisticas")">
-                                                        <span><i class="far fa-chart-bar"></i> Estadísticas</span>
-                                                    </a>
-                                                </li>
-                                            }
-                                            if (p_Usuarios || p_Grupos || p_Roles)
-                                            {
-                                                <li><hr class="dropdown-divider"></li>
-                                            }
+                                            <li>
+                                                <a class="dropdown-item" id="submenu-estadisticas" href="@Url.Action("Index", "Estadisticas")">
+                                                    <span><i class="far fa-chart-bar"></i> Estadísticas</span>
+                                                </a>
+                                            </li>
                                         }
+                                        
+                                        @if (p_Caja || p_ValidaTransferencias || p_PuedeVerEstadisticas)
+                                        {
+                                            <li><hr class="dropdown-divider"></li>
+                                        }
+
                                         @if (p_PuedeVerDatosStripe)
                                         {
                                             <li><a class="dropdown-item" id="submenu-cuentas-stripe" href="@Url.Action("Index", "CuentasStripe")"><i class="fa-brands fa-stripe"></i> Pasarelas Stripe</a></li>
@@ -649,10 +438,6 @@
                                         <i class="position-relative letra-nombre" style="font-style: normal; display: inline-flex;">
                                             <span class="fw-bold small">@inicialUsuario</span>
 
-                                            @if (nAlertasComprasCliente > 0)
-                                            {
-                                                <span class="badge-dinamico" style="top: -1rem;right: -1rem;">@nAlertasComprasCliente</span>
-                                            }
                                         </i>
                                     </div>
 
@@ -665,21 +450,6 @@
                                     <li class="dropdown-header text-center">SESIÓN ACTIVA</li>
                                     <li><a class="dropdown-item" id="submenu-miperfil" href="@Url.Action("Index", "Perfil")"><i class="fa-solid fa-address-card"></i> Mi Perfil</a></li>
 
-                                    <li>
-                                        <a class="dropdown-item align-items-center" id="submenu-miscompras" href="@Url.Action("MisCompras", "Tienda")">
-                                            <span><i class="fa-solid fa-bag-shopping me-1"></i> Mis Compras</span>
-                                            @if (nAlertasComprasCliente > 0)
-                                            {
-                                                <span class="badge rounded-pill bg-danger shadow-sm ms-3">@nAlertasComprasCliente</span>
-                                            }
-                                        </a>
-                                    </li>
-
-                                    <li><a class="dropdown-item" id="submenu-diseños" href="@Url.Action("MisDisenos", "Perfil")"><i class="fa-solid fa-paint-roller"></i> Mis Diseños</a></li>
-                                    @if (ViewBag.nMisPaginasWeb != null && ViewBag.nMisPaginasWeb > 0)
-                                    {
-                                        <li><a class="dropdown-item" id="submenu-paginasweb" href="@Url.Action("Index", "IglesiasWeb")"><i class="fa-solid fa-globe"></i> Mis Páginas WEB</a></li>
-                                    }
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger fw-bold" href="@Url.Action("Salir", "Login")"><i class="fa-solid fa-power-off"></i> Cerrar Sesión</a></li>
                                 </ul>
@@ -708,7 +478,7 @@
             }
             <div class="mb-3">
                 <i class="fa-solid fa-anchor me-2" style="color: var(--acento-dorado); opacity: 0.8;"></i>
-                <span class="fw-bold text-white tracking-wide">Alianza Juvenil Los Pescadores</span>
+                <span class="fw-bold text-white tracking-wide">Plataforma de Eventos Cristianos</span>
             </div>
 
             <div class="mb-4 px-3">
@@ -722,12 +492,12 @@
                     ¿NECESITAS AYUDA?
                 </div>
 
-                <a href="mailto:soporte@lospescadores.org"
+                <a href="#"
                    class="d-inline-flex align-items-center px-4 py-2 rounded-pill text-decoration-none transition-hover"
                    style="border: 1px solid rgba(255, 255, 255, 0.15); background-color: rgba(255, 255, 255, 0.05); color: var(--texto-arena);">
 
                     <i class="fa-regular fa-envelope me-2" style="color: var(--acento-dorado);"></i>
-                    <span style="font-size: 0.9rem;">soporte@lospescadores.org</span>
+                    <span style="font-size: 0.9rem;">soporte@eventoscristianos.com</span>
                 </a>
             </div>
 
@@ -735,8 +505,8 @@
                 <span class="small text-uppercase me-3 fw-bold" style="font-size: 0.75rem; color: var(--texto-arena); letter-spacing: 1px;">SÍGUENOS</span>
 
                 <div class="d-flex gap-2">
-                    <a href="https://www.facebook.com/yosoyAJP" class="social-buoy" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="https://www.instagram.com/yosoyajp/" class="social-buoy" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="social-buoy" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" class="social-buoy" target="_blank"><i class="fa-brands fa-instagram"></i></a>
                 </div>
             </div>
 

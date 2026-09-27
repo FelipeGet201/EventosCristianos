@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
 namespace RedAJP.Controladores
 {
@@ -6,8 +6,8 @@ namespace RedAJP.Controladores
     {
         public IActionResult Index()
         {
-            //Abrir la vista tienda
-            return RedirectToAction("Index", "Tienda");
+            //Abrir la vista de eventos
+            return RedirectToAction("Index", "Eventos");
         }
         public IActionResult Login()
         {

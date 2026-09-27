@@ -1,5 +1,5 @@
--- =================================================================
--- SCRIPT BASE DE DATOS OPTIMIZADO Y UNIFICADO (EDICIÓN DEFINITIVA)
+﻿-- =================================================================
+-- SCRIPT BASE DE DATOS OPTIMIZADO Y UNIFICADO (EDICIÃ“N DEFINITIVA)
 -- Motor: PostgreSQL
 -- Zona Horaria: America/Mexico_City
 -- =================================================================
@@ -37,38 +37,7 @@ DROP TABLE IF EXISTS "Eventos_Inscriptores" CASCADE;
 DROP TABLE IF EXISTS "Eventos_Subtipos" CASCADE;
 DROP TABLE IF EXISTS "Eventos_Catalogo" CASCADE;
 
-DROP TABLE IF EXISTS "Tienda_Archivos_Diseno" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Detalles_Pedido" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Pedidos_Mensajes" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Pedidos" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Producto_Preguntas" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Carrito" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Solicitudes_Diseno" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Multimedia_Productos" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Productos_Medidas" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Productos_Venta" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Inventario_Base" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Cat_Categorias" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Cat_Estatus_Diseno" CASCADE;
-DROP TABLE IF EXISTS "Tienda_Cat_Estatus" CASCADE;
-
-DROP TABLE IF EXISTS "Rifas_Sorteo_Confirmaciones" CASCADE;
-DROP TABLE IF EXISTS "Rifas_Folios_Canjeados" CASCADE;
-DROP TABLE IF EXISTS "Rifas_Encuestas" CASCADE;
-DROP TABLE IF EXISTS "Rifas_Descartes" CASCADE;
-DROP TABLE IF EXISTS "Rifas_Pagos" CASCADE;
-DROP TABLE IF EXISTS "Rifas_Boletos" CASCADE;
-DROP TABLE IF EXISTS "Rifas_Ventas" CASCADE;
 DROP TABLE IF EXISTS "Rifas" CASCADE;
-DROP TABLE IF EXISTS "Rifa_Boletos" CASCADE;
-DROP TABLE IF EXISTS "Rifa_Cat_Sorteos" CASCADE;
-
-DROP TABLE IF EXISTS "RifasPersonales_Notificaciones" CASCADE;
-DROP TABLE IF EXISTS "RifasPersonales_Pagos" CASCADE;
-DROP TABLE IF EXISTS "RifasPersonales_Descartes" CASCADE;
-DROP TABLE IF EXISTS "RifasPersonales_Boletos" CASCADE;
-DROP TABLE IF EXISTS "RifasPersonales_Rifas" CASCADE;
-
 DROP TABLE IF EXISTS "Encuestas_Archivos" CASCADE;
 DROP TABLE IF EXISTS "Encuestas_Respuestas_Detalle" CASCADE;
 DROP TABLE IF EXISTS "Encuestas_Respuestas_Header" CASCADE;
@@ -79,17 +48,6 @@ DROP TABLE IF EXISTS "Encuestas_Tipos_Pregunta" CASCADE;
 DROP TABLE IF EXISTS "Sist_Cupones_Usuarios" CASCADE;
 DROP TABLE IF EXISTS "Sist_Cupones_Uso" CASCADE;
 DROP TABLE IF EXISTS "Sist_Cupones" CASCADE;
-
-DROP TABLE IF EXISTS "Tianguis_Ventas" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Mensajes" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Interesados" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Tallas" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Imagenes" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Publicaciones" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Categorias" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Cat_EstadosTrato" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Cat_EstadosPublicacion" CASCADE;
-DROP TABLE IF EXISTS "Tianguis_Cat_TiposVenta" CASCADE;
 
 DROP TABLE IF EXISTS "Sist_Comunidad_Mensajes_Destinatarios" CASCADE;
 DROP TABLE IF EXISTS "Sist_Comunidad_Configuracion" CASCADE;
@@ -115,8 +73,6 @@ DROP TABLE IF EXISTS "iciar_plantillas_web" CASCADE;
 DROP TABLE IF EXISTS "iciar_iglesias" CASCADE;
 DROP TABLE IF EXISTS "iciar_municipios" CASCADE;
 
-DROP TABLE IF EXISTS "Devoluciones_Pagos" CASCADE;
-DROP TABLE IF EXISTS "Devoluciones" CASCADE;
 DROP TABLE IF EXISTS "Fin_Proyectos_Caja" CASCADE;
 DROP TABLE IF EXISTS "Fin_Proyectos" CASCADE;
 DROP TABLE IF EXISTS "Sist_Aportaciones_Transacciones" CASCADE;
@@ -148,7 +104,7 @@ DROP TABLE IF EXISTS "Sist_Modulos" CASCADE;
 DROP TABLE IF EXISTS "Sist_Roles" CASCADE;
 
 -- =================================================================
--- 2. MÓDULO SISTEMA, SEGURIDAD Y CONFIGURACIÓN GLOBAL
+-- 2. MÃ“DULO SISTEMA, SEGURIDAD Y CONFIGURACIÃ“N GLOBAL
 -- =================================================================
 
 CREATE TABLE "Sist_Roles" (
@@ -258,7 +214,7 @@ CREATE TABLE "Sist_CodigosQR" (
 );
 
 -- =================================================================
--- 3. MÓDULO DIRECTORIO IGLESIAS (ICIAR) Y WEB SITES
+-- 3. MÃ“DULO DIRECTORIO IGLESIAS (ICIAR) Y WEB SITES
 -- =================================================================
 
 CREATE TABLE "iciar_municipios" (
@@ -411,7 +367,7 @@ CREATE TABLE "iciar_iglesias_secciones_disenos" (
 );
 
 -- =================================================================
--- 4. MÓDULO INSTITUCIONAL, GRUPOS Y RECURSOS
+-- 4. MÃ“DULO INSTITUCIONAL, GRUPOS Y RECURSOS
 -- =================================================================
 
 CREATE TABLE "Inst_Sedes" (
@@ -476,7 +432,7 @@ CREATE TABLE "Rec_Archivos" (
 );
 
 -- =================================================================
--- 5. MÓDULO FINANZAS, APORTACIONES, PROYECTOS Y DEVOLUCIONES
+-- 5. MÃ“DULO FINANZAS, APORTACIONES, PROYECTOS Y DEVOLUCIONES
 -- =================================================================
 
 CREATE TABLE "Fin_Caja" (
@@ -596,30 +552,8 @@ CREATE TABLE "Fin_Proyectos_Caja" (
     "Es_Traspaso_General" BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE "Devoluciones" (
-    "Id_Devolucion" SERIAL PRIMARY KEY,
-    "Modulo_Origen" VARCHAR(50) NOT NULL,
-    "Id_Referencia_Origen" INTEGER NOT NULL,
-    "Monto" DECIMAL(10,2) NOT NULL,
-    "Motivo" TEXT NOT NULL,
-    "Entregado" BOOLEAN NOT NULL DEFAULT FALSE,
-    "Fecha_Generacion" TIMESTAMP NOT NULL DEFAULT NOW(),
-    "Id_Usuario_Genera" INTEGER NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Fecha_Entrega" TIMESTAMP NULL,
-    "Id_Usuario_Entrega" INTEGER NULL REFERENCES "Sist_Usuarios"("Id_Usuario")
-);
-
-CREATE TABLE "Devoluciones_Pagos" (
-    "Id_Devolucion_Pago" SERIAL PRIMARY KEY,
-    "Id_Devolucion" INTEGER NOT NULL REFERENCES "Devoluciones"("Id_Devolucion") ON DELETE CASCADE,
-    "Monto_Pagado" DECIMAL(10,2) NOT NULL,
-    "Referencia" VARCHAR(100) NULL,
-    "Fecha_Pago" TIMESTAMP NOT NULL DEFAULT NOW(),
-    "Id_Usuario_Pago" INTEGER NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario")
-);
-
 -- =================================================================
--- 6. MÓDULO EVENTOS Y ALOJAMIENTO
+-- 6. MÃ“DULO EVENTOS Y ALOJAMIENTO
 -- =================================================================
 
 CREATE TABLE "Encuestas_Catalogo" (
@@ -850,7 +784,7 @@ CREATE TABLE "Eventos_ConfigAlojamiento" (
     "Mostrar_Todas_Habitaciones" BOOLEAN NOT NULL DEFAULT FALSE,
     "Fecha_Apertura" TIMESTAMP WITHOUT TIME ZONE NULL,
     "Fecha_Cierre" TIMESTAMP WITHOUT TIME ZONE NULL,
-    "Mensaje_Portal_Cerrado" VARCHAR(255) DEFAULT 'El sistema de selección de habitaciones no está disponible por el momento.'
+    "Mensaje_Portal_Cerrado" VARCHAR(255) DEFAULT 'El sistema de selecciÃ³n de habitaciones no estÃ¡ disponible por el momento.'
 );
 
 CREATE TABLE "Eventos_Modalidades_Grafico" (
@@ -899,188 +833,15 @@ CREATE TABLE "Eventos_Asistentes_ProductosExtra" (
 );
 
 -- =================================================================
--- 7. MÓDULO TIENDA ONLINE
+-- 7. MÃ“DULO TIENDA ONLINE
 -- =================================================================
 
-CREATE TABLE "Tienda_Cat_Estatus" (
-    "Id_Estatus" INT NOT NULL PRIMARY KEY,
-    "Nombre" TEXT NOT NULL,
-    "Color_Hex" TEXT,
-    "Orden" INT
-);
-
-CREATE TABLE "Tienda_Cat_Estatus_Diseno" (
-    "Id_Estatus" INT NOT NULL PRIMARY KEY,
-    "Nombre" VARCHAR(100) NOT NULL,
-    "Color_Hex" VARCHAR(20) DEFAULT '#000000',
-    "Descripcion" VARCHAR(255)
-);
-
-CREATE TABLE "Tienda_Cat_Categorias" (
-    "Id_Categoria" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Nombre" TEXT NOT NULL,
-    "Descripcion" TEXT,
-    "Icono" TEXT DEFAULT 'fa-box-open',
-    "Medidas_Default" TEXT DEFAULT 'N/A',
-    "Activo" BOOLEAN DEFAULT TRUE,
-    "Fecha_Creacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "Tienda_Inventario_Base" (
-    "Id_Insumo" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Categoria" INT REFERENCES "Tienda_Cat_Categorias"("Id_Categoria"),
-    "Nombre" TEXT NOT NULL,
-    "Stock_Actual" INT DEFAULT 0,
-    "Costo_Unitario" DECIMAL(18,2),
-    "Fecha_Creacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "Tienda_Productos_Venta" (
-    "Id_Producto" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Categoria" INT REFERENCES "Tienda_Cat_Categorias"("Id_Categoria"),
-    "Nombre_Comercial" TEXT NOT NULL,
-    "Descripcion" TEXT,
-    "Precio_Venta" DECIMAL(18,2) NOT NULL,
-    "Es_Personalizable" BOOLEAN DEFAULT FALSE,
-    "Usa_Medidas_Categoria" BOOLEAN DEFAULT TRUE,
-    "Cobrar_Comision_Extra" BOOLEAN NOT NULL DEFAULT TRUE,
-    "Area_X" INT DEFAULT 25,
-    "Area_Y" INT DEFAULT 20,
-    "Area_Ancho" INT DEFAULT 50,
-    "Area_Alto" INT DEFAULT 60,
-    "Url_Imagen_Impresion" TEXT NULL,
-    "Url_Imagen_Impresion_Posterior" VARCHAR(500) NULL,
-    "Activo" BOOLEAN DEFAULT TRUE,
-    "Fecha_Creacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "Tienda_Productos_Medidas" (
-    "Id_Medida" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Producto" INT REFERENCES "Tienda_Productos_Venta"("Id_Producto") ON DELETE CASCADE,
-    "Nombre" TEXT NOT NULL,
-    "Stock" INTEGER DEFAULT 0 NOT NULL
-);
-
-CREATE TABLE "Tienda_Multimedia_Productos" (
-    "Id_Imagen" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Producto" INT REFERENCES "Tienda_Productos_Venta"("Id_Producto") ON DELETE CASCADE,
-    "UrlImagen" TEXT,
-    "Es_Principal" BOOLEAN DEFAULT FALSE
-);
-
-CREATE TABLE "Tienda_Solicitudes_Diseno" (
-    "Id_Solicitud" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Usuario" INT REFERENCES "Sist_Usuarios"("Id_Usuario") ON DELETE CASCADE,
-    "Id_Producto_Base" INT REFERENCES "Tienda_Productos_Venta"("Id_Producto") ON DELETE CASCADE,
-    "Imagen_Original_Url" TEXT NOT NULL,
-    "Imagen_Previo_Url" TEXT NOT NULL,
-    "Configuracion_Json" TEXT,
-    "Id_Estatus_Diseno" INT REFERENCES "Tienda_Cat_Estatus_Diseno"("Id_Estatus") DEFAULT 1,
-    "Comentarios_Admin" TEXT,
-    "Fecha_Creacion" TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE "Tienda_Pedidos" (
-    "Id_Pedido" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Usuario_Solicita" INT REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Id_Estatus" INT REFERENCES "Tienda_Cat_Estatus"("Id_Estatus"),
-    "Clave_Estatus_Snapshot" INT,
-    "Total_Estimado" DECIMAL(18,2),
-    "Total_Neto" NUMERIC(18,2) DEFAULT 0,
-    "Monto_Descuento" NUMERIC(18,2) DEFAULT 0,
-    "Comentarios_Admin" TEXT,
-    "Codigo_Entrega" VARCHAR(50),
-    "Fecha_Entrega" TIMESTAMP DEFAULT NULL,
-    "Fecha_Estimada" TIMESTAMP WITHOUT TIME ZONE DEFAULT '1900-01-01 00:00:00',
-    "Id_Usuario_Entrega" INT DEFAULT NULL,
-    "Ref_Pasarela" VARCHAR(255),
-    "External_Reference" VARCHAR(100),
-    "Telefono_Contacto" VARCHAR(20),
-    "Comentarios_Cliente" TEXT,
-    "Id_Cupon" INT NULL,
-    "Codigo_Cupon_Aplicado" VARCHAR(50) NULL,
-    "CuentaPrincipalBanco" BOOLEAN NOT NULL DEFAULT FALSE,
-    "ValidadoXCaja" BOOLEAN NOT NULL DEFAULT FALSE,
-    "Fecha_Solicitud" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "FK_Pedidos_Cupon" FOREIGN KEY ("Id_Cupon") REFERENCES "Sist_Cupones"("Id_Cupon") ON DELETE SET NULL
-);
-
-CREATE TABLE "Tienda_Detalles_Pedido" (
-    "Id_Detalle" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Pedido" INT REFERENCES "Tienda_Pedidos"("Id_Pedido") ON DELETE CASCADE,
-    "Id_Producto_Venta" INT REFERENCES "Tienda_Productos_Venta"("Id_Producto"),
-    "Cantidad" INT NOT NULL,
-    "Precio_Unitario" DECIMAL(18,2),
-    "Es_Personalizado" BOOLEAN DEFAULT FALSE,
-    "Id_Solicitud_Diseno" INT REFERENCES "Tienda_Solicitudes_Diseno"("Id_Solicitud"),
-    "Instrucciones_Especiales" TEXT
-);
-
-CREATE TABLE "Tienda_Archivos_Diseno" (
-    "Id_Archivo" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Detalle" INT REFERENCES "Tienda_Detalles_Pedido"("Id_Detalle") ON DELETE CASCADE,
-    "Nombre_Archivo" TEXT,
-    "Contenido_Binario" BYTEA,
-    "Fecha_Carga" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "Tienda_Carrito" (
-    "Id_Carrito" SERIAL PRIMARY KEY,
-    "Id_Usuario" INTEGER NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario") ON DELETE CASCADE,
-    "Id_Producto" INTEGER NOT NULL REFERENCES "Tienda_Productos_Venta"("Id_Producto") ON DELETE CASCADE,
-    "Cantidad" INTEGER NOT NULL DEFAULT 1,
-    "Instrucciones" TEXT,
-    "Es_Personalizado" BOOLEAN DEFAULT FALSE,
-    "Id_Solicitud_Diseno" INTEGER REFERENCES "Tienda_Solicitudes_Diseno"("Id_Solicitud") ON DELETE SET NULL,
-    "Fecha_Agregado" TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE "Tienda_Producto_Preguntas" (
-    "Id_Pregunta" SERIAL PRIMARY KEY,
-    "Id_Producto" INT NOT NULL REFERENCES "Tienda_Productos_Venta"("Id_Producto") ON DELETE CASCADE,
-    "Id_Usuario" INT NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Mensaje" TEXT NOT NULL,
-    "Fecha_Registro" TIMESTAMP DEFAULT NOW(),
-    "Id_Pregunta_Padre" INT NULL REFERENCES "Tienda_Producto_Preguntas"("Id_Pregunta") ON DELETE CASCADE,
-    "Es_Admin" BOOLEAN DEFAULT FALSE
-);
-
-CREATE TABLE "Tienda_Pedidos_Mensajes" (
-    "Id_Mensaje" SERIAL PRIMARY KEY,
-    "Id_Pedido" INTEGER NOT NULL REFERENCES "Tienda_Pedidos"("Id_Pedido") ON DELETE CASCADE,
-    "Id_Usuario" INTEGER NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Mensaje" TEXT NOT NULL,
-    "Leido" BOOLEAN NOT NULL DEFAULT FALSE,
-    "Es_Admin" BOOLEAN NOT NULL DEFAULT FALSE,
-    "Fecha_Registro" TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
 -- =================================================================
--- 8. MÓDULO RIFAS Y SORTEOS (GENERALES Y PERSONALES)
+-- 8. MÃ“DULO RIFAS Y SORTEOS (GENERALES Y PERSONALES)
 -- =================================================================
 
 -- Tablas Legacy
-CREATE TABLE "Rifa_Cat_Sorteos" (
-    "Id_Sorteo" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Nombre" TEXT NOT NULL,
-    "PrecioBoleto" DECIMAL(18,2),
-    "CantidadBoletos" INT,
-    "Activo" BOOLEAN DEFAULT TRUE,
-    "Fecha_Creacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "Rifa_Boletos" (
-    "Id_Boleto" INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    "Id_Sorteo" INT REFERENCES "Rifa_Cat_Sorteos"("Id_Sorteo") ON DELETE CASCADE,
-    "Numero" INT NOT NULL,
-    "NombreComprador" TEXT,
-    "TelefonoContacto" TEXT,
-    "Estado" TEXT DEFAULT 'Disponible',
-    "Id_Vendedor" INT REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Fecha_Venta" TIMESTAMP
-);
-
--- Sistema Principal de Rifas Públicas
+-- Sistema Principal de Rifas PÃºblicas
 CREATE TABLE "Rifas" (
     "Id_Rifa" SERIAL PRIMARY KEY,
     "Titulo" VARCHAR(150) NOT NULL,
@@ -1108,171 +869,9 @@ CREATE TABLE "Rifas" (
     CONSTRAINT "CHK_Rifas_Modalidad" CHECK ("Modalidad_Sorteo" IN ('MANUAL', 'PLATAFORMA') OR "Modalidad_Sorteo" IS NULL)
 );
 
-CREATE TABLE "Rifas_Ventas" (
-    "Id_Venta" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    "Id_Usuario_Comprador" INTEGER NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Id_Usuario_Vendedor" INTEGER NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Total" NUMERIC(10,2) NOT NULL,
-    "Total_Neto" NUMERIC(10,2) DEFAULT 0,
-    "Cantidad_Boletos" INTEGER NOT NULL,
-    "Estado" VARCHAR(20) DEFAULT 'Pendiente',
-    "Metodo_Pago" VARCHAR(20) DEFAULT 'Stripe',
-    "Ref_Stripe" VARCHAR(100) NULL,
-    "Ref_Pasarela_Id" VARCHAR(100) NULL,
-    "Token_Acceso" VARCHAR(100) NOT NULL,
-    "Email_Contacto" VARCHAR(150) NULL,
-    "Nombre_Contacto" VARCHAR(150) NULL,
-    "Telefono_Contacto" VARCHAR(50) NULL,
-    "CuentaPrincipalBanco" BOOLEAN NOT NULL DEFAULT FALSE,
-    "ValidadoXCaja" BOOLEAN NOT NULL DEFAULT FALSE,
-    "Fecha_Creacion" TIMESTAMP DEFAULT NOW(),
-    "Fecha_Pago" TIMESTAMP NULL
-);
-
-CREATE TABLE "Rifas_Boletos" (
-    "Id_Boleto" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    "Id_Venta" INTEGER NULL REFERENCES "Rifas_Ventas"("Id_Venta") ON DELETE SET NULL,
-    "Id_Usuario_Asignado" INTEGER NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Numero" INTEGER NOT NULL,
-    "Estado" VARCHAR(20) DEFAULT 'Apartado',
-    "Nombre_Comprador" VARCHAR(150),
-    "Telefono" VARCHAR(50),
-    "Nombre_Cliente_Final" VARCHAR(150) NULL,
-    "Telefono_Cliente_Final" VARCHAR(50) NULL,
-    "NombrePromotorExterno" CHARACTER VARYING(100) NULL,
-    "MarcadorPersonal" BOOLEAN DEFAULT FALSE NOT NULL,
-    "FechaVenta" TIMESTAMP WITHOUT TIME ZONE NULL,
-    "FechaAsignacion" TIMESTAMP WITHOUT TIME ZONE NULL,
-    CONSTRAINT "FK_Rifas_Boletos_Rifa" FOREIGN KEY ("Id_Rifa") REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    CONSTRAINT "UQ_Rifa_Numero" UNIQUE ("Id_Rifa", "Numero")
-);
-
-CREATE TABLE "Rifas_Pagos" (
-    "IdPago" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    "Id_Usuario_Vendedor" INTEGER NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "NombrePromotorExterno" CHARACTER VARYING(100) NULL,
-    "Monto" NUMERIC(12,2) NOT NULL,
-    "MetodoPago" CHARACTER VARYING(50) NOT NULL,
-    "ComprobanteUrl" CHARACTER VARYING(500) NULL,
-    "Estado" CHARACTER VARYING(20) NOT NULL,
-    "Origen" CHARACTER VARYING(30) NOT NULL,
-    "Nota" TEXT NULL,
-    "BoletosPagados" TEXT NULL,
-    "FechaPago" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT "FK_Rifas_Pagos_Rifas" FOREIGN KEY ("Id_Rifa") REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE
-);
-
-CREATE TABLE "Rifas_Descartes" (
-    "IdDescarte" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    "BoletoToken" CHARACTER VARYING(255) NOT NULL,
-    "FechaDescarte" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT "FK_Rifas_Descartes_Rifas" FOREIGN KEY ("Id_Rifa") REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE
-);
-
-CREATE TABLE "Rifas_Encuestas" (
-    "Id_Rifa" INTEGER NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    "Id_Encuesta" INTEGER NOT NULL REFERENCES "Encuestas_Catalogo"("Id_Encuesta") ON DELETE CASCADE,
-    PRIMARY KEY ("Id_Rifa", "Id_Encuesta")
-);
-
-CREATE TABLE "Rifas_Folios_Canjeados" (
-    "Id_Canje" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    "Id_Usuario" INTEGER NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario") ON DELETE CASCADE,
-    "Id_Respuesta" INTEGER NOT NULL UNIQUE,
-    "Id_Boleto" INTEGER NOT NULL REFERENCES "Rifas_Boletos"("Id_Boleto") ON DELETE CASCADE,
-    "Fecha_Canje" TIMESTAMP NOT NULL DEFAULT NOW(),
-    CONSTRAINT "UQ_Usuario_Rifa" UNIQUE ("Id_Usuario", "Id_Rifa")
-);
-
-CREATE TABLE "Rifas_Sorteo_Confirmaciones" (
-    "Id_Confirmacion" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    "Id_Boleto_Candidato" INTEGER NOT NULL REFERENCES "Rifas_Boletos"("Id_Boleto") ON DELETE CASCADE,
-    "Id_Usuario" INTEGER NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario") ON DELETE CASCADE,
-    "Fecha_Confirmacion" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-    "IP_Confirmacion" VARCHAR(100) NULL,
-    CONSTRAINT "UQ_Confirmacion_Usuario_Rifa" UNIQUE ("Id_Rifa", "Id_Usuario")
-);
-
 -- Rifas Personales / Privadas
-CREATE TABLE "RifasPersonales_Rifas" (
-    "IdRifa" SERIAL PRIMARY KEY,
-    "IdUsuarioCreador" INTEGER NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Titulo" VARCHAR(150) NOT NULL,
-    "Descripcion" TEXT,
-    "CostoBoleto" DECIMAL(10,2) NOT NULL,
-    "MetaBoletos" INTEGER NOT NULL,
-    "InversionPremio" NUMERIC(18,2) NOT NULL DEFAULT 0,
-    "FechaSorteo" TIMESTAMP NOT NULL,
-    "FechaCreacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "Estado" VARCHAR(20) DEFAULT 'Activa',
-    "IdBoletoGanador" INTEGER NULL,
-    "ImagenUrl" VARCHAR(500) NULL,
-    "Banco" VARCHAR(100) NULL,
-    "CuentaClabe" VARCHAR(255) NULL,
-    "NumeroCuenta" VARCHAR(255) NULL,
-    "NumeroTarjeta" VARCHAR(255) NULL,
-    "TitularCuenta" VARCHAR(150) NULL,
-    "EnlaceGrupoWhatsapp" TEXT NULL,
-    "QrGrupoWhatsappUrl" TEXT NULL
-);
-
-CREATE TABLE "RifasPersonales_Boletos" (
-    "IdBoleto" SERIAL PRIMARY KEY,
-    "IdRifa" INTEGER NOT NULL REFERENCES "RifasPersonales_Rifas"("IdRifa") ON DELETE CASCADE,
-    "Numero" INTEGER NOT NULL,
-    "Estado" VARCHAR(20) DEFAULT 'Disponible',
-    "IdUsuarioAsignado" INTEGER NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "NombreComprador" VARCHAR(150) NULL,
-    "TelefonoComprador" VARCHAR(20) NULL,
-    "NombrePromotorExterno" VARCHAR(150) NULL,
-    "MarcadorPersonal" BOOLEAN DEFAULT FALSE,
-    "Comentarios" TEXT NULL,
-    "FechaVenta" TIMESTAMP NULL,
-    "FechaAsignacion" TIMESTAMP NULL
-);
-
-CREATE TABLE "RifasPersonales_Notificaciones" (
-    "IdNotificacion" SERIAL PRIMARY KEY,
-    "IdRifa" INTEGER NOT NULL REFERENCES "RifasPersonales_Rifas"("IdRifa") ON DELETE CASCADE,
-    "IdBoleto" INTEGER NULL REFERENCES "RifasPersonales_Boletos"("IdBoleto") ON DELETE SET NULL,
-    "TelefonoDestino" VARCHAR(20) NOT NULL,
-    "TipoMensaje" VARCHAR(50) NOT NULL,
-    "EstadoEnvio" VARCHAR(20) DEFAULT 'Pendiente',
-    "FechaEnvio" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "RespuestaAPI" TEXT NULL
-);
-
-CREATE TABLE "RifasPersonales_Pagos" (
-    "IdPago" SERIAL PRIMARY KEY,
-    "IdRifa" INTEGER NOT NULL REFERENCES "RifasPersonales_Rifas"("IdRifa") ON DELETE CASCADE,
-    "IdUsuarioVendedor" INTEGER NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "NombrePromotorExterno" VARCHAR(150) NULL,
-    "Monto" NUMERIC(10,2) NOT NULL,
-    "MetodoPago" VARCHAR(50) NOT NULL,
-    "ComprobanteUrl" TEXT NULL,
-    "Estado" VARCHAR(50) NOT NULL,
-    "Origen" VARCHAR(50) NOT NULL,
-    "Nota" TEXT NULL,
-    "FechaPago" TIMESTAMP NOT NULL,
-    "FechaRegistro" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "RifasPersonales_Descartes" (
-    "IdDescarte" SERIAL PRIMARY KEY,
-    "IdRifa" INT NOT NULL REFERENCES "RifasPersonales_Rifas"("IdRifa") ON DELETE CASCADE,
-    "BoletoToken" VARCHAR(255) NOT NULL,
-    "FechaDescarte" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE ("IdRifa", "BoletoToken")
-);
-
 -- =================================================================
--- 9. MÓDULO ENCUESTAS
+-- 9. MÃ“DULO ENCUESTAS
 -- =================================================================
 
 CREATE TABLE "Encuestas_Tipos_Pregunta" (
@@ -1329,7 +928,7 @@ CREATE TABLE "Encuestas_Archivos" (
 );
 
 -- =================================================================
--- 10. MÓDULO CUPONES Y DESCUENTOS
+-- 10. MÃ“DULO CUPONES Y DESCUENTOS
 -- =================================================================
 
 CREATE TABLE "Sist_Cupones" (
@@ -1378,96 +977,11 @@ CREATE TABLE "Sist_Cupones_Usuarios" (
 );
 
 -- =================================================================
--- 11. MÓDULO TIANGUIS (MARKETPLACE)
+-- 11. MÃ“DULO TIANGUIS (MARKETPLACE)
 -- =================================================================
 
-CREATE TABLE "Tianguis_Cat_TiposVenta" (
-    "IdTipo" CHAR(3) PRIMARY KEY,
-    "Nombre" VARCHAR(50) NOT NULL
-);
-
-CREATE TABLE "Tianguis_Cat_EstadosPublicacion" (
-    "IdEstado" CHAR(3) PRIMARY KEY,
-    "Nombre" VARCHAR(50) NOT NULL
-);
-
-CREATE TABLE "Tianguis_Cat_EstadosTrato" (
-    "IdEstado" CHAR(3) PRIMARY KEY,
-    "Nombre" VARCHAR(50) NOT NULL
-);
-
-CREATE TABLE "Tianguis_Categorias" (
-    "IdCategoria" SERIAL PRIMARY KEY,
-    "Nombre" VARCHAR(100) NOT NULL,
-    "Activo" BOOLEAN DEFAULT TRUE
-);
-
-CREATE TABLE "Tianguis_Publicaciones" (
-    "IdPublicacion" SERIAL PRIMARY KEY,
-    "IdUsuarioVendedor" INT NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "IdCategoria" INT NOT NULL REFERENCES "Tianguis_Categorias"("IdCategoria"),
-    "Titulo" VARCHAR(150) NOT NULL,
-    "Descripcion" TEXT,
-    "IdTipoVenta" CHAR(3) NOT NULL REFERENCES "Tianguis_Cat_TiposVenta"("IdTipo"),
-    "PrecioBase" DECIMAL(10,2) NOT NULL,
-    "IdEstado" CHAR(3) NOT NULL DEFAULT 'ACT' REFERENCES "Tianguis_Cat_EstadosPublicacion"("IdEstado"),
-    "TieneTallas" BOOLEAN NOT NULL DEFAULT FALSE,
-    "Activo" BOOLEAN NOT NULL DEFAULT TRUE,
-    "FechaPublicacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "FechaExpiracion" TIMESTAMP NULL
-);
-
-CREATE TABLE "Tianguis_Imagenes" (
-    "IdImagen" SERIAL PRIMARY KEY,
-    "IdPublicacion" INT NOT NULL REFERENCES "Tianguis_Publicaciones"("IdPublicacion") ON DELETE CASCADE,
-    "UrlImagen" VARCHAR(500) NOT NULL,
-    "Orden" SMALLINT NOT NULL DEFAULT 1
-);
-
-CREATE TABLE "Tianguis_Tallas" (
-    "IdTalla" SERIAL PRIMARY KEY,
-    "IdPublicacion" INT NOT NULL REFERENCES "Tianguis_Publicaciones"("IdPublicacion") ON DELETE CASCADE,
-    "NombreTalla" VARCHAR(50) NOT NULL,
-    "Stock" INT NOT NULL DEFAULT 0 CHECK ("Stock" >= 0)
-);
-
-CREATE TABLE "Tianguis_Interesados" (
-    "IdInteresado" SERIAL PRIMARY KEY,
-    "IdPublicacion" INT NOT NULL REFERENCES "Tianguis_Publicaciones"("IdPublicacion") ON DELETE CASCADE,
-    "IdUsuarioComprador" INT NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "AliasAnonimo" VARCHAR(50) NOT NULL,
-    "OfertaActual" DECIMAL(10,2) NOT NULL,
-    "EsMejorOferta" BOOLEAN DEFAULT FALSE,
-    "IdTallaSolicitada" INT NULL REFERENCES "Tianguis_Tallas"("IdTalla"),
-    "CantidadSolicitada" INT NULL,
-    "IdEstadoTrato" CHAR(3) NOT NULL DEFAULT 'INT' REFERENCES "Tianguis_Cat_EstadosTrato"("IdEstado"),
-    "FechaActualizacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "Tianguis_Mensajes" (
-    "IdMensaje" SERIAL PRIMARY KEY,
-    "IdInteresado" INT NOT NULL REFERENCES "Tianguis_Interesados"("IdInteresado") ON DELETE CASCADE,
-    "IdUsuarioRemitente" INT NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Texto" TEXT NOT NULL,
-    "FechaEnvio" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "Leido" BOOLEAN DEFAULT FALSE
-);
-
-CREATE TABLE "Tianguis_Ventas" (
-    "IdVenta" SERIAL PRIMARY KEY,
-    "IdPublicacion" INT NOT NULL REFERENCES "Tianguis_Publicaciones"("IdPublicacion"),
-    "IdInteresado" INT NOT NULL REFERENCES "Tianguis_Interesados"("IdInteresado"),
-    "IdUsuarioVendedor" INT NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "IdUsuarioComprador" INT NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "IdTalla" INT NULL REFERENCES "Tianguis_Tallas"("IdTalla"),
-    "Cantidad" INT NOT NULL CHECK ("Cantidad" > 0),
-    "PrecioAcordado" DECIMAL(10,2) NOT NULL,
-    "Total" DECIMAL(10,2) NOT NULL,
-    "FechaVenta" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- =================================================================
--- 12. MÓDULO COMUNIDAD Y MENSAJERÍA
+-- 12. MÃ“DULO COMUNIDAD Y MENSAJERÃA
 -- =================================================================
 
 CREATE TABLE "Sist_Comunidad_Tipos_Mensaje" (
@@ -1561,7 +1075,7 @@ CREATE TABLE "Sist_Comunidad_Mensajes_Destinatarios" (
 );
 
 -- =================================================================
--- 13. MÓDULO PALETAS TEMÁTICAS
+-- 13. MÃ“DULO PALETAS TEMÃTICAS
 -- =================================================================
 
 CREATE TABLE "Paletas_Tematicas" (
@@ -1581,41 +1095,23 @@ CREATE TABLE "Paletas_Colores" (
 );
 
 -- =================================================================
--- 14. ÍNDICES Y OPTIMIZACIONES DE RENDIMIENTO
+-- 14. ÃNDICES Y OPTIMIZACIONES DE RENDIMIENTO
 -- =================================================================
 
-CREATE INDEX "IX_Carrito_Usuario" ON "Tienda_Carrito" ("Id_Usuario");
 CREATE INDEX "Idx_Visitas_Fecha" ON "Sist_Visitas" ("Fecha");
 CREATE INDEX "Idx_CalPagos_Evento" ON "Eventos_Calendario" ("Id_Evento");
 CREATE INDEX "Idx_Cuentas_Asistente" ON "Eventos_C_Cuentas_Cobrar" ("Id_Asistente");
 CREATE INDEX "Idx_Cuentas_Pagado" ON "Eventos_C_Cuentas_Cobrar" ("Pagado");
 CREATE INDEX "IDX_Rifas_Estado" ON "Rifas" ("Estado");
 CREATE INDEX "IX_Rifas_Modalidad" ON "Rifas" ("Modalidad_Sorteo");
-CREATE INDEX "IDX_Boletos_Rifa" ON "Rifas_Boletos" ("Id_Rifa");
-CREATE INDEX "IDX_Boletos_Estado" ON "Rifas_Boletos" ("Estado");
-CREATE INDEX "IX_Rifas_Boletos_Estado" ON "Rifas_Boletos" ("Id_Rifa", "Estado");
-CREATE INDEX "IX_Rifas_Ventas_Token" ON "Rifas_Ventas" ("Token_Acceso");
-CREATE INDEX "IX_Rifas_Pagos_Rifa" ON "Rifas_Pagos" ("Id_Rifa");
-CREATE INDEX "IX_Rifas_Pagos_Vendedor" ON "Rifas_Pagos" ("Id_Usuario_Vendedor");
-CREATE INDEX "IX_Rifas_Descartes_Rifa" ON "Rifas_Descartes" ("Id_Rifa");
-CREATE INDEX "IX_Confirmaciones_Rifa" ON "Rifas_Sorteo_Confirmaciones" ("Id_Rifa");
-CREATE INDEX "IX_Confirmaciones_Boleto" ON "Rifas_Sorteo_Confirmaciones" ("Id_Boleto_Candidato");
 CREATE INDEX "idx_tel_grupos" ON "Sist_Grupos_Miembros" ("Telefono_Origen");
 CREATE INDEX "IX_Sist_Cupones_Codigo" ON "Sist_Cupones" ("Codigo");
 CREATE UNIQUE INDEX "IX_Unico_Cupon_Activo" ON "Sist_Cupones" (UPPER("Codigo")) WHERE "Activo" = TRUE;
 CREATE INDEX "IX_Cupones_Usuarios_IdUsuario" ON "Sist_Cupones_Usuarios" ("Id_Usuario");
 CREATE INDEX "IX_Encuestas_Archivos_IdRespuesta" ON "Encuestas_Archivos" ("Id_Respuesta");
-CREATE INDEX "IDX_TianguisPub_Estado" ON "Tianguis_Publicaciones" ("IdEstado");
-CREATE INDEX "IDX_TianguisInt_Pub" ON "Tianguis_Interesados" ("IdPublicacion");
-CREATE INDEX "IDX_TianguisMsgs_Int" ON "Tianguis_Mensajes" ("IdInteresado");
-CREATE INDEX "IDX_TianguisTallas_Pub" ON "Tianguis_Tallas" ("IdPublicacion");
-CREATE INDEX "IDX_TianguisVentas_Vendedor" ON "Tianguis_Ventas" ("IdUsuarioVendedor");
-CREATE INDEX "IDX_TianguisVentas_Comprador" ON "Tianguis_Ventas" ("IdUsuarioComprador");
 CREATE INDEX idx_sist_donaciones_id_usuario ON "Sist_Aportaciones" ("Id_Usuario");
 CREATE INDEX idx_sist_donaciones_estatus ON "Sist_Aportaciones" ("Estatus");
 CREATE INDEX idx_sist_donaciones_id_archivo_rec ON "Sist_Aportaciones" ("Id_Archivo_Rec");
-CREATE INDEX "IX_Tienda_Preguntas_Prod" ON "Tienda_Producto_Preguntas" ("Id_Producto");
-CREATE INDEX "IX_Tienda_Preguntas_Padre" ON "Tienda_Producto_Preguntas" ("Id_Pregunta_Padre");
 CREATE INDEX "IX_Comunidad_Mensajes_Estado" ON "Sist_Comunidad_Mensajes" ("Estado");
 CREATE INDEX "IX_Comunidad_Mensajes_Fechas" ON "Sist_Comunidad_Mensajes" ("Fecha_Creacion", "Fecha_Expiracion");
 CREATE INDEX "IX_Comunidad_Mensajes_Tipo" ON "Sist_Comunidad_Mensajes" ("Tipo_Mensaje");
@@ -1623,13 +1119,10 @@ CREATE INDEX "IX_Comunidad_Respuestas_Hilo" ON "Sist_Comunidad_Respuestas" ("Id_
 CREATE INDEX "IX_Zonas_Evento" ON "Eventos_F_Zonas" ("Id_Evento");
 CREATE INDEX "IX_Asignaciones_Alojamiento" ON "Eventos_I_Alojamiento_Asignaciones" ("Id_Alojamiento");
 CREATE INDEX "IX_Zonas_Subtipos_Zona" ON "Eventos_F_Zonas_Subtipos" ("Id_Zona");
-CREATE INDEX "IDX_Devoluciones_Origen" ON "Devoluciones" ("Modulo_Origen", "Id_Referencia_Origen");
-CREATE INDEX "IDX_Devoluciones_Entregado" ON "Devoluciones" ("Entregado");
-CREATE INDEX "IDX_Dev_Pagos_IdDev" ON "Devoluciones_Pagos" ("Id_Devolucion");
 CREATE INDEX "IX_IngresosEfectivo_Cuenta" ON "Eventos_Ingresos_Efectivo_Log" ("Id_Cuenta");
 
 -- =================================================================
--- 15. ACTIVACIÓN DE SEGURIDAD A NIVEL DE FILAS (RLS)
+-- 15. ACTIVACIÃ“N DE SEGURIDAD A NIVEL DE FILAS (RLS)
 -- =================================================================
 
 ALTER TABLE "Sist_Roles" ENABLE ROW LEVEL SECURITY;
@@ -1662,9 +1155,6 @@ ALTER TABLE "Fin_Evidencias" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Fin_Traspasos" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Fin_Caja_Historial" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Sist_Aportaciones" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Devoluciones" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Devoluciones_Pagos" ENABLE ROW LEVEL SECURITY;
-
 ALTER TABLE "Eventos_Catalogo" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Eventos_Subtipos" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Eventos_Preguntas" ENABLE ROW LEVEL SECURITY;
@@ -1684,31 +1174,7 @@ ALTER TABLE "Eventos_H_Alojamiento_Capacidades" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Eventos_I_Alojamiento_Asignaciones" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Eventos_J_Prioridad_Alojamiento" ENABLE ROW LEVEL SECURITY;
 
-ALTER TABLE "Tienda_Cat_Estatus" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Cat_Estatus_Diseno" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Cat_Categorias" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Inventario_Base" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Productos_Venta" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Productos_Medidas" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Multimedia_Productos" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Solicitudes_Diseno" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Pedidos" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Detalles_Pedido" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Archivos_Diseno" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Carrito" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Producto_Preguntas" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tienda_Pedidos_Mensajes" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "Rifa_Cat_Sorteos" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Rifa_Boletos" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Rifas" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Rifas_Boletos" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Rifas_Ventas" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Rifas_Sorteo_Confirmaciones" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "RifasPersonales_Rifas" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "RifasPersonales_Boletos" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "RifasPersonales_Descartes" ENABLE ROW LEVEL SECURITY;
-
 ALTER TABLE "Encuestas_Catalogo" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Encuestas_Preguntas" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Encuestas_Respuestas_Header" ENABLE ROW LEVEL SECURITY;
@@ -1719,17 +1185,6 @@ ALTER TABLE "Encuestas_Archivos" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Sist_Cupones" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Sist_Cupones_Uso" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Sist_Cupones_Usuarios" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "Tianguis_Cat_EstadosPublicacion" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Cat_EstadosTrato" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Cat_TiposVenta" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Categorias" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Imagenes" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Interesados" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Mensajes" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Publicaciones" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Tallas" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Tianguis_Ventas" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "Sist_Comunidad_Auditoria_Ediciones" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Sist_Comunidad_Configuracion" ENABLE ROW LEVEL SECURITY;
@@ -1745,29 +1200,29 @@ ALTER TABLE "Paletas_Tematicas" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Paletas_Colores" ENABLE ROW LEVEL SECURITY;
 
 -- =================================================================
--- 16. INSERCIÓN DE DATOS SEMILLA (SEED DATA)
+-- 16. INSERCIÃ“N DE DATOS SEMILLA (SEED DATA)
 -- =================================================================
 
 -- A. ROLES
 INSERT INTO "Sist_Roles" ("Nombre", "Descripcion", "Es_Predeterminado", "Icono") VALUES 
 ('Administrador', 'Acceso total al sistema', FALSE, 'fa-user-shield'),
-('Tesorero', 'Gestión de finanzas y rifas', FALSE, 'fa-chart-line'),
+('Tesorero', 'GestiÃ³n de finanzas y rifas', FALSE, 'fa-chart-line'),
 ('Miembro', 'Acceso a tienda, recursos y eventos', TRUE, 'fa-user'),
-('Encargado Tienda', 'Gestión de inventario y pedidos', FALSE, 'fa-store');
+('Encargado Tienda', 'GestiÃ³n de inventario y pedidos', FALSE, 'fa-store');
 
--- B. MÓDULOS
+-- B. MÃ“DULOS
 INSERT INTO "Sist_Modulos" ("Nombre_Clave", "Nombre_Visible", "Orden_Visual", "VisibleRoles", "Activo") VALUES
 ('Home_Dashboard', 'Inicio', 1, FALSE, TRUE),
-('Seguridad_Usuarios', 'Gestión de Usuarios', 10, TRUE, TRUE),
+('Seguridad_Usuarios', 'GestiÃ³n de Usuarios', 10, TRUE, TRUE),
 ('Inst_Reuniones', 'Directorio de Reuniones', 20, FALSE, TRUE),
 ('Inst_Eventos', 'Calendario Eventos', 30, TRUE, TRUE),
 ('Fin_Caja', 'Caja General', 40, TRUE, TRUE),
 ('Fin_Rifas', 'Sorteos', 50, TRUE, TRUE),
 ('Tienda_Catalogo', 'Tienda Online', 60, TRUE, TRUE),
-('Rec_Materiales', 'Material Evangelístico', 70, TRUE, TRUE),
-('Tienda_Config', 'Configuración Tienda', 80, TRUE, TRUE),
-('Tienda_Entregas', 'Gestión de Entregas', 90, TRUE, TRUE),
-('Visitas', 'Reporte de Tráfico', 100, TRUE, TRUE);
+('Rec_Materiales', 'Material EvangelÃ­stico', 70, TRUE, TRUE),
+('Tienda_Config', 'ConfiguraciÃ³n Tienda', 80, TRUE, TRUE),
+('Tienda_Entregas', 'GestiÃ³n de Entregas', 90, TRUE, TRUE),
+('Visitas', 'Reporte de TrÃ¡fico', 100, TRUE, TRUE);
 
 -- C. USUARIO SUPERADMIN
 INSERT INTO "Sist_Usuarios" 
@@ -1779,21 +1234,21 @@ VALUES
 INSERT INTO "Sist_Permisos" ("Id_Rol", "Id_Modulo", "P_Leer", "P_Crear", "P_Editar", "P_Borrar", "P_Admin")
 SELECT 1, "Id_Modulo", TRUE, TRUE, TRUE, TRUE, TRUE FROM "Sist_Modulos";
 
--- E. PARÁMETROS GLOBALES
+-- E. PARÃMETROS GLOBALES
 INSERT INTO "Sist_Parametros" ("Clave", "Valor", "Descripcion", "Activo") 
 VALUES ('pPagoEventosXTransferencia', 'true', 'Habilita flujo de pago manual por transferencia bancaria', true);
 
 -- F. ALERTAS DE CORREO
 INSERT INTO "Sist_EnvioCorreos" ("Clave_Evento", "Descripcion", "Correos_Destino", "Activo") VALUES
-('NUEVA_DONACION', 'Aviso al equipo de soporte cuando un usuario envía un comprobante de donación para su revisión.', 'soporte@lospescadores.org', TRUE),
+('NUEVA_DONACION', 'Aviso al equipo de soporte cuando un usuario envÃ­a un comprobante de donaciÃ³n para su revisiÃ³n.', 'soporte@lospescadores.org', TRUE),
 ('NUEVA_TRANSFERENCIA_EVENTO', 'Aviso al equipo de soporte cuando un usuario sube un comprobante de pago/transferencia para un Evento.', 'soporte@lospescadores.com', TRUE),
-('DONACION_2DA_VALIDACION', 'Aviso a los revisores cuando una donación es modificada o rechazada en su primera revisión.', 'soporte@lospescadores.com', TRUE),
+('DONACION_2DA_VALIDACION', 'Aviso a los revisores cuando una donaciÃ³n es modificada o rechazada en su primera revisiÃ³n.', 'soporte@lospescadores.com', TRUE),
 ('WEB_IGLESIA_SOLICITADA', 'Aviso de solicitud de web de iglesia', 'f3lip947@gmail.com', TRUE),
-('WEB_IGLESIA_PUBLICADA', 'Aviso de publicación de web de iglesia', 'f3lip947@gmail.com', TRUE),
-('TIENDA_NUEVO_DISENO', 'Aviso de nuevo diseño en tienda', 'f3lip947@gmail.com', TRUE),
-('TIENDA_DISENO_DICTAMINADO', 'Aviso de dictamen de diseño en tienda', 'f3lip947@gmail.com', TRUE);
+('WEB_IGLESIA_PUBLICADA', 'Aviso de publicaciÃ³n de web de iglesia', 'f3lip947@gmail.com', TRUE),
+('TIENDA_NUEVO_DISENO', 'Aviso de nuevo diseÃ±o en tienda', 'f3lip947@gmail.com', TRUE),
+('TIENDA_DISENO_DICTAMINADO', 'Aviso de dictamen de diseÃ±o en tienda', 'f3lip947@gmail.com', TRUE);
 
--- G. ESTATUS Y CATEGORÍAS TIENDA
+-- G. ESTATUS Y CATEGORÃAS TIENDA
 INSERT INTO "Tienda_Cat_Estatus" ("Id_Estatus", "Nombre", "Color_Hex", "Orden") VALUES
 (0,  'Carrito de Compras', '#6c757d', 0),
 (15, 'Verificando Pago / Pendiente', '#ffc107', 1),
@@ -1802,27 +1257,27 @@ INSERT INTO "Tienda_Cat_Estatus" ("Id_Estatus", "Nombre", "Color_Hex", "Orden") 
 (99, 'Expirado', '#dc3545', 3);
 
 INSERT INTO "Tienda_Cat_Estatus_Diseno" ("Id_Estatus", "Nombre", "Color_Hex", "Descripcion") VALUES
-(1, 'Pendiente de Revisión', '#ffc107', 'En espera de revisión'),
-(2, 'Aprobado / Listo',      '#198754', 'Listo para producción'),
+(1, 'Pendiente de RevisiÃ³n', '#ffc107', 'En espera de revisiÃ³n'),
+(2, 'Aprobado / Listo',      '#198754', 'Listo para producciÃ³n'),
 (3, 'Rechazado / Corregir',  '#dc3545', 'Requiere ajustes por el cliente');
 
 INSERT INTO "Tienda_Cat_Categorias" ("Nombre", "Medidas_Default") VALUES 
 ('Textiles', 'CH, M, G, XG'), 
 ('Accesorios', 'Unitalla'), 
-('Papelería', 'N/A');
+('PapelerÃ­a', 'N/A');
 
 -- H. TIPOS DE PREGUNTA EN ENCUESTAS
 INSERT INTO "Encuestas_Tipos_Pregunta" ("Id_Tipo", "Descripcion", "Tipo_Dato_Esperado", "Tiene_Opciones") VALUES 
 ('Texto', 'Campo de texto corto', 'string', FALSE),
-('Parrafo', 'Área de texto largo', 'string', FALSE),
-('SiNo', 'Opción binaria (Sí/No)', 'bool', FALSE),
-('Opcion', 'Selección única (Botones/Pills)', 'string', TRUE),
-('Casillas', 'Selección múltiple (Checkboxes)', 'json', TRUE),
-('RatingStar', 'Calificación con estrellas (1-5)', 'int', FALSE),
+('Parrafo', 'Ãrea de texto largo', 'string', FALSE),
+('SiNo', 'OpciÃ³n binaria (SÃ­/No)', 'bool', FALSE),
+('Opcion', 'SelecciÃ³n Ãºnica (Botones/Pills)', 'string', TRUE),
+('Casillas', 'SelecciÃ³n mÃºltiple (Checkboxes)', 'json', TRUE),
+('RatingStar', 'CalificaciÃ³n con estrellas (1-5)', 'int', FALSE),
 ('RatingEmoji', 'Escala emocional (1-5)', 'int', FALSE),
-('RangoNumerico', 'Barra deslizante con mínimo y máximo', 'int', TRUE),
+('RangoNumerico', 'Barra deslizante con mÃ­nimo y mÃ¡ximo', 'int', TRUE),
 ('Fecha', 'Selector de fecha', 'date', FALSE),
-('Archivo', 'Subida de Archivo (Máx 2MB)', 'File', TRUE);
+('Archivo', 'Subida de Archivo (MÃ¡x 2MB)', 'File', TRUE);
 
 -- I. TIANGUIS DICCIONARIOS
 INSERT INTO "Tianguis_Cat_TiposVenta" ("IdTipo", "Nombre") VALUES
@@ -1842,25 +1297,25 @@ INSERT INTO "Tianguis_Cat_EstadosTrato" ("IdEstado", "Nombre") VALUES
 ('COM', 'Comprador Confirmado');
 
 INSERT INTO "Tianguis_Categorias" ("Nombre") VALUES
-('Hogar'), ('Tecnología'), ('Ropa y Accesorios'), ('Calzado'), ('Transporte'),
-('Herramientas y Construcción'), ('Niños y Bebés'), ('Mascotas'), ('Entretenimiento'),
-('Deportes'), ('Jardín y Exterior'), ('Servicios'), ('Otros');
+('Hogar'), ('TecnologÃ­a'), ('Ropa y Accesorios'), ('Calzado'), ('Transporte'),
+('Herramientas y ConstrucciÃ³n'), ('NiÃ±os y BebÃ©s'), ('Mascotas'), ('Entretenimiento'),
+('Deportes'), ('JardÃ­n y Exterior'), ('Servicios'), ('Otros');
 
 -- J. COMUNIDAD TIPOS DE MENSAJE
 INSERT INTO "Sist_Comunidad_Tipos_Mensaje" ("Clave", "Nombre", "Icono", "Solo_Directiva") VALUES 
 ('General', 'General', 'fa-envelope', FALSE),
-('Oracion', 'Petición de Oración', 'fa-person-praying', FALSE),
+('Oracion', 'PeticiÃ³n de OraciÃ³n', 'fa-person-praying', FALSE),
 ('Sugerencia', 'Sugerencia', 'fa-lightbulb', TRUE),
 ('Queja', 'Queja', 'fa-triangle-exclamation', TRUE),
 ('Visita', 'Solicitud de Visita', 'fa-house-chimney-user', TRUE);
 
 -- K. IGLESIAS Y MUNICIPIOS (DATOS COMPLETOS DE ICIAR)
 INSERT INTO iciar_municipios (nombre) VALUES 
-('Actopan'), ('Alvarado'), ('Ángel R. Cabada'), ('Boca del Río'), ('Coatepec'), 
+('Actopan'), ('Alvarado'), ('Ãngel R. Cabada'), ('Boca del RÃ­o'), ('Coatepec'), 
 ('Coatzacoalcos'), ('Coatzintla'), ('Coscomatepec'), ('Emiliano Zapata'), 
-('Ignacio de la Llave'), ('Ixtaczoquitlán'), ('La Antigua'), ('Medellín de Bravo'), 
+('Ignacio de la Llave'), ('IxtaczoquitlÃ¡n'), ('La Antigua'), ('MedellÃ­n de Bravo'), 
 ('Papantla'), ('Paso de Ovejas'), ('Perote'), ('San Rafael'), ('Tlalixcoyan'), 
-('Tres Valles'), ('Úrsulo Galván'), ('Veracruz'), ('Xalapa'), ('Xico')
+('Tres Valles'), ('Ãšrsulo GalvÃ¡n'), ('Veracruz'), ('Xalapa'), ('Xico')
 ON CONFLICT (nombre) DO NOTHING;
 
 -- B. IGLESIAS
@@ -1878,8 +1333,8 @@ VALUES
 (
     'Monte de Sion', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Actopan'),
-    'Atrás del campo deportivo', 'SN', 'Calle aún lado del campo', 'Paso de la Milpa', 
-    'Miércoles: 6:00 pm', 
+    'AtrÃ¡s del campo deportivo', 'SN', 'Calle aÃºn lado del campo', 'Paso de la Milpa', 
+    'MiÃ©rcoles: 6:00 pm', 
     'https://maps.app.goo.gl/hWnjy5AdYxk27GSU8'
 );
 
@@ -1890,17 +1345,17 @@ VALUES
     'La Hermosa', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Alvarado'),
     'Prncipal', 'S/N', 'Las Escolleras', 'Alvarado', 
-    'Lunes, Juvenil 7:00 p.m.\nMartes, Varones 7:00 p.m.\nMiércoles, Femenil 7:00 p.m.\nJueves, Familiar 7:00 p.m.\nViernes, Adultos mayores 7:00 p.m.\nSábado, Evangelismo 6:00 p.m.\nDomingo, Estudio 11:00 a.m.\nDomingo, Familiar 6:00 p.m.', 
+    'Lunes, Juvenil 7:00 p.m.\nMartes, Varones 7:00 p.m.\nMiÃ©rcoles, Femenil 7:00 p.m.\nJueves, Familiar 7:00 p.m.\nViernes, Adultos mayores 7:00 p.m.\nSÃ¡bado, Evangelismo 6:00 p.m.\nDomingo, Estudio 11:00 a.m.\nDomingo, Familiar 6:00 p.m.', 
     'https://maps.app.goo.gl/hVPvcbocFPHNXGVH7',
     'https://www.facebook.com/lahermosaescolleras'
 );
 
--- --- MUNICIPIO: ÁNGEL R. CABADA ---
+-- --- MUNICIPIO: ÃNGEL R. CABADA ---
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, referencia, horarios, mapa_url, facebook_url)
 VALUES 
 (
     'EBEN EZER', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Ángel R. Cabada'),
+    (SELECT id FROM iciar_municipios WHERE nombre = 'Ãngel R. Cabada'),
     '25 de octubre', '167', 'Barrio sur', 'Angel R cabada', 
     'Entre calle independencia y juan rodriguez clara',
     'Lun mar mie jueves vie dom templo sabado de higar 6pm', 
@@ -1908,30 +1363,30 @@ VALUES
 ),
 (
     'Peniel', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Ángel R. Cabada'),
-    'Av. Benito Juárez', 'S/n', 'La Florida', 'La Florida', 
+    (SELECT id FROM iciar_municipios WHERE nombre = 'Ãngel R. Cabada'),
+    'Av. Benito JuÃ¡rez', 'S/n', 'La Florida', 'La Florida', 
     NULL,
-    'Martes Servicio de Varones (6:00pm)\nMiércoles Servicio de Mujeres (6:00pm)\nJueves Servicio Discipulado y Doctrina (6:00pm)\nViernes Misión y Servicio de Jóvenes (6:00pm)\nDomingo Escuela Dominical 10:30am\nDomingo Servicio General (6:00pm)', 
+    'Martes Servicio de Varones (6:00pm)\nMiÃ©rcoles Servicio de Mujeres (6:00pm)\nJueves Servicio Discipulado y Doctrina (6:00pm)\nViernes MisiÃ³n y Servicio de JÃ³venes (6:00pm)\nDomingo Escuela Dominical 10:30am\nDomingo Servicio General (6:00pm)', 
     'https://maps.app.goo.gl/5SgoJjTXnN6PNc9w9',
     'https://www.facebook.com/EldherCanela'
 ),
 (
     'EBEN EZER', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Ángel R. Cabada'),
+    (SELECT id FROM iciar_municipios WHERE nombre = 'Ãngel R. Cabada'),
     '25 DE OCTUBRE', '167', 'BARRIO SUR', 'ANGEL R. CABADA', 
     'A MEDIA CUADRA DE LA ESCUELA PRIMARIA MIGUEL ALEMAN',
     'DE LUNES A VIERNES: 6 PM\nSABADOS: CULTOS DE CELULAS 6 PM\nDOMINGOS: CULTO GENERAL 6 PM', 
     'https://maps.app.goo.gl/ig7xqx9AA5UP4UvT6', NULL
 );
 
--- --- MUNICIPIO: BOCA DEL RÍO ---
+-- --- MUNICIPIO: BOCA DEL RÃO ---
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, horarios, mapa_url, facebook_url)
 VALUES 
 (
     'Monte Horeb', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Boca del Río'),
-    'Fausto P. Martínez', '78', 'Adalberto Tejeda', 'Boca del Río', 
-    'Martes familiar 19:30 h\nJueves General 19:30 h\nDomingo Alabanza y Enseñanza 11:00 h\nDomingo Culto Vespertino 13:00 h', 
+    (SELECT id FROM iciar_municipios WHERE nombre = 'Boca del RÃ­o'),
+    'Fausto P. MartÃ­nez', '78', 'Adalberto Tejeda', 'Boca del RÃ­o', 
+    'Martes familiar 19:30 h\nJueves General 19:30 h\nDomingo Alabanza y EnseÃ±anza 11:00 h\nDomingo Culto Vespertino 13:00 h', 
     'https://maps.app.goo.gl/2XgjH4KBmUUGHYa37',
     'https://www.facebook.com/MonteHorebBocadelRio'
 );
@@ -1942,8 +1397,8 @@ VALUES
 (
     'Iglesia Israel', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Coatepec'),
-    'Av. Constitución', 'N° 123', 'Centro', 'Coatepec', 
-    'Lunes Jóvenes: 7:00 PM\nMartes  Varones: 7:00 PM\nMiércoles Mujeres: 7:00 PM\nJueves Familiar: 7:00 PM\nViernes Niños: 7:00 PM\nDomingo Escuela Dominical 11:00 AM\nDomingo Familiar: 6:00 PM', 
+    'Av. ConstituciÃ³n', 'NÂ° 123', 'Centro', 'Coatepec', 
+    'Lunes JÃ³venes: 7:00 PM\nMartes  Varones: 7:00 PM\nMiÃ©rcoles Mujeres: 7:00 PM\nJueves Familiar: 7:00 PM\nViernes NiÃ±os: 7:00 PM\nDomingo Escuela Dominical 11:00 AM\nDomingo Familiar: 6:00 PM', 
     'https://maps.app.goo.gl/ujDZFEWsBQGrs79q8'
 );
 
@@ -1955,7 +1410,7 @@ VALUES
     (SELECT id FROM iciar_municipios WHERE nombre = 'Coatzacoalcos'),
     'Petroquimica y Pajaritos', '201', 'Paso a Desnivel', 'Coatzacoalcos', 
     'Cerca de la Escuela Primaria "Emiliano Zapata"',
-    'Martes: Varones 7:30 pm\nMiércoles: Mujeres 7:30 pm\nJueves: Culto general 7:30 pm\nViernes: tiempo de oración   7:30\nDomingo: Escuela Dominical 10:00 am', 
+    'Martes: Varones 7:30 pm\nMiÃ©rcoles: Mujeres 7:30 pm\nJueves: Culto general 7:30 pm\nViernes: tiempo de oraciÃ³n   7:30\nDomingo: Escuela Dominical 10:00 am', 
     'https://maps.app.goo.gl/oPuKN18QJwKuYTLs8'
 );
 
@@ -1963,10 +1418,10 @@ VALUES
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, horarios, mapa_url)
 VALUES 
 (
-    'La nueva Jerusalén', 
+    'La nueva JerusalÃ©n', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Coatzintla'),
-    'Ignacio Pérez Pérez', '0', 'Com . Guadalupe victoria', 'Guadalupe victoria', 
-    'Miércoles  de 6 pm\nViernes ,oración 6 pm\nDomingo culto 2 pm', 
+    'Ignacio PÃ©rez PÃ©rez', '0', 'Com . Guadalupe victoria', 'Guadalupe victoria', 
+    'MiÃ©rcoles  de 6 pm\nViernes ,oraciÃ³n 6 pm\nDomingo culto 2 pm', 
     'https://maps.app.goo.gl/zFSbysEbR6Cho71Z9'
 );
 
@@ -1976,8 +1431,8 @@ VALUES
 (
     'Peniel', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Coscomatepec'),
-    'Ursulo Galván', 'Sin número', 'Gonzalo Vázquez Vela', 'Coscomatepec ver', 
-    'Martes, oración 7:00 pm\nMiércoles, vanguardia 7:00 pm\nJueves, familiar 7:00 pm\nDomingo, matutino 6 a 8 am\nDomingo, escuela dominical 12:00am a 2:pm', 
+    'Ursulo GalvÃ¡n', 'Sin nÃºmero', 'Gonzalo VÃ¡zquez Vela', 'Coscomatepec ver', 
+    'Martes, oraciÃ³n 7:00 pm\nMiÃ©rcoles, vanguardia 7:00 pm\nJueves, familiar 7:00 pm\nDomingo, matutino 6 a 8 am\nDomingo, escuela dominical 12:00am a 2:pm', 
     'https://maps.app.goo.gl/offtkCjaVERpCkNv9'
 );
 
@@ -1985,11 +1440,11 @@ VALUES
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, referencia, horarios, mapa_url)
 VALUES 
 (
-    'Siloé Rinconada', 
+    'SiloÃ© Rinconada', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Emiliano Zapata'),
     'Francisco Javier Mina', 'S/N', 'S/N', 'Rinconada', 
     NULL,
-    'Martes varones 6:00pm\nMiercoles Vanguardia 6:00pm\nViernes jóvenes 6:00pm\nDomingo escuela dominical 11:00am \nDomingo culto general a las 6:00pm', 
+    'Martes varones 6:00pm\nMiercoles Vanguardia 6:00pm\nViernes jÃ³venes 6:00pm\nDomingo escuela dominical 11:00am \nDomingo culto general a las 6:00pm', 
     'https://maps.app.goo.gl/YeD8djKYkC6fPUzJA'
 ),
 (
@@ -1997,15 +1452,15 @@ VALUES
     (SELECT id FROM iciar_municipios WHERE nombre = 'Emiliano Zapata'),
     '20 de noviembre', '27', 'Centro', 'Carrizal', 
     NULL,
-    'Miércoles familiar 6:00 pm\nJueves oración 6:30 pm\nDomingo, escuela dominical 11:00 am', 
+    'MiÃ©rcoles familiar 6:00 pm\nJueves oraciÃ³n 6:30 pm\nDomingo, escuela dominical 11:00 am', 
     'https://maps.app.goo.gl/YJfTGPGXpRZm6xr48'
 ),
 (
     'Rinconcito del cielo', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Emiliano Zapata'),
-    'Benito Juárez S/N', 'S/N', 'Domicilio', 'Plan del rio', 
-    'Justo en esquina está ubicado el local de "Eventos Landa"',
-    'Domingo, escuela dominical: 11 a.m. \nMartes y Miércoles: 6 p.m. \nJueves, familiar: 6 p.m.', 
+    'Benito JuÃ¡rez S/N', 'S/N', 'Domicilio', 'Plan del rio', 
+    'Justo en esquina estÃ¡ ubicado el local de "Eventos Landa"',
+    'Domingo, escuela dominical: 11 a.m. \nMartes y MiÃ©rcoles: 6 p.m. \nJueves, familiar: 6 p.m.', 
     'https://maps.app.goo.gl/PB9cWAmQrARnwPeu6'
 );
 
@@ -2021,14 +1476,14 @@ VALUES
     'https://maps.app.goo.gl/9qoEqWcCBkpLhtLi8'
 );
 
--- --- MUNICIPIO: IXTACZOQUITLÁN ---
+-- --- MUNICIPIO: IXTACZOQUITLÃN ---
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, horarios, mapa_url)
 VALUES 
 (
-    'Jesús de Nazaret', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Ixtaczoquitlán'),
-    'Norte 2, esquina poniente 3', 'S/N', 'El Santísimo', 'Ixtaczoquitlán', 
-    'Martes, oración 6:30 pm\nJueves, culto familiar  6:30 pm\nDomingo, culto 3:30 pm', 
+    'JesÃºs de Nazaret', 
+    (SELECT id FROM iciar_municipios WHERE nombre = 'IxtaczoquitlÃ¡n'),
+    'Norte 2, esquina poniente 3', 'S/N', 'El SantÃ­simo', 'IxtaczoquitlÃ¡n', 
+    'Martes, oraciÃ³n 6:30 pm\nJueves, culto familiar  6:30 pm\nDomingo, culto 3:30 pm', 
     'https://maps.app.goo.gl/2dr2dnEBBb6mZbMF9'
 );
 
@@ -2036,29 +1491,29 @@ VALUES
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, horarios, mapa_url)
 VALUES 
 (
-    'Río Jordan', 
+    'RÃ­o Jordan', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'La Antigua'),
-    'Av. Hilario Gallo', '77', 'San Francisco de la Peña', 'Cd. J. Cardel', 
-    'Martes, oración 6:00 pm\nJueves, Culto General 6:00 pm\nDomingo, Escuela Dominical 11:00 pm\nDomingo, Culto General 6:00 pm', 
+    'Av. Hilario Gallo', '77', 'San Francisco de la PeÃ±a', 'Cd. J. Cardel', 
+    'Martes, oraciÃ³n 6:00 pm\nJueves, Culto General 6:00 pm\nDomingo, Escuela Dominical 11:00 pm\nDomingo, Culto General 6:00 pm', 
     'https://maps.app.goo.gl/T43UwyoCi4gdEDSH8'
 );
 
--- --- MUNICIPIO: MEDELLÍN DE BRAVO ---
+-- --- MUNICIPIO: MEDELLÃN DE BRAVO ---
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, horarios, mapa_url, facebook_url)
 VALUES 
 (
-    'Misión "Fuente de Vida"', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Medellín de Bravo'),
+    'MisiÃ³n "Fuente de Vida"', 
+    (SELECT id FROM iciar_municipios WHERE nombre = 'MedellÃ­n de Bravo'),
     'Pepehua Esq. Plaza de Toros', '213', 'Centro Fracc. Arboledas San Miguel', 'Fracc. ARBOLEDAS SAN MIGUEL', 
     'Jueves familiar 6pm', 
     'https://maps.app.goo.gl/fnH6TYqmxbMuCftS6',
     'https://www.facebook.com/profile.php?id=100079685193901'
 ),
 (
-    'SILOÉ', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Medellín de Bravo'),
-    'Flores Magón (Plan de Ayala y Luis Cabrera)', 'S/N', 'Obrera Campesina', 'El Tejar', 
-    '●LUNES 7.30pm\nOración (necesidades, fortaleza espiritual y salvación)\n\n●MIÉRCOLES 7.30pm\nDiscipulado (creciendo en la fe)\n\n●VIERNES 7.30pm\nCulto de Sociedades (familias completas en la casa del Sr)\n\n●DOMINGO 11am\nCulto familiar (Adoración, Escuela Dominical, Palabra de Dios)', 
+    'SILOÃ‰', 
+    (SELECT id FROM iciar_municipios WHERE nombre = 'MedellÃ­n de Bravo'),
+    'Flores MagÃ³n (Plan de Ayala y Luis Cabrera)', 'S/N', 'Obrera Campesina', 'El Tejar', 
+    'â—LUNES 7.30pm\nOraciÃ³n (necesidades, fortaleza espiritual y salvaciÃ³n)\n\nâ—MIÃ‰RCOLES 7.30pm\nDiscipulado (creciendo en la fe)\n\nâ—VIERNES 7.30pm\nCulto de Sociedades (familias completas en la casa del Sr)\n\nâ—DOMINGO 11am\nCulto familiar (AdoraciÃ³n, Escuela Dominical, Palabra de Dios)', 
     'https://goo.gl/maps/9aGwwdnHRya66w5e9',
     NULL
 );
@@ -2067,11 +1522,11 @@ VALUES
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, referencia, horarios, mapa_url, facebook_url)
 VALUES 
 (
-    'Príncipe de paz', 
+    'PrÃ­ncipe de paz', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Papantla'),
-    'Callejón privada Álvaro Obregón', 'No hay', 'Cerro de dolores', 'Papantla', 
-    'Por la calle Buenavista atrás del templo de los mormones',
-    'Martes,culto de fraternidad de varones:6:30 pm\nJueves,culto de vanguardia femenil:6:30 pm\nSábado,culto de jóvenes:4:30 pm\nDomingo,culto familiar :5:30 pm', 
+    'CallejÃ³n privada Ãlvaro ObregÃ³n', 'No hay', 'Cerro de dolores', 'Papantla', 
+    'Por la calle Buenavista atrÃ¡s del templo de los mormones',
+    'Martes,culto de fraternidad de varones:6:30 pm\nJueves,culto de vanguardia femenil:6:30 pm\nSÃ¡bado,culto de jÃ³venes:4:30 pm\nDomingo,culto familiar :5:30 pm', 
     'https://maps.app.goo.gl/GDNbnd1KjvD2JRn57',
     'https://facebook.com/profile.php?id=61567070350046'
 );
@@ -2082,9 +1537,9 @@ VALUES
 (
     'Maranatha', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Paso de Ovejas'),
-    'Carretera hacia loma del nanche.', 'Sin número', 'Sin colonia', 'Plan de manantial', 
+    'Carretera hacia loma del nanche.', 'Sin nÃºmero', 'Sin colonia', 'Plan de manantial', 
     NULL,
-    'Lunes jóvenes 6pm\nMartes varones 6pm\nMiércoles vanguardia 6pm\nJueves general 6pm\nViernes misión 6pm\nDomingo escuela dominical 11 am y culto general a las 6pm.', 
+    'Lunes jÃ³venes 6pm\nMartes varones 6pm\nMiÃ©rcoles vanguardia 6pm\nJueves general 6pm\nViernes misiÃ³n 6pm\nDomingo escuela dominical 11 am y culto general a las 6pm.', 
     'https://maps.app.goo.gl/7vcJJCaf4WX94WiX9',
     NULL
 ),
@@ -2093,7 +1548,7 @@ VALUES
     (SELECT id FROM iciar_municipios WHERE nombre = 'Paso de Ovejas'),
     'Domicilio Conocido', 'S/N', NULL, 'Zapotito', 
     'En la calle principal',
-    'Lunes, culto Juvenil 19:00\nMartes, culto Fraternidad de Varones 19:00\nMiércoles, culto Vanguardia Femenil 19:00\nJueves, culto familiar 19\nViernes, culto de Edad de oro 19:00\nDomingo 11:00 Escuela Dominical \nDomingo 18:00 culto vespertino', 
+    'Lunes, culto Juvenil 19:00\nMartes, culto Fraternidad de Varones 19:00\nMiÃ©rcoles, culto Vanguardia Femenil 19:00\nJueves, culto familiar 19\nViernes, culto de Edad de oro 19:00\nDomingo 11:00 Escuela Dominical \nDomingo 18:00 culto vespertino', 
     'https://maps.app.goo.gl/jeYvMtwMdhhSxgJo8',
     'https://www.facebook.com/profile.php?id=61562877343857'
 );
@@ -2104,7 +1559,7 @@ VALUES
 (
     '"Estrella de David"', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Perote'),
-    'Francisco I. Madero', 'Sin número', 'Francisco I. Madero', 'Francisco I. Madero', 
+    'Francisco I. Madero', 'Sin nÃºmero', 'Francisco I. Madero', 'Francisco I. Madero', 
     'Jueves familiar: 6:00 pm\nDomingo: Escuela Dominical: 12:00 pm', 
     'https://maps.app.goo.gl/ZG4NTH7N2qtgwGC5A'
 );
@@ -2115,7 +1570,7 @@ VALUES
 (
     'Emmanuel', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'San Rafael'),
-    'Mártires 14 de agosto', 'S/N', 'El Guayabal', 'El Guayabal', 
+    'MÃ¡rtires 14 de agosto', 'S/N', 'El Guayabal', 'El Guayabal', 
     'Jueves, familiar 5:00 p.m. - 7:00 p.m.\nDomingo, escuela dominical 10:00 a.m. - 11:00 a.m.\nDomingo, culto 11:00 a.m. - 01:00 p.m.', 
     'https://maps.app.goo.gl/hGGNyRV6Y3Knuo628'
 );
@@ -2126,7 +1581,7 @@ VALUES
 (
     'Rosa de Saron', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Tlalixcoyan'),
-    'Mártires de Tuzales', 'Sin número', 'Francisco I Madero', 'Piedras Negras Veracruz', 
+    'MÃ¡rtires de Tuzales', 'Sin nÃºmero', 'Francisco I Madero', 'Piedras Negras Veracruz', 
     'Lunes 6 pm Martes a viernes 7 pm\nDomingo 10:30 am y 5:30 pm', 
     'https://maps.app.goo.gl/KbVUegha8DbRhzqXA',
     NULL
@@ -2134,8 +1589,8 @@ VALUES
 (
     'Monte de Sion', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Tlalixcoyan'),
-    'Callé del Líbano', 'S/N', 'Libertad', 'Piedras Negras', 
-    'Miércoles: Mujeres-Varones 7:00 PM\nJueves: General  7:00 PM\nViernes: Jóvenes. 7:00 PM\nDomingo: Escuela Dominical 10:00 AM', 
+    'CallÃ© del LÃ­bano', 'S/N', 'Libertad', 'Piedras Negras', 
+    'MiÃ©rcoles: Mujeres-Varones 7:00 PM\nJueves: General  7:00 PM\nViernes: JÃ³venes. 7:00 PM\nDomingo: Escuela Dominical 10:00 AM', 
     'https://maps.app.goo.gl/C3iBEuZqsPohMeey5',
     'https://facebook.com/profile.php?id=100087873049477'
 );
@@ -2144,28 +1599,28 @@ VALUES
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, horarios, mapa_url)
 VALUES 
 (
-    'Getsemaní', 
+    'GetsemanÃ­', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Tres Valles'),
     'Ignacio Allende', 'S/N', 'Centro', 'Tres Valles', 
     'Jueves 6:30 pm\nDomingo, escuela dominical: 11:30 am\nDomingo culto: 6:30 pm', 
     'https://maps.app.goo.gl/NZHByRFWvXgwWJnN7'
 );
 
--- --- MUNICIPIO: ÚRSULO GALVÁN ---
+-- --- MUNICIPIO: ÃšRSULO GALVÃN ---
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, horarios, mapa_url)
 VALUES 
 (
-    'El Jardín de la oración', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Úrsulo Galván'),
-    'Miguel Alemán', 'Lote 3', 'Benito Juárez', 'Zempoala', 
-    'Miércoles, vanguardia femenil: 5:00 PM Jueves, familiar: 5:00 PM\nDomingo, escuela dominical: 11:00 am\nDomingo culto: 5:00 pm', 
+    'El JardÃ­n de la oraciÃ³n', 
+    (SELECT id FROM iciar_municipios WHERE nombre = 'Ãšrsulo GalvÃ¡n'),
+    'Miguel AlemÃ¡n', 'Lote 3', 'Benito JuÃ¡rez', 'Zempoala', 
+    'MiÃ©rcoles, vanguardia femenil: 5:00 PM Jueves, familiar: 5:00 PM\nDomingo, escuela dominical: 11:00 am\nDomingo culto: 5:00 pm', 
     'https://maps.app.goo.gl/CSZdHVT7f4m5hdSz6'
 ),
 (
     'Fuente de vida eterna', 
-    (SELECT id FROM iciar_municipios WHERE nombre = 'Úrsulo Galván'),
+    (SELECT id FROM iciar_municipios WHERE nombre = 'Ãšrsulo GalvÃ¡n'),
     'Ingenio La Gloria', 'Sn', 'La Gloria', 'La Gloria', 
-    'Martes oración. 5 PM\nJueves familiar: 5 PM\nDomingo Escuela dominical 11:30 am\nDomingo culto de evangelismo: 5 pm', 
+    'Martes oraciÃ³n. 5 PM\nJueves familiar: 5 PM\nDomingo Escuela dominical 11:30 am\nDomingo culto de evangelismo: 5 pm', 
     'https://maps.app.goo.gl/igKxc2tiNMsYRvEG6'
 );
 
@@ -2177,7 +1632,7 @@ VALUES
     (SELECT id FROM iciar_municipios WHERE nombre = 'Veracruz'),
     'Honestidad', '559', 'Hidalgo', 'Veracruz', 
     NULL,
-    'Lunes 18:00\nMiércoles 19:00\nJueves 19:00\nDomingo 11:30', 
+    'Lunes 18:00\nMiÃ©rcoles 19:00\nJueves 19:00\nDomingo 11:30', 
     'https://maps.app.goo.gl/T6vzSuLNatLcKme38',
     NULL
 ),
@@ -2186,16 +1641,16 @@ VALUES
     (SELECT id FROM iciar_municipios WHERE nombre = 'Veracruz'),
     'BRILLANTE', 'Num 5', 'Col predio Malibran las brujas', 'Veracruz', 
     NULL,
-    'Miércoles, culto general 7:00pm\n\nViernes, culto de oración 6:00pm\n\nDomingo, escuela dominical 4:00pm\n\nDomingo, culto general 6:15pm\n\nSábado, último sábado de mes (culto de vanguardia femenil) 7:00pm\n\nDomingo, 1er domingo de mes, culto de gratitud, 1 solo culto a las 5pm\n\nTodos los días oración de 5am a 7pm (2 turnos 5-6 am y de 6-7am)', 
+    'MiÃ©rcoles, culto general 7:00pm\n\nViernes, culto de oraciÃ³n 6:00pm\n\nDomingo, escuela dominical 4:00pm\n\nDomingo, culto general 6:15pm\n\nSÃ¡bado, Ãºltimo sÃ¡bado de mes (culto de vanguardia femenil) 7:00pm\n\nDomingo, 1er domingo de mes, culto de gratitud, 1 solo culto a las 5pm\n\nTodos los dÃ­as oraciÃ³n de 5am a 7pm (2 turnos 5-6 am y de 6-7am)', 
     'https://goo.gl/maps/FzYXcHnEqHu5hTdQ7',
     NULL
 ),
 (
-    'Misión "Aposento Alto"', 
+    'MisiÃ³n "Aposento Alto"', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Veracruz'),
     'Marquesina', '4386', 'Fracc. El Campanario', 'Veracruz Ver', 
     'Entre Baluarte y Eje Km 13.5',
-    'Miércoles culto juvenil 6:00 pm\nJueves: 6:00 PM\nDomingo, Dominical: 11:00 AM \nDomingo Culto General: 01:00 PM', 
+    'MiÃ©rcoles culto juvenil 6:00 pm\nJueves: 6:00 PM\nDomingo, Dominical: 11:00 AM \nDomingo Culto General: 01:00 PM', 
     'https://maps.app.goo.gl/757XiVDkvvgKap4FA',
     NULL
 ),
@@ -2204,7 +1659,7 @@ VALUES
     (SELECT id FROM iciar_municipios WHERE nombre = 'Veracruz'),
     'Constituyentes', '3021', 'Centro', 'Veracruz', 
     'Entre Aria y Esteban Morales.',
-    'Lunes. Oración. 7:00pm.\nMartes. Fraternidad. 7:00pm.\nMiércoles. Vanguardia. 7:00pm.\nJueves. Familiar. 7:00pm.\nSábado. Juvenil. 6:00pm.\nDomingo, escuela dominical. 11:00am.\nDomingo. Familiar. 1:00pm.', 
+    'Lunes. OraciÃ³n. 7:00pm.\nMartes. Fraternidad. 7:00pm.\nMiÃ©rcoles. Vanguardia. 7:00pm.\nJueves. Familiar. 7:00pm.\nSÃ¡bado. Juvenil. 6:00pm.\nDomingo, escuela dominical. 11:00am.\nDomingo. Familiar. 1:00pm.', 
     'https://maps.app.goo.gl/GUfaamv3k69MUzdH7',
     'https://facebook.com/bethaniaiciver'
 );
@@ -2213,10 +1668,10 @@ VALUES
 INSERT INTO iciar_iglesias (nombre, municipio_id, calle, numero, colonia, localidad, horarios, mapa_url, facebook_url)
 VALUES 
 (
-    'Príncipe de Paz', 
+    'PrÃ­ncipe de Paz', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Xalapa'),
-    'Justino Sarmiento', '16', 'José Cardel', 'Xalapa', 
-    'Lunes, Jóvenes: 7:30 am\nMartes, Varones: 7:00 pm\nMiercoles, Mujeres: 6:00 pm\nJueves, Familiar: 7:00 pm\nViernes, Edad de oro: 6:00 pm\nDomingo Escuela dominical: 11:00 am\nDomingo vespertino: 6:00 pm', 
+    'Justino Sarmiento', '16', 'JosÃ© Cardel', 'Xalapa', 
+    'Lunes, JÃ³venes: 7:30 am\nMartes, Varones: 7:00 pm\nMiercoles, Mujeres: 6:00 pm\nJueves, Familiar: 7:00 pm\nViernes, Edad de oro: 6:00 pm\nDomingo Escuela dominical: 11:00 am\nDomingo vespertino: 6:00 pm', 
     'https://maps.app.goo.gl/mMLANTXA2rahxfxK7',
     'https://www.facebook.com/PrincipeICI'
 ),
@@ -2224,15 +1679,15 @@ VALUES
     'Ebenezer', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Xalapa'),
     'Rio Seco', '315', 'Carolino Anaya', 'Xalapa', 
-    'Domingos \nMatutino 7 am\nEscuela Dominical 11:30 am\nCulto Devocional 6 pm\nMartes y Viernes Oración 7 pm\nJueves 7 pm', 
+    'Domingos \nMatutino 7 am\nEscuela Dominical 11:30 am\nCulto Devocional 6 pm\nMartes y Viernes OraciÃ³n 7 pm\nJueves 7 pm', 
     'https://maps.app.goo.gl/12pYvSAwCucwqCi99',
     NULL
 ),
 (
     'Alfa y Omega', 
     (SELECT id FROM iciar_municipios WHERE nombre = 'Xalapa'),
-    'Escuadron 201', '27', 'Portón colorado', 'Xalapa', 
-    'Lunes, grupos celulares 7:00 pm\nMartes, varones 7:00 pm\nMiércoles, vanguardia 7:00 pm\nJueves, grupos celulares 7:00 pm\nDomingo, escuela dominical 11:30 am\nDomingo, general 1:00 pm', 
+    'Escuadron 201', '27', 'PortÃ³n colorado', 'Xalapa', 
+    'Lunes, grupos celulares 7:00 pm\nMartes, varones 7:00 pm\nMiÃ©rcoles, vanguardia 7:00 pm\nJueves, grupos celulares 7:00 pm\nDomingo, escuela dominical 11:30 am\nDomingo, general 1:00 pm', 
     'https://maps.app.goo.gl/exAYdAuGiQ848sXs5',
     'https://www.facebook.com/profile.php?id=100090537957385'
 );
@@ -2260,23 +1715,23 @@ CREATE TABLE IF NOT EXISTS iciar_plantillas_web (
     activa BOOLEAN DEFAULT TRUE
 );
 
--- 2. Limpiar la tabla y reiniciar el ID (por si tenías las 3 anteriores)
+-- 2. Limpiar la tabla y reiniciar el ID (por si tenÃ­as las 3 anteriores)
 TRUNCATE TABLE iciar_plantillas_web RESTART IDENTITY CASCADE;
 
 -- 3. Insertar las 10 Plantillas Creativas
 INSERT INTO iciar_plantillas_web (nombre, descripcion, ruta_vista) VALUES 
-('Clásica', 'Diseño tradicional y equilibrado (Historia, Horarios y Mapa). Ideal para empezar.', 'Clasica'),
-('Minimalista', 'Diseño limpio y moderno. Menos es más, enfocado en tipografía y lectura clara.', 'Minimalista'),
-('Galería Visual', 'Foco en imágenes grandes y carruseles. Perfecto si tienes excelentes fotografías.', 'Galeria'),
-('Comunidad Activa', 'Destaca los Eventos y Avisos en primer plano. Diseñada para congregaciones con mucha actividad.', 'Comunidad'),
+('ClÃ¡sica', 'DiseÃ±o tradicional y equilibrado (Historia, Horarios y Mapa). Ideal para empezar.', 'Clasica'),
+('Minimalista', 'DiseÃ±o limpio y moderno. Menos es mÃ¡s, enfocado en tipografÃ­a y lectura clara.', 'Minimalista'),
+('GalerÃ­a Visual', 'Foco en imÃ¡genes grandes y carruseles. Perfecto si tienes excelentes fotografÃ­as.', 'Galeria'),
+('Comunidad Activa', 'Destaca los Eventos y Avisos en primer plano. DiseÃ±ada para congregaciones con mucha actividad.', 'Comunidad'),
 ('Multimedia & Streaming', 'Pone los videos de YouTube y FB al inicio. Ideal para iglesias que transmiten en vivo.', 'Multimedia'),
 ('Contacto Directo', 'Orientada al evangelismo. Botones gigantes de WhatsApp y "Llegar al lugar".', 'Contacto'),
-('Revista Editorial', 'Estilo blog elegante. La historia y los avisos se muestran como artículos de lectura.', 'Revista'),
-('Moderna Dark Mode', 'Diseño en tonos oscuros con contrastes llamativos. Muy atractiva para ministerios juveniles.', 'ModernaDark'),
-('Territorio y Mapa', 'Enfoque total en la ubicación, rutas de llegada y horarios. Diseño de mapa destacado.', 'Territorio'),
-('Landing One-Pager', 'Toda la información fluye en una sola página larga y continua con menú pegajoso.', 'OnePager');
+('Revista Editorial', 'Estilo blog elegante. La historia y los avisos se muestran como artÃ­culos de lectura.', 'Revista'),
+('Moderna Dark Mode', 'DiseÃ±o en tonos oscuros con contrastes llamativos. Muy atractiva para ministerios juveniles.', 'ModernaDark'),
+('Territorio y Mapa', 'Enfoque total en la ubicaciÃ³n, rutas de llegada y horarios. DiseÃ±o de mapa destacado.', 'Territorio'),
+('Landing One-Pager', 'Toda la informaciÃ³n fluye en una sola pÃ¡gina larga y continua con menÃº pegajoso.', 'OnePager');
 
--- 4. Crear la relación con la tabla Web (Si no la habías creado)
+-- 4. Crear la relaciÃ³n con la tabla Web (Si no la habÃ­as creado)
 -- (Si ya existe, esto puede dar una advertencia, puedes ignorarla)
 ALTER TABLE iciar_iglesias_web
 DROP CONSTRAINT IF EXISTS fk_plantilla_web;
@@ -2285,7 +1740,7 @@ ALTER TABLE iciar_iglesias_web
 ADD CONSTRAINT fk_plantilla_web 
 FOREIGN KEY (plantilla_id) REFERENCES iciar_plantillas_web(id) ON DELETE SET DEFAULT;
 
--- Agregar la columna slug (única) a la tabla principal
+-- Agregar la columna slug (Ãºnica) a la tabla principal
 ALTER TABLE iciar_iglesias ADD COLUMN IF NOT EXISTS slug VARCHAR(150) UNIQUE;
 
 -- (Opcional) Si ya tienes iglesias registradas, puedes actualizar sus slugs temporalmente 
@@ -2303,7 +1758,7 @@ ALTER TABLE iciar_iglesias_web ALTER COLUMN youtube_url TYPE TEXT;
 -- Ensanchar la columna del reproductor de Video
 ALTER TABLE iciar_iglesias_multimedia ALTER COLUMN url_embed TYPE TEXT;
 
--- Ensanchar las columnas de imágenes (por si pegan URLs larguísimas)
+-- Ensanchar las columnas de imÃ¡genes (por si pegan URLs larguÃ­simas)
 ALTER TABLE iciar_iglesias_galeria ALTER COLUMN url_imagen TYPE TEXT;
 ALTER TABLE iciar_iglesias_eventos ALTER COLUMN imagen_url TYPE TEXT;
 
@@ -2315,7 +1770,7 @@ ADD COLUMN "Id_Iglesia_Asignada" integer NULL;
 CREATE TABLE iciar_iglesias_solicitudes (
     id SERIAL PRIMARY KEY,
     usuario_id integer NOT NULL,
-    iglesia_existente_id integer NULL, -- Lleno si eligió "Vincular", Null si es "Nueva"
+    iglesia_existente_id integer NULL, -- Lleno si eligiÃ³ "Vincular", Null si es "Nueva"
     nombre character varying(150),
     municipio_id integer,
     localidad character varying(150),
@@ -2358,21 +1813,7 @@ ALTER TABLE "Sist_CodigosQR"
 ADD COLUMN "FormaOjos" VARCHAR(50) DEFAULT 'Cuadrado',
 ADD COLUMN "FormaModulos" VARCHAR(50) DEFAULT 'Cuadrado';
 
-CREATE TABLE "Tienda_Producto_Preguntas" (
-    "Id_Pregunta" SERIAL PRIMARY KEY,
-    "Id_Producto" INT NOT NULL,
-    "Id_Usuario" INT NOT NULL, -- Guardamos quién fue por control interno, aunque sea anónimo en la vista
-    "Mensaje" TEXT NOT NULL,
-    "Fecha_Registro" TIMESTAMP DEFAULT NOW(),
-    "Id_Pregunta_Padre" INT NULL REFERENCES "Tienda_Producto_Preguntas"("Id_Pregunta") ON DELETE CASCADE,
-    "Es_Admin" BOOLEAN DEFAULT FALSE
-);
-
-
--- Índices para que la tienda no se vuelva lenta al cargar los comentarios
-CREATE INDEX "IX_Tienda_Preguntas_Prod" ON "Tienda_Producto_Preguntas"("Id_Producto");
-CREATE INDEX "IX_Tienda_Preguntas_Padre" ON "Tienda_Producto_Preguntas"("Id_Pregunta_Padre");
-
+-- Ãndices para que la tienda no se vuelva lenta al cargar los comentarios
 -- 1. Eliminamos la columna pesada que guarda el binario (bytea)
 ALTER TABLE "Tienda_Multimedia_Productos"
 DROP COLUMN "Contenido_Binario";
@@ -2380,23 +1821,6 @@ DROP COLUMN "Contenido_Binario";
 -- 2. Agregamos la nueva columna para almacenar la URL de Cloudinary
 ALTER TABLE "Tienda_Multimedia_Productos"
 ADD COLUMN "UrlImagen" TEXT;
-
-ALTER TABLE "Tienda_Producto_Preguntas" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE TABLE "Tienda_Pedidos_Mensajes" (
-    "Id_Mensaje" SERIAL PRIMARY KEY,
-    "Id_Pedido" INTEGER NOT NULL,
-    "Id_Usuario" INTEGER NOT NULL,
-    "Mensaje" TEXT NOT NULL,
-    "Fecha_Registro" TIMESTAMP NOT NULL DEFAULT NOW(),
-    "Es_Admin" BOOLEAN NOT NULL DEFAULT FALSE
-);
-
-
-ALTER TABLE "Tienda_Pedidos_Mensajes" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "Tienda_Pedidos_Mensajes" ADD COLUMN "Leido" BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- 1. TABLA DE TRASPASOS (Vinculada directo a los Usuarios)
 CREATE TABLE "Fin_Traspasos" (
@@ -2411,7 +1835,7 @@ CREATE TABLE "Fin_Traspasos" (
 );
 
 ALTER TABLE "Fin_Traspasos" ENABLE ROW LEVEL SECURITY;
--- 2. TABLA PARA EL HISTORIAL DE EDICIONES (Ya habías aprobado el historial)
+-- 2. TABLA PARA EL HISTORIAL DE EDICIONES (Ya habÃ­as aprobado el historial)
 CREATE TABLE "Fin_Caja_Historial" (
     "Id_Historial" SERIAL PRIMARY KEY,
     "Id_Movimiento" INTEGER NOT NULL REFERENCES "Fin_Caja"("Id_Movimiento") ON DELETE CASCADE,
@@ -2442,20 +1866,20 @@ ADD COLUMN es_personalizable BOOLEAN DEFAULT FALSE;
 INSERT INTO iciar_plantillas_web 
 (nombre, descripcion, ruta_vista, activa, es_personalizable) 
 VALUES 
-('Modular / Personalizada', 'Construye tu propio diseño mediante bloques, colores y tipografías personalizadas.', 'Modular', TRUE, TRUE);
+('Modular / Personalizada', 'Construye tu propio diseÃ±o mediante bloques, colores y tipografÃ­as personalizadas.', 'Modular', TRUE, TRUE);
 
 
 CREATE TABLE iciar_iglesias_web_diseno (
     id SERIAL PRIMARY KEY,
     iglesia_id INTEGER NOT NULL,
-    estado VARCHAR(3) NOT NULL, -- Para mantener la sincronía con 'BOR' y 'PUB'
+    estado VARCHAR(3) NOT NULL, -- Para mantener la sincronÃ­a con 'BOR' y 'PUB'
     configuracion_json JSONB NOT NULL DEFAULT '{}'::jsonb,
     fecha_actualizacion TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
     
-    -- Opcional: Si tienes llaves foráneas configuradas, descomenta la siguiente línea
+    -- Opcional: Si tienes llaves forÃ¡neas configuradas, descomenta la siguiente lÃ­nea
     CONSTRAINT fk_iglesia_diseno FOREIGN KEY (iglesia_id) REFERENCES iciar_iglesias(id) ON DELETE CASCADE,
     
-    -- Evita que haya más de un 'BOR' o 'PUB' por iglesia
+    -- Evita que haya mÃ¡s de un 'BOR' o 'PUB' por iglesia
     CONSTRAINT uq_iglesia_estado_diseno UNIQUE (iglesia_id, estado) 
 );
 
@@ -2464,22 +1888,22 @@ CREATE TABLE iciar_iglesias_web_diseno (
 -- =========================================================================
 CREATE TABLE iciar_iglesias_secciones (
     id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,        -- Ej. "Navegación", "Cabecera Principal"
+    nombre VARCHAR(100) NOT NULL,        -- Ej. "NavegaciÃ³n", "Cabecera Principal"
     identificador VARCHAR(50) NOT NULL,  -- Ej. "Navbar", "Hero" (Usado en el JSON y C#)
     orden_sugerido INTEGER NOT NULL,     -- Para mostrar en el panel de edicion de arriba a abajo
     activa BOOLEAN DEFAULT TRUE
 );
 
 -- =========================================================================
--- TABLA 2: DISEÑOS / VARIANTES POR SECCIÓN
+-- TABLA 2: DISEÃ‘OS / VARIANTES POR SECCIÃ“N
 -- =========================================================================
 CREATE TABLE iciar_iglesias_secciones_disenos (
     id SERIAL PRIMARY KEY,
     seccion_id INTEGER NOT NULL,
-    nombre VARCHAR(100) NOT NULL,        -- Ej. "Clásico Pegajoso", "Modo Cine"
+    nombre VARCHAR(100) NOT NULL,        -- Ej. "ClÃ¡sico Pegajoso", "Modo Cine"
     ruta_vista VARCHAR(100) NOT NULL,    -- Ej. "_NavbarClasico" (VITAL: El nombre del archivo .cshtml)
     descripcion VARCHAR(255),            -- Ayuda visual para el usuario
-    url_preview VARCHAR(255),            -- Ruta a la imagen miniatura que verá en el editor
+    url_preview VARCHAR(255),            -- Ruta a la imagen miniatura que verÃ¡ en el editor
     activa BOOLEAN DEFAULT TRUE,
     
     CONSTRAINT fk_diseno_seccion FOREIGN KEY (seccion_id) 
@@ -2490,85 +1914,85 @@ CREATE TABLE iciar_iglesias_secciones_disenos (
 -- INSERTAR SECCIONES (PADRES)
 -- =========================================================================
 INSERT INTO iciar_iglesias_secciones (id, nombre, identificador, orden_sugerido) VALUES
-(1, 'Navegación (Navbar)', 'Navbar', 1),
+(1, 'NavegaciÃ³n (Navbar)', 'Navbar', 1),
 (2, 'Cabecera Principal (Hero)', 'Hero', 2),
 (3, 'Tablero de Avisos', 'Avisos', 3),
-(4, 'Próximos Eventos', 'Eventos', 4),
+(4, 'PrÃ³ximos Eventos', 'Eventos', 4),
 (5, 'Historia y Nosotros', 'Historia', 5),
-(6, 'Galería Fotográfica', 'Galeria', 6),
+(6, 'GalerÃ­a FotogrÃ¡fica', 'Galeria', 6),
 (7, 'Mensajes y Multimedia', 'Multimedia', 7),
 (8, 'Contacto y Mapas', 'Contacto', 8),
 (9, 'Puntos Doctrinales', 'Doctrina', 9),
-(10, 'Pie de Página (Footer)', 'Footer', 10);
+(10, 'Pie de PÃ¡gina (Footer)', 'Footer', 10);
 
--- Ajustamos el autoincremental de la secuencia por si insertamos más manualmente después
+-- Ajustamos el autoincremental de la secuencia por si insertamos mÃ¡s manualmente despuÃ©s
 SELECT setval('iciar_iglesias_secciones_id_seq', (SELECT MAX(id) FROM iciar_iglesias_secciones));
 
 -- =========================================================================
--- INSERTAR DISEÑOS (VARIANTES)
+-- INSERTAR DISEÃ‘OS (VARIANTES)
 -- =========================================================================
 
 -- 1. NAVBAR
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(1, 'Clásico Sólido Pegajoso', '_NavbarClasico', 'Menú tradicional con fondo de color sólido.'),
-(1, 'Pastilla Flotante (Glassmorphism)', '_NavbarFlotante', 'Menú centrado con efecto cristal.'),
+(1, 'ClÃ¡sico SÃ³lido Pegajoso', '_NavbarClasico', 'MenÃº tradicional con fondo de color sÃ³lido.'),
+(1, 'Pastilla Flotante (Glassmorphism)', '_NavbarFlotante', 'MenÃº centrado con efecto cristal.'),
 (1, 'Transparente Superpuesto', '_NavbarTransparente', 'Se funde con la imagen de la cabecera.'),
 (1, 'Editorial Minimalista', '_NavbarEditorial', 'Fondo limpio, letras elegantes estilo revista.');
 
 -- 2. HERO
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(2, 'Clásico Centrado', '_HeroCentrado', 'Imagen de fondo oscura con texto al centro.'),
-(2, 'Cuadrícula Bento', '_HeroBento', 'Mosaico interactivo moderno con botones gigantes.'),
-(2, 'Carrusel Dinámico', '_HeroCarrusel', 'Las imágenes rotan de fondo automáticamente.'),
-(2, 'Modo Transmisión (Cine)', '_HeroCine', 'Un reproductor de YouTube gigante es el protagonista.'),
-(2, 'Estilo Editorial', '_HeroEditorial', 'Letras gigantes y una foto artística estilo periódico.'),
-(2, 'Pantalla Dividida con Mapa', '_HeroSplit', 'Información a un lado, Google Maps al otro.'),
-(2, 'Minimalista a la Izquierda', '_HeroMinimalista', 'Sin imagen de fondo, diseño limpio y rápido.');
+(2, 'ClÃ¡sico Centrado', '_HeroCentrado', 'Imagen de fondo oscura con texto al centro.'),
+(2, 'CuadrÃ­cula Bento', '_HeroBento', 'Mosaico interactivo moderno con botones gigantes.'),
+(2, 'Carrusel DinÃ¡mico', '_HeroCarrusel', 'Las imÃ¡genes rotan de fondo automÃ¡ticamente.'),
+(2, 'Modo TransmisiÃ³n (Cine)', '_HeroCine', 'Un reproductor de YouTube gigante es el protagonista.'),
+(2, 'Estilo Editorial', '_HeroEditorial', 'Letras gigantes y una foto artÃ­stica estilo periÃ³dico.'),
+(2, 'Pantalla Dividida con Mapa', '_HeroSplit', 'InformaciÃ³n a un lado, Google Maps al otro.'),
+(2, 'Minimalista a la Izquierda', '_HeroMinimalista', 'Sin imagen de fondo, diseÃ±o limpio y rÃ¡pido.');
 
 -- 3. AVISOS
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(3, 'Cuadrícula de Tarjetas', '_AvisosGrid', 'Tarjetas con bordes de color laterales.'),
-(3, 'Lista Compacta (Sidebar)', '_AvisosSidebar', 'Diseño vertical apilado, ahorra espacio.'),
-(3, 'Líneas Editoriales', '_AvisosEditorial', 'Texto puro con líneas divisorias sobrias.'),
-(3, 'Tarjetas Glass/Neón', '_AvisosGlass', 'Estilo oscuro con fondos translúcidos.');
+(3, 'CuadrÃ­cula de Tarjetas', '_AvisosGrid', 'Tarjetas con bordes de color laterales.'),
+(3, 'Lista Compacta (Sidebar)', '_AvisosSidebar', 'DiseÃ±o vertical apilado, ahorra espacio.'),
+(3, 'LÃ­neas Editoriales', '_AvisosEditorial', 'Texto puro con lÃ­neas divisorias sobrias.'),
+(3, 'Tarjetas Glass/NeÃ³n', '_AvisosGlass', 'Estilo oscuro con fondos translÃºcidos.');
 
 -- 4. EVENTOS
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(4, 'Tarjeta Vertical Clásica', '_EventosVertical', 'Imagen arriba, fecha sobresaliente y texto abajo.'),
-(4, 'Tarjeta Horizontal Apaisada', '_EventosHorizontal', 'Imagen a la izquierda, información a la derecha.'),
-(4, 'Panorámico Editorial', '_EventosPanoramico', 'Imágenes muy anchas con texto sofisticado.'),
-(4, 'Moderno Neón', '_EventosNeox', 'Caja de fecha superpuesta en la foto.');
+(4, 'Tarjeta Vertical ClÃ¡sica', '_EventosVertical', 'Imagen arriba, fecha sobresaliente y texto abajo.'),
+(4, 'Tarjeta Horizontal Apaisada', '_EventosHorizontal', 'Imagen a la izquierda, informaciÃ³n a la derecha.'),
+(4, 'PanorÃ¡mico Editorial', '_EventosPanoramico', 'ImÃ¡genes muy anchas con texto sofisticado.'),
+(4, 'Moderno NeÃ³n', '_EventosNeox', 'Caja de fecha superpuesta en la foto.');
 
 -- 5. HISTORIA
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(5, 'Texto Centrado Simple', '_HistoriaCentrada', 'Lectura fácil, sin cajas ni bordes.'),
+(5, 'Texto Centrado Simple', '_HistoriaCentrada', 'Lectura fÃ¡cil, sin cajas ni bordes.'),
 (5, 'Caja Destacada', '_HistoriaCaja', 'El texto se encierra en una tarjeta blanca con sombra.'),
 (5, 'Revista a Dos Columnas', '_HistoriaColumnas', 'Texto dividido con Letra Capital gigante.'),
-(5, 'Título Fijo Lateral', '_HistoriaSticky', 'El título acompaña la lectura al hacer scroll.');
+(5, 'TÃ­tulo Fijo Lateral', '_HistoriaSticky', 'El tÃ­tulo acompaÃ±a la lectura al hacer scroll.');
 
 -- 6. GALERIA
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(6, 'Cuadrícula 1:1', '_GaleriaCuadrada', 'Todas las fotos se recortan en cuadrados perfectos.'),
+(6, 'CuadrÃ­cula 1:1', '_GaleriaCuadrada', 'Todas las fotos se recortan en cuadrados perfectos.'),
 (6, 'Mosaico (Masonry)', '_GaleriaMasonry', 'Las fotos respetan sus proporciones originales.'),
-(6, 'Modo Cine 16:9', '_GaleriaCine', 'Fotos rectangulares panorámicas.'),
-(6, 'Retrato 3:4', '_GaleriaRetrato', 'Exposición fotográfica vertical estilo galería de arte.');
+(6, 'Modo Cine 16:9', '_GaleriaCine', 'Fotos rectangulares panorÃ¡micas.'),
+(6, 'Retrato 3:4', '_GaleriaRetrato', 'ExposiciÃ³n fotogrÃ¡fica vertical estilo galerÃ­a de arte.');
 
 -- 7. MULTIMEDIA
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(7, 'Cuadrícula de Videos', '_MultiGrid', 'Grid tradicional de videos en 2 columnas.'),
+(7, 'CuadrÃ­cula de Videos', '_MultiGrid', 'Grid tradicional de videos en 2 columnas.'),
 (7, 'Carrusel Horizontal', '_MultiScroll', 'Los videos se deslizan hacia los lados (Estilo Netflix).'),
 (7, 'Video Gigante', '_MultiGigante', 'Un video grande abarcando todo el ancho.'),
-(7, 'Reproductor Limpio', '_MultiLimpio', 'Sin marcos ni fondos, integrado al diseño.');
+(7, 'Reproductor Limpio', '_MultiLimpio', 'Sin marcos ni fondos, integrado al diseÃ±o.');
 
 -- 8. CONTACTO / MAPAS (Bloques independientes)
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(8, 'Grid de Contacto Moderno', '_ContactoBento', 'Cajas grandes para ubicación y WhatsApp.'),
+(8, 'Grid de Contacto Moderno', '_ContactoBento', 'Cajas grandes para ubicaciÃ³n y WhatsApp.'),
 (8, 'Tarjeta Minimalista', '_ContactoTarjeta', 'Toda la info condensada en una sola caja blanca.'),
 (8, 'Mapa Gigante Final', '_MapaGigante', 'El mapa ocupa el 100% de la pantalla horizontal.');
 
 -- 9. DOCTRINA
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(9, 'Acordeón Universal', '_Doctrina', 'Se adapta automáticamente a los colores elegidos.');
+(9, 'AcordeÃ³n Universal', '_Doctrina', 'Se adapta automÃ¡ticamente a los colores elegidos.');
 
 -- 10. FOOTER
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
@@ -2577,7 +2001,7 @@ INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, de
 (10, 'Dividido en 2 Columnas', '_FooterDividido', 'Contacto a la izquierda, redes a la derecha.');
 
 -- =====================================================================
--- INSERT DE PRUEBA: ESTADO PÚBLICO (PUB) Y BORRADOR (BOR) PARA IGLESIA ID = 1
+-- INSERT DE PRUEBA: ESTADO PÃšBLICO (PUB) Y BORRADOR (BOR) PARA IGLESIA ID = 1
 -- =====================================================================
 
 INSERT INTO iciar_iglesias_web_diseno (iglesia_id, estado, configuracion_json, fecha_actualizacion) 
@@ -2663,9 +2087,7 @@ ALTER TABLE "Eventos_B_Asistentes" ADD COLUMN "Correo_Externo" VARCHAR(200) NULL
 ALTER TABLE "Eventos_B_Asistentes" ADD COLUMN "Telefono_Externo" VARCHAR(50) NULL;
 ALTER TABLE "Eventos_B_Asistentes" ADD COLUMN "Es_Carga_Masiva" BOOLEAN DEFAULT FALSE;
 
-ALTER TABLE "Tienda_Productos_Venta" ADD COLUMN "Url_Imagen_Impresion" text NULL;
-
--- Crear tabla principal del Catálogo Temático
+-- Crear tabla principal del CatÃ¡logo TemÃ¡tico
 CREATE TABLE "Paletas_Tematicas" (
     "IdPaleta" SERIAL PRIMARY KEY,
     "IdUsuarioCreador" INT NOT NULL,
@@ -2674,7 +2096,7 @@ CREATE TABLE "Paletas_Tematicas" (
     "FechaCreacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Crear tabla dinámica de colores (permite N cantidad de colores por paleta)
+-- Crear tabla dinÃ¡mica de colores (permite N cantidad de colores por paleta)
 CREATE TABLE "Paletas_Colores" (
     "IdColor" SERIAL PRIMARY KEY,
     "IdPaleta" INT REFERENCES "Paletas_Tematicas"("IdPaleta") ON DELETE CASCADE,
@@ -2692,70 +2114,34 @@ ALTER TABLE "Paletas_Colores" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Eventos_Catalogo"
 ADD COLUMN "Permitir_Pago_Tarjeta" boolean NOT NULL DEFAULT TRUE;
 
--- 2. (OPCIONAL) Ajuste de consistencia histórica:
--- Si en tu sistema anterior un evento tenía Permitir_Transferencia = TRUE, 
--- la vista ocultaba Stripe. Esta query respeta esa misma lógica para eventos viejos.
+-- 2. (OPCIONAL) Ajuste de consistencia histÃ³rica:
+-- Si en tu sistema anterior un evento tenÃ­a Permitir_Transferencia = TRUE, 
+-- la vista ocultaba Stripe. Esta query respeta esa misma lÃ³gica para eventos viejos.
 UPDATE "Eventos_Catalogo"
 SET "Permitir_Pago_Tarjeta" = FALSE
 WHERE "Permitir_Transferencia" = TRUE;
 
--- 1. Indica si es un archivo físico (FALSE) o un enlace web (TRUE)
+-- 1. Indica si es un archivo fÃ­sico (FALSE) o un enlace web (TRUE)
 ALTER TABLE "Rec_Archivos" ADD COLUMN "Es_Enlace" BOOLEAN DEFAULT FALSE;
 
 -- 2. Almacena la URL si Es_Enlace es TRUE
 ALTER TABLE "Rec_Archivos" ADD COLUMN "Url_Enlace" TEXT;
 
--- 3. Categoría: 'Publico' o 'Grupos'
+-- 3. CategorÃ­a: 'Publico' o 'Grupos'
 ALTER TABLE "Rec_Archivos" ADD COLUMN "Categoria" VARCHAR(20) DEFAULT 'Publico';
 
--- 4. ID del Grupo de WhatsApp si la categoría es 'Grupos' (Nulo si es Público)
+-- 4. ID del Grupo de WhatsApp si la categorÃ­a es 'Grupos' (Nulo si es PÃºblico)
 ALTER TABLE "Rec_Archivos" ADD COLUMN "Id_Grupo_Acceso" INTEGER;
 
--- 5. Agregar restricción de llave foránea
+-- 5. Agregar restricciÃ³n de llave forÃ¡nea
 ALTER TABLE "Rec_Archivos"
 ADD CONSTRAINT "FK_RecArchivos_GrupoAcceso"
 FOREIGN KEY ("Id_Grupo_Acceso") REFERENCES "Sist_Grupos_Whatsapp" ("Id_Grupo")
 ON DELETE SET NULL;
 
 -- 1. TABLA PRINCIPAL DE RIFAS PRIVADAS
-CREATE TABLE "RifasPersonales_Rifas" (
-    "IdRifa" SERIAL PRIMARY KEY,
-    "IdUsuarioCreador" INTEGER NOT NULL, -- FK a Sist_Usuarios
-    "Titulo" VARCHAR(150) NOT NULL,
-    "Descripcion" TEXT,
-    "CostoBoleto" DECIMAL(10,2) NOT NULL,
-    "MetaBoletos" INTEGER NOT NULL,
-    "FechaSorteo" TIMESTAMP NOT NULL,
-    "FechaCreacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "Estado" VARCHAR(20) DEFAULT 'Activa', -- Activa, Finalizada, Cancelada
-    "IdBoletoGanador" INTEGER NULL, -- Se actualiza al hacer el sorteo
-    "ImagenUrl" VARCHAR(500) NULL
-);
-
 -- 2. TABLA DE BOLETOS PRIVADOS
-CREATE TABLE "RifasPersonales_Boletos" (
-    "IdBoleto" SERIAL PRIMARY KEY,
-    "IdRifa" INTEGER NOT NULL REFERENCES "RifasPersonales_Rifas"("IdRifa") ON DELETE CASCADE,
-    "Numero" INTEGER NOT NULL,
-    "Estado" VARCHAR(20) DEFAULT 'Disponible', -- Disponible, Asignado, Vendido
-    "IdUsuarioAsignado" INTEGER NULL, -- FK a Sist_Usuarios (El vendedor, puede ser el creador u otro promotor registrado)
-    "NombreComprador" VARCHAR(150) NULL, -- El cliente final (Ej. "Doña Mary")
-    "TelefonoComprador" VARCHAR(20) NULL, -- WhatsApp para Twilio
-    "Comentarios" TEXT NULL,
-    "FechaVenta" TIMESTAMP NULL
-);
-
 -- 3. TABLA DE LOGS DE NOTIFICACIONES (TWILIO)
-CREATE TABLE "RifasPersonales_Notificaciones" (
-    "IdNotificacion" SERIAL PRIMARY KEY,
-    "IdRifa" INTEGER NOT NULL REFERENCES "RifasPersonales_Rifas"("IdRifa") ON DELETE CASCADE,
-    "IdBoleto" INTEGER NULL REFERENCES "RifasPersonales_Boletos"("IdBoleto") ON DELETE SET NULL,
-    "TelefonoDestino" VARCHAR(20) NOT NULL,
-    "TipoMensaje" VARCHAR(50) NOT NULL, -- Ej: 'Plantilla_Ganador', 'Plantilla_Agradecimiento'
-    "EstadoEnvio" VARCHAR(20) DEFAULT 'Pendiente', -- Pendiente, Enviado, Fallido
-    "FechaEnvio" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "RespuestaAPI" TEXT NULL -- Para guardar el Error Code o SID de Twilio
-);
 ALTER TABLE "RifasPersonales_Boletos" 
 ADD COLUMN "NombrePromotorExterno" character varying(150) NULL;
 
@@ -2766,28 +2152,13 @@ ADD COLUMN "FechaAsignacion" TIMESTAMP NULL;
 UPDATE "RifasPersonales_Boletos" SET "FechaAsignacion" = CURRENT_TIMESTAMP 
 WHERE "Estado" IN ('Asignado', 'Vendido');
 
--- 1. Agregar configuración bancaria a la tabla de Rifas
+-- 1. Agregar configuraciÃ³n bancaria a la tabla de Rifas
 ALTER TABLE "RifasPersonales_Rifas"
 ADD COLUMN "Banco" VARCHAR(100) NULL,
 ADD COLUMN "CuentaBancaria" VARCHAR(50) NULL,
 ADD COLUMN "TitularCuenta" VARCHAR(150) NULL;
 
 -- 2. Crear la tabla de Pagos/Abonos
-CREATE TABLE "RifasPersonales_Pagos" (
-    "IdPago" SERIAL PRIMARY KEY,
-    "IdRifa" INTEGER NOT NULL,
-    "IdUsuarioVendedor" INTEGER NULL,
-    "NombrePromotorExterno" VARCHAR(150) NULL,
-    "Monto" NUMERIC(10,2) NOT NULL,
-    "MetodoPago" VARCHAR(50) NOT NULL, 
-    "ComprobanteUrl" TEXT NULL,
-    "Estado" VARCHAR(50) NOT NULL, 
-    "Origen" VARCHAR(50) NOT NULL, 
-    "Nota" TEXT NULL,
-    "FechaPago" TIMESTAMP NOT NULL,
-    "FechaRegistro" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 ALTER TABLE "RifasPersonales_Rifas" 
 DROP COLUMN "CuentaBancaria",
 ADD COLUMN "CuentaClabe" VARCHAR(255) NULL,
@@ -2801,20 +2172,7 @@ ADD COLUMN "QrGrupoWhatsappUrl" TEXT NULL;
 ALTER TABLE "RifasPersonales_Rifas" 
 ADD COLUMN "InversionPremio" numeric(18,2) NOT NULL DEFAULT 0;
 
-CREATE TABLE "RifasPersonales_Descartes" (
-    "IdDescarte" SERIAL PRIMARY KEY,
-    "IdRifa" INT NOT NULL,
-    "BoletoToken" VARCHAR(255) NOT NULL,
-    "FechaDescarte" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE ("IdRifa", "BoletoToken")
-);
-
-ALTER TABLE "RifasPersonales_Descartes" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "RifasPersonales_Boletos" ADD COLUMN "MarcadorPersonal" BOOLEAN DEFAULT FALSE;
-
-
--- 1. CATÁLOGO DE TIPOS DE MENSAJE
+-- 1. CATÃLOGO DE TIPOS DE MENSAJE
 CREATE TABLE "Sist_Comunidad_Tipos_Mensaje" (
     "Id_Tipo" SERIAL PRIMARY KEY,
     "Clave" VARCHAR(50) NOT NULL UNIQUE,
@@ -2825,7 +2183,7 @@ CREATE TABLE "Sist_Comunidad_Tipos_Mensaje" (
 
 INSERT INTO "Sist_Comunidad_Tipos_Mensaje" ("Clave", "Nombre", "Icono", "Solo_Directiva") VALUES 
 ('General', 'General', 'fa-envelope', FALSE),
-('Oracion', 'Petición de Oración', 'fa-person-praying', FALSE),
+('Oracion', 'PeticiÃ³n de OraciÃ³n', 'fa-person-praying', FALSE),
 ('Sugerencia', 'Sugerencia', 'fa-lightbulb', TRUE),
 ('Queja', 'Queja', 'fa-triangle-exclamation', TRUE),
 ('Visita', 'Solicitud de Visita', 'fa-house-chimney-user', TRUE);
@@ -2851,7 +2209,7 @@ CREATE TABLE "Sist_Comunidad_Mensajes" (
         REFERENCES "Sist_Comunidad_Tipos_Mensaje" ("Clave") ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
--- 3. TABLA DE RESPUESTAS (HILOS DE CONVERSACIÓN)
+-- 3. TABLA DE RESPUESTAS (HILOS DE CONVERSACIÃ“N)
 CREATE TABLE "Sist_Comunidad_Respuestas" (
     "Id_Respuesta" SERIAL PRIMARY KEY,
     "Id_Mensaje" INT NOT NULL,
@@ -2868,7 +2226,7 @@ CREATE TABLE "Sist_Comunidad_Respuestas" (
         REFERENCES "Sist_Usuarios" ("Id_Usuario") ON DELETE CASCADE
 );
 
--- 4. TABLA DE AUDITORÍA DE EDICIONES
+-- 4. TABLA DE AUDITORÃA DE EDICIONES
 CREATE TABLE "Sist_Comunidad_Auditoria_Ediciones" (
     "Id_Auditoria" SERIAL PRIMARY KEY,
     "Id_Mensaje" INT NOT NULL,
@@ -2894,7 +2252,7 @@ CREATE TABLE "Sist_Comunidad_Oraciones_Atendidas" (
         REFERENCES "Sist_Usuarios" ("Id_Usuario") ON DELETE CASCADE
 );
 
--- 6. TABLAS DE MÉTRICAS E INTERACCIONES
+-- 6. TABLAS DE MÃ‰TRICAS E INTERACCIONES
 CREATE TABLE "Sist_Comunidad_Mensajes_Leidos" (
     "Id_Mensaje" INT NOT NULL,
     "Id_Usuario" INT NOT NULL,
@@ -2917,7 +2275,7 @@ CREATE TABLE "Sist_Comunidad_Mensajes_Reacciones" (
         REFERENCES "Sist_Usuarios" ("Id_Usuario") ON DELETE CASCADE
 );
 
--- 7. TABLA DE CONFIGURACIÓN ÚNICA
+-- 7. TABLA DE CONFIGURACIÃ“N ÃšNICA
 CREATE TABLE "Sist_Comunidad_Configuracion" (
     "Id_Config" INT PRIMARY KEY DEFAULT 1 CHECK ("Id_Config" = 1),
     "Id_Grupo_Directiva" INT NULL,
@@ -2925,7 +2283,7 @@ CREATE TABLE "Sist_Comunidad_Configuracion" (
         REFERENCES "Sist_Grupos_Whatsapp" ("Id_Grupo") ON DELETE SET NULL
 );
 
--- 8. ÍNDICES DE OPTIMIZACIÓN
+-- 8. ÃNDICES DE OPTIMIZACIÃ“N
 CREATE INDEX "IX_Comunidad_Mensajes_Estado" ON "Sist_Comunidad_Mensajes" ("Estado");
 CREATE INDEX "IX_Comunidad_Mensajes_Fechas" ON "Sist_Comunidad_Mensajes" ("Fecha_Creacion", "Fecha_Expiracion");
 CREATE INDEX "IX_Comunidad_Mensajes_Tipo" ON "Sist_Comunidad_Mensajes" ("Tipo_Mensaje");
@@ -2939,11 +2297,11 @@ CREATE TABLE "Sist_Comunidad_Mensajes_Destinatarios" (
     FOREIGN KEY ("Id_Usuario") REFERENCES "Sist_Usuarios"("Id_Usuario") ON DELETE CASCADE
 );
 
--- 1. Eliminamos la restricción actual
+-- 1. Eliminamos la restricciÃ³n actual
 ALTER TABLE "Sist_Comunidad_Mensajes" 
 DROP CONSTRAINT "Sist_Comunidad_Mensajes_Destinatario_check";
 
--- 2. Creamos la nueva restricción incluyendo 'Especificos'
+-- 2. Creamos la nueva restricciÃ³n incluyendo 'Especificos'
 ALTER TABLE "Sist_Comunidad_Mensajes" 
 ADD CONSTRAINT "Sist_Comunidad_Mensajes_Destinatario_check" 
 CHECK ("Destinatario" IN ('Directiva', 'Todos', 'Especificos'));
@@ -2959,16 +2317,16 @@ CREATE TABLE "Eventos_F_Zonas" (
     "Fecha_Creacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. ALOJAMIENTOS / CONTENEDORES (Ej. "Habitación 101", "Cabaña A")
+-- 2. ALOJAMIENTOS / CONTENEDORES (Ej. "HabitaciÃ³n 101", "CabaÃ±a A")
 CREATE TABLE "Eventos_G_Alojamientos" (
     "Id_Alojamiento" SERIAL PRIMARY KEY,
     "Id_Zona" INT NOT NULL REFERENCES "Eventos_F_Zonas"("Id_Zona") ON DELETE CASCADE,
     "Nombre" VARCHAR(100) NOT NULL,
-    "Genero_Asignado" VARCHAR(1) NULL, -- 'H', 'M' o NULL si está vacía/neutral
+    "Genero_Asignado" VARCHAR(1) NULL, -- 'H', 'M' o NULL si estÃ¡ vacÃ­a/neutral
     "Fecha_Creacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. CAPACIDADES HÍBRIDAS (Ej. "Cabaña A" tiene 4 Camas y 10 Colchonetas)
+-- 3. CAPACIDADES HÃBRIDAS (Ej. "CabaÃ±a A" tiene 4 Camas y 10 Colchonetas)
 CREATE TABLE "Eventos_H_Alojamiento_Capacidades" (
     "Id_Capacidad" SERIAL PRIMARY KEY,
     "Id_Alojamiento" INT NOT NULL REFERENCES "Eventos_G_Alojamientos"("Id_Alojamiento") ON DELETE CASCADE,
@@ -2976,7 +2334,7 @@ CREATE TABLE "Eventos_H_Alojamiento_Capacidades" (
     "Capacidad_Total" INT NOT NULL DEFAULT 0
 );
 
--- 4. ASIGNACIONES (El mapeo de la persona a la habitación)
+-- 4. ASIGNACIONES (El mapeo de la persona a la habitaciÃ³n)
 CREATE TABLE "Eventos_I_Alojamiento_Asignaciones" (
     "Id_Asignacion" SERIAL PRIMARY KEY,
     "Id_Alojamiento" INT NOT NULL REFERENCES "Eventos_G_Alojamientos"("Id_Alojamiento") ON DELETE CASCADE,
@@ -2984,7 +2342,7 @@ CREATE TABLE "Eventos_I_Alojamiento_Asignaciones" (
     "Fecha_Asignacion" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices recomendados para la velocidad del Drag & Drop
+-- Ãndices recomendados para la velocidad del Drag & Drop
 CREATE INDEX "IX_Zonas_Evento" ON "Eventos_F_Zonas"("Id_Evento");
 CREATE INDEX "IX_Asignaciones_Alojamiento" ON "Eventos_I_Alojamiento_Asignaciones"("Id_Alojamiento");
 
@@ -3004,48 +2362,12 @@ CREATE TABLE "Eventos_J_Prioridad_Alojamiento" (
 );
 
 
--- Tabla genérica y directa
-CREATE TABLE "Devoluciones" (
-    "Id_Devolucion" SERIAL PRIMARY KEY,
-    "Modulo_Origen" VARCHAR(50) NOT NULL, -- Ej: 'Eventos', 'Tianguis', 'Sorteos'
-    "Id_Referencia_Origen" INTEGER NOT NULL, -- El Id_Asistente, Id_Venta, etc.
-    "Monto" DECIMAL(10,2) NOT NULL,
-    "Motivo" TEXT NOT NULL,
-    "Entregado" BOOLEAN NOT NULL DEFAULT FALSE,
-    "Fecha_Generacion" TIMESTAMP NOT NULL DEFAULT NOW(),
-    "Id_Usuario_Genera" INTEGER NOT NULL,
-    "Fecha_Entrega" TIMESTAMP NULL,
-    "Id_Usuario_Entrega" INTEGER NULL,
-    
-    CONSTRAINT "FK_Devoluciones_UsuarioGen" FOREIGN KEY ("Id_Usuario_Genera") REFERENCES "Sist_Usuarios" ("Id_Usuario"),
-    CONSTRAINT "FK_Devoluciones_UsuarioEnt" FOREIGN KEY ("Id_Usuario_Entrega") REFERENCES "Sist_Usuarios" ("Id_Usuario")
-);
-
--- Índices para búsquedas rápidas en el panel de control
-CREATE INDEX "IDX_Devoluciones_Origen" ON "Devoluciones" ("Modulo_Origen", "Id_Referencia_Origen");
-CREATE INDEX "IDX_Devoluciones_Entregado" ON "Devoluciones" ("Entregado");
-
-CREATE TABLE "Devoluciones_Pagos" (
-    "Id_Devolucion_Pago" SERIAL PRIMARY KEY,
-    "Id_Devolucion" INTEGER NOT NULL,
-    "Monto_Pagado" DECIMAL(10,2) NOT NULL,
-    "Referencia" VARCHAR(100) NULL,
-    "Fecha_Pago" TIMESTAMP NOT NULL DEFAULT NOW(),
-    "Id_Usuario_Pago" INTEGER NOT NULL,
-    
-    CONSTRAINT "FK_Dev_Pagos_Dev" FOREIGN KEY ("Id_Devolucion") REFERENCES "Devoluciones" ("Id_Devolucion") ON DELETE CASCADE,
-    CONSTRAINT "FK_Dev_Pagos_Usr" FOREIGN KEY ("Id_Usuario_Pago") REFERENCES "Sist_Usuarios" ("Id_Usuario")
-);
-
--- Índice para sumar rápido los abonos
-CREATE INDEX "IDX_Dev_Pagos_IdDev" ON "Devoluciones_Pagos" ("Id_Devolucion");
-
+-- Tabla genÃ©rica y directa
+-- Ãndices para bÃºsquedas rÃ¡pidas en el panel de control
+-- Ãndice para sumar rÃ¡pido los abonos
 -- ==========================================
 -- 1. TABLAS DE DEVOLUCIONES
 -- ==========================================
-ALTER TABLE "Devoluciones" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Devoluciones_Pagos" ENABLE ROW LEVEL SECURITY;
-
 -- ==========================================
 -- 2. TABLAS DE ALOJAMIENTOS Y ZONAS (EVENTOS)
 -- ==========================================
@@ -3063,7 +2385,7 @@ ALTER TABLE "Sist_Comunidad_Auditoria_Ediciones" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Sist_Comunidad_Configuracion" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Sist_Comunidad_Mensajes" ENABLE ROW LEVEL SECURITY;
 
--- Nota: Esta tabla salía cortada en tu captura, asumo que termina en "Destinatarios"
+-- Nota: Esta tabla salÃ­a cortada en tu captura, asumo que termina en "Destinatarios"
 ALTER TABLE "Sist_Comunidad_Mensajes_Destinatarios" ENABLE ROW LEVEL SECURITY; 
 
 ALTER TABLE "Sist_Comunidad_Mensajes_Leidos" ENABLE ROW LEVEL SECURITY;
@@ -3099,14 +2421,14 @@ CREATE TABLE "Eventos_ValidacionPorEvento" (
 ALTER TABLE "Eventos_Catalogo" ADD COLUMN "ImagenDinamica_Url" TEXT NULL;
 ALTER TABLE "Eventos_Catalogo" ADD COLUMN "ImagenDinamica" BOOLEAN DEFAULT FALSE;
 
--- Añadir columna de agrupación con valor por defecto
+-- AÃ±adir columna de agrupaciÃ³n con valor por defecto
 ALTER TABLE "Eventos_B_Asistentes" 
 ADD COLUMN "Etiqueta_Grupo" VARCHAR(50) DEFAULT 'General';
 
 BEGIN;
 
 -- =========================================================================
--- 1. TABLA: CONFIGURACIÓN GLOBAL DEL PORTAL DE ALOJAMIENTOS
+-- 1. TABLA: CONFIGURACIÃ“N GLOBAL DEL PORTAL DE ALOJAMIENTOS
 -- =========================================================================
 CREATE TABLE "Eventos_ConfigAlojamiento" (
     "Id_Evento" integer NOT NULL,
@@ -3114,12 +2436,12 @@ CREATE TABLE "Eventos_ConfigAlojamiento" (
     "Solo_Pagados" boolean NOT NULL DEFAULT TRUE,
     "Fecha_Apertura" timestamp without time zone NULL,
     "Fecha_Cierre" timestamp without time zone NULL,
-    "Mensaje_Portal_Cerrado" character varying(255) DEFAULT 'El sistema de selección de habitaciones no está disponible por el momento.',
+    "Mensaje_Portal_Cerrado" character varying(255) DEFAULT 'El sistema de selecciÃ³n de habitaciones no estÃ¡ disponible por el momento.',
     CONSTRAINT "PK_Eventos_ConfigAlojamiento" PRIMARY KEY ("Id_Evento")
 );
 
 -- =========================================================================
--- 2. TABLA: CATÁLOGO DE AGRUPACIONES (CLÚSTERES)
+-- 2. TABLA: CATÃLOGO DE AGRUPACIONES (CLÃšSTERES)
 -- =========================================================================
 CREATE TABLE "Eventos_K_AgrupaModalidades" (
     "Id_Agrupacion" serial NOT NULL,
@@ -3142,7 +2464,7 @@ CREATE TABLE "Eventos_K_AgrupaModalidadesDetalle" (
 );
 
 -- =========================================================================
--- 4. TABLA: ALOJAMIENTOS PÚBLICOS
+-- 4. TABLA: ALOJAMIENTOS PÃšBLICOS
 -- =========================================================================
 CREATE TABLE "Eventos_K_Alojamientos_Publicados" (
     "Id_Alojamiento" integer NOT NULL,
@@ -3153,7 +2475,7 @@ CREATE TABLE "Eventos_K_Alojamientos_Publicados" (
 );
 
 -- =========================================================================
--- 5. ALTERACIÓN: CAPACIDADES DEL ALOJAMIENTO (MODELO HÍBRIDO)
+-- 5. ALTERACIÃ“N: CAPACIDADES DEL ALOJAMIENTO (MODELO HÃBRIDO)
 -- =========================================================================
 ALTER TABLE "Eventos_H_Alojamiento_Capacidades" ALTER COLUMN "Id_Subtipo" DROP NOT NULL;
 
@@ -3176,12 +2498,12 @@ ADD COLUMN "Id_Evento" integer NULL;
 
 CREATE TABLE "Sist_Aportaciones_Transacciones" (
     "Id_Transaccion" SERIAL PRIMARY KEY,
-    "Id_Usuario" INT NULL,                 -- Puede ser NULL si es donante anónimo
+    "Id_Usuario" INT NULL,                 -- Puede ser NULL si es donante anÃ³nimo
     "Monto" DECIMAL(10,2) NOT NULL,
     "Estatus_Pago" VARCHAR(20) NOT NULL,   -- 'pending', 'paid', 'expired'
     "Fecha_Intento" TIMESTAMP NOT NULL,
-    "Ref_Pasarela" VARCHAR(100) NULL,      -- Guardará el session.Id de Stripe (cs_...)
-    "External_Reference" VARCHAR(50) NULL, -- Referencia única de control (APOR_...)
+    "Ref_Pasarela" VARCHAR(100) NULL,      -- GuardarÃ¡ el session.Id de Stripe (cs_...)
+    "External_Reference" VARCHAR(50) NULL, -- Referencia Ãºnica de control (APOR_...)
     "Comentario" VARCHAR(500) NULL
 );
 
@@ -3205,7 +2527,7 @@ CREATE TABLE IF NOT EXISTS "Fin_Proyectos_Caja" (
     "Fecha" TIMESTAMP NOT NULL DEFAULT NOW(),
     "Id_Usuario" INT NOT NULL,
     "Folio_Bancario" VARCHAR(100) NULL,
-    "Es_Traspaso_General" BOOLEAN NOT NULL DEFAULT FALSE -- Identifica si el movimiento fue una extracción hacia la caja general
+    "Es_Traspaso_General" BOOLEAN NOT NULL DEFAULT FALSE -- Identifica si el movimiento fue una extracciÃ³n hacia la caja general
 );
 
 ALTER TABLE "Fin_Proyectos_Caja" ADD COLUMN "Fecha_Registro" TIMESTAMP NOT NULL DEFAULT NOW();
@@ -3221,7 +2543,7 @@ ALTER TABLE "Sist_Aportaciones_Transacciones" ADD COLUMN "Monto_Neto" numeric DE
 ALTER TABLE "Fin_Proyectos_Caja" 
 ADD COLUMN "Movimiento_En_Banco" BOOLEAN DEFAULT FALSE;
 
--- Cambiar la columna para que permita valores NULOS (quitar la restricción NOT NULL)
+-- Cambiar la columna para que permita valores NULOS (quitar la restricciÃ³n NOT NULL)
 ALTER TABLE "Sist_Comunidad_Mensajes" 
 ALTER COLUMN "Id_Usuario_Autor" DROP NOT NULL;
 
@@ -3238,7 +2560,7 @@ CREATE TABLE "Eventos_Ingresos_Efectivo_Log" (
     "Fecha_Cobro" TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Opcional pero recomendado: Índice para búsquedas rápidas en los reportes
+-- Opcional pero recomendado: Ãndice para bÃºsquedas rÃ¡pidas en los reportes
 CREATE INDEX "IX_IngresosEfectivo_Cuenta" ON "Eventos_Ingresos_Efectivo_Log" ("Id_Cuenta");
 
 ALTER TABLE "Tienda_Productos_Venta" 
@@ -3248,7 +2570,7 @@ ALTER TABLE "Tienda_Productos_Venta"
 ADD COLUMN IF NOT EXISTS "Url_Imagen_Impresion_Posterior" VARCHAR(500);
 
 -- ========================================================================
--- 1. ACTUALIZACIÓN DE LA TABLA: Rifas
+-- 1. ACTUALIZACIÃ“N DE LA TABLA: Rifas
 -- ========================================================================
 ALTER TABLE "Rifas" 
     ADD COLUMN "InversionPremio" NUMERIC DEFAULT 0 NOT NULL,
@@ -3261,7 +2583,7 @@ ALTER TABLE "Rifas"
     ADD COLUMN "TitularCuenta" CHARACTER VARYING(150) NULL;
 
 -- ========================================================================
--- 2. ACTUALIZACIÓN DE LA TABLA: Rifas_Boletos
+-- 2. ACTUALIZACIÃ“N DE LA TABLA: Rifas_Boletos
 -- ========================================================================
 ALTER TABLE "Rifas_Boletos" 
     ADD COLUMN "NombrePromotorExterno" CHARACTER VARYING(100) NULL,
@@ -3270,42 +2592,12 @@ ALTER TABLE "Rifas_Boletos"
     ADD COLUMN "FechaAsignacion" TIMESTAMP WITHOUT TIME ZONE NULL;
 
 -- ========================================================================
--- 3. CREACIÓN DE NUEVA TABLA: Rifas_Pagos (Control del CRM de Cobranza)
+-- 3. CREACIÃ“N DE NUEVA TABLA: Rifas_Pagos (Control del CRM de Cobranza)
 -- ========================================================================
-CREATE TABLE "Rifas_Pagos" (
-    "IdPago" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL,
-    "Id_Usuario_Vendedor" INTEGER NULL,
-    "NombrePromotorExterno" CHARACTER VARYING(100) NULL,
-    "Monto" NUMERIC(12,2) NOT NULL,
-    "MetodoPago" CHARACTER VARYING(50) NOT NULL, -- 'Efectivo', 'Transferencia', 'Stripe'
-    "ComprobanteUrl" CHARACTER VARYING(500) NULL, -- URL de Cloudinary para capturas
-    "Estado" CHARACTER VARYING(20) NOT NULL,     -- 'Pendiente', 'Aprobado', 'Rechazado'
-    "Origen" CHARACTER VARYING(30) NOT NULL,     -- 'Administrador', 'Vendedor'
-    "Nota" TEXT NULL,                            -- Motivos de rechazo o comentarios
-    "FechaPago" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT "FK_Rifas_Pagos_Rifas" FOREIGN KEY ("Id_Rifa") REFERENCES "Rifas" ("Id_Rifa") ON DELETE CASCADE
-);
-
--- Indices de rendimiento para cobros rápidos
-CREATE INDEX "IX_Rifas_Pagos_Rifa" ON "Rifas_Pagos" ("Id_Rifa");
-CREATE INDEX "IX_Rifas_Pagos_Vendedor" ON "Rifas_Pagos" ("Id_Usuario_Vendedor");
-
+-- Indices de rendimiento para cobros rÃ¡pidos
 -- ========================================================================
--- 4. CREACIÓN DE NUEVA TABLA: Rifas_Descartes (Persistencia Criptográfica)
+-- 4. CREACIÃ“N DE NUEVA TABLA: Rifas_Descartes (Persistencia CriptogrÃ¡fica)
 -- ========================================================================
-CREATE TABLE "Rifas_Descartes" (
-    "IdDescarte" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL,
-    "BoletoToken" CHARACTER VARYING(255) NOT NULL, -- ID Encriptado del boleto eliminado
-    "FechaDescarte" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT "FK_Rifas_Descartes_Rifas" FOREIGN KEY ("Id_Rifa") REFERENCES "Rifas" ("Id_Rifa") ON DELETE CASCADE
-);
-
-CREATE INDEX "IX_Rifas_Descartes_Rifa" ON "Rifas_Descartes" ("Id_Rifa");
-
-ALTER TABLE "Rifas_Pagos" ADD COLUMN "BoletosPagados" TEXT NULL;
-
 ALTER TABLE "Rifas" RENAME COLUMN "EnlaceGrupoWhatsapp" TO "EnlaceCompra";
 ALTER TABLE "Rifas" RENAME COLUMN "QrGrupoWhatsappUrl" TO "QrEnlaceCompraUrl";
 
@@ -3313,7 +2605,7 @@ ALTER TABLE "Rifas" ADD COLUMN "VisiblePublico" BOOLEAN NOT NULL DEFAULT TRUE;
 
 ALTER TABLE "Eventos_Catalogo" ADD COLUMN "Bloqueado" BOOLEAN NOT NULL DEFAULT FALSE;
 
--- Agregamos la bandera en el catálogo para saber si la encuesta pide iglesia
+-- Agregamos la bandera en el catÃ¡logo para saber si la encuesta pide iglesia
 ALTER TABLE "Encuestas_Catalogo" 
 ADD COLUMN "Solicitar_Iglesia" BOOLEAN NOT NULL DEFAULT FALSE;
 
@@ -3321,37 +2613,14 @@ ADD COLUMN "Solicitar_Iglesia" BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE "Encuestas_Respuestas_Header" 
 ADD COLUMN "Id_Iglesia_Seleccionada" INTEGER NULL;
 
--- 1. Tabla para asociar una o múltiples encuestas a una rifa
-CREATE TABLE "Rifas_Encuestas" (
-    "Id_Rifa" INTEGER NOT NULL,
-    "Id_Encuesta" INTEGER NOT NULL,
-    PRIMARY KEY ("Id_Rifa", "Id_Encuesta")
-);
-
+-- 1. Tabla para asociar una o mÃºltiples encuestas a una rifa
 -- 2. Tabla para registrar los folios canjeados y bloquear abusos
-CREATE TABLE "Rifas_Folios_Canjeados" (
-    "Id_Canje" SERIAL PRIMARY KEY,
-    "Id_Rifa" INTEGER NOT NULL,
-    "Id_Usuario" INTEGER NOT NULL,
-    "Id_Respuesta" INTEGER NOT NULL UNIQUE, -- (Regla 6) El folio es único a nivel global, no se puede usar 2 veces.
-    "Id_Boleto" INTEGER NOT NULL,
-    "Fecha_Canje" TIMESTAMP NOT NULL DEFAULT NOW(),
-    -- (Regla 4) Bloqueo estricto: Un usuario solo puede reclamar 1 folio por cada rifa
-    CONSTRAINT "UQ_Usuario_Rifa" UNIQUE ("Id_Usuario", "Id_Rifa") 
-);
-
--- 1. Módulo de Eventos
+-- 1. MÃ³dulo de Eventos
 ALTER TABLE "Eventos_D_Transacciones" ADD COLUMN "CuentaPrincipalBanco" BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE "Eventos_D_Transacciones" ADD COLUMN "ValidadoXCaja" BOOLEAN NOT NULL DEFAULT FALSE;
 
--- 2. Módulo de Rifas
-ALTER TABLE "Rifas_Ventas" ADD COLUMN "CuentaPrincipalBanco" BOOLEAN NOT NULL DEFAULT FALSE;
-ALTER TABLE "Rifas_Ventas" ADD COLUMN "ValidadoXCaja" BOOLEAN NOT NULL DEFAULT FALSE;
-
--- 3. Módulo de Tienda Online
-ALTER TABLE "Tienda_Pedidos" ADD COLUMN "CuentaPrincipalBanco" BOOLEAN NOT NULL DEFAULT FALSE;
-ALTER TABLE "Tienda_Pedidos" ADD COLUMN "ValidadoXCaja" BOOLEAN NOT NULL DEFAULT FALSE;
-
+-- 2. MÃ³dulo de Rifas
+-- 3. MÃ³dulo de Tienda Online
 ALTER TABLE iciar_iglesias
 ADD COLUMN sector integer NOT NULL DEFAULT 0,
 ADD COLUMN zona integer NOT NULL DEFAULT 0;
@@ -3363,35 +2632,18 @@ ADD COLUMN zona integer NOT NULL DEFAULT 0;
 ---- Modificaciones para Rifas con ganador en sorteo fisico
 -- 3 columnas nuevas, todas NULL, no afectan datos existentes
 ALTER TABLE "Rifas"
-    ADD COLUMN "Modalidad_Sorteo"        VARCHAR(20) NULL,  -- 'MANUAL' | 'PLATAFORMA' | NULL (sin sortear aún)
-    ADD COLUMN "Fecha_Sorteo_Confirmado" TIMESTAMP   NULL,  -- Cuándo quedó oficialmente confirmado el ganador
-    ADD COLUMN "Id_Usuario_Sorteo"       INTEGER     NULL;  -- Quién registró el sorteo (trazabilidad)
+    ADD COLUMN "Modalidad_Sorteo"        VARCHAR(20) NULL,  -- 'MANUAL' | 'PLATAFORMA' | NULL (sin sortear aÃºn)
+    ADD COLUMN "Fecha_Sorteo_Confirmado" TIMESTAMP   NULL,  -- CuÃ¡ndo quedÃ³ oficialmente confirmado el ganador
+    ADD COLUMN "Id_Usuario_Sorteo"       INTEGER     NULL;  -- QuiÃ©n registrÃ³ el sorteo (trazabilidad)
 
 -- Constraint de integridad sobre los valores permitidos
--- NULL es válido = rifa sin sortear aún
+-- NULL es vÃ¡lido = rifa sin sortear aÃºn
 ALTER TABLE "Rifas"
     ADD CONSTRAINT "CHK_Rifas_Modalidad"
     CHECK ("Modalidad_Sorteo" IN ('MANUAL', 'PLATAFORMA') OR "Modalidad_Sorteo" IS NULL);
 
--- Índice de rendimiento para consultas por modalidad
+-- Ãndice de rendimiento para consultas por modalidad
 CREATE INDEX "IX_Rifas_Modalidad" ON "Rifas" ("Modalidad_Sorteo");
-
-CREATE TABLE "Rifas_Sorteo_Confirmaciones" (
-    "Id_Confirmacion"      SERIAL PRIMARY KEY,
-    "Id_Rifa"              INTEGER   NOT NULL REFERENCES "Rifas"("Id_Rifa") ON DELETE CASCADE,
-    "Id_Boleto_Candidato"  INTEGER   NOT NULL REFERENCES "Rifas_Boletos"("Id_Boleto"),
-    "Id_Usuario"           INTEGER   NOT NULL REFERENCES "Sist_Usuarios"("Id_Usuario"),
-    "Fecha_Confirmacion"   TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-    "IP_Confirmacion"      VARCHAR(100) NULL,
-
-    -- Garantía de BD: un usuario solo puede confirmar UNA VEZ por rifa
-    CONSTRAINT "UQ_Confirmacion_Usuario_Rifa" UNIQUE ("Id_Rifa", "Id_Usuario")
-);
-
-CREATE INDEX "IX_Confirmaciones_Rifa"    ON "Rifas_Sorteo_Confirmaciones" ("Id_Rifa");
-CREATE INDEX "IX_Confirmaciones_Boleto"  ON "Rifas_Sorteo_Confirmaciones" ("Id_Boleto_Candidato");
-
-ALTER TABLE "Rifas_Sorteo_Confirmaciones" ENABLE ROW LEVEL SECURITY;
 
 UPDATE "Rifas"
 SET "Modalidad_Sorteo"        = 'PLATAFORMA',
@@ -3403,7 +2655,7 @@ WHERE "Id_Boleto_Ganador" IS NOT NULL
 ADD COLUMN "Cobrar_Comision_Extra" BOOLEAN NOT NULL DEFAULT TRUE;
 
 
--- Catálogo de productos/servicios extra por evento (Cenas, Camisas, etc.)
+-- CatÃ¡logo de productos/servicios extra por evento (Cenas, Camisas, etc.)
 CREATE TABLE "Eventos_Catalogo_ProductosExtra" (
     "Id_ProductoExtra" SERIAL PRIMARY KEY,
     "Id_Evento" INT NOT NULL REFERENCES "Eventos_Catalogo"("Id_Evento"),
@@ -3434,35 +2686,35 @@ ALTER TABLE "Eventos_B_Asistentes" ADD COLUMN "Notas_Staff" TEXT;
 ALTER TABLE "Eventos_Catalogo"
 ADD COLUMN "Id_Encuesta_Requisito" INT NULL;
 
--- (Opcional, pero recomendado) Agregar relación para que si se borra la encuesta, se limpie el campo
+-- (Opcional, pero recomendado) Agregar relaciÃ³n para que si se borra la encuesta, se limpie el campo
 ALTER TABLE "Eventos_Catalogo"
 ADD CONSTRAINT "FK_Evento_EncuestaReq"
 FOREIGN KEY ("Id_Encuesta_Requisito") REFERENCES "Encuestas_Catalogo"("Id_Encuesta")
 ON DELETE SET NULL;
 
--- Script Opcional: Agregar evidencia de aceptación legal en los registros de eventos
+-- Script Opcional: Agregar evidencia de aceptaciÃ³n legal en los registros de eventos
 ALTER TABLE "Eventos_A_Registros" 
 ADD COLUMN IF NOT EXISTS "Fecha_Aceptacion_Terminos" TIMESTAMP NULL,
 ADD COLUMN IF NOT EXISTS "IP_Aceptacion_Terminos" VARCHAR(45) NULL;
 
 CREATE TABLE iciar_iglesias_secciones (
     id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,        -- Ej. "Navegación", "Cabecera Principal"
+    nombre VARCHAR(100) NOT NULL,        -- Ej. "NavegaciÃ³n", "Cabecera Principal"
     identificador VARCHAR(50) NOT NULL,  -- Ej. "Navbar", "Hero" (Usado en el JSON y C#)
     orden_sugerido INTEGER NOT NULL,     -- Para mostrar en el panel de edicion de arriba a abajo
     activa BOOLEAN DEFAULT TRUE
 );
 
 -- =========================================================================
--- TABLA 2: DISEÑOS / VARIANTES POR SECCIÓN
+-- TABLA 2: DISEÃ‘OS / VARIANTES POR SECCIÃ“N
 -- =========================================================================
 CREATE TABLE iciar_iglesias_secciones_disenos (
     id SERIAL PRIMARY KEY,
     seccion_id INTEGER NOT NULL,
-    nombre VARCHAR(100) NOT NULL,        -- Ej. "Clásico Pegajoso", "Modo Cine"
+    nombre VARCHAR(100) NOT NULL,        -- Ej. "ClÃ¡sico Pegajoso", "Modo Cine"
     ruta_vista VARCHAR(100) NOT NULL,    -- Ej. "_NavbarClasico" (VITAL: El nombre del archivo .cshtml)
     descripcion VARCHAR(255),            -- Ayuda visual para el usuario
-    url_preview VARCHAR(255),            -- Ruta a la imagen miniatura que verá en el editor
+    url_preview VARCHAR(255),            -- Ruta a la imagen miniatura que verÃ¡ en el editor
     activa BOOLEAN DEFAULT TRUE,
     
     CONSTRAINT fk_diseno_seccion FOREIGN KEY (seccion_id) 
@@ -3473,85 +2725,85 @@ CREATE TABLE iciar_iglesias_secciones_disenos (
 -- INSERTAR SECCIONES (PADRES)
 -- =========================================================================
 INSERT INTO iciar_iglesias_secciones (id, nombre, identificador, orden_sugerido) VALUES
-(1, 'Navegación (Navbar)', 'Navbar', 1),
+(1, 'NavegaciÃ³n (Navbar)', 'Navbar', 1),
 (2, 'Cabecera Principal (Hero)', 'Hero', 2),
 (3, 'Tablero de Avisos', 'Avisos', 3),
-(4, 'Próximos Eventos', 'Eventos', 4),
+(4, 'PrÃ³ximos Eventos', 'Eventos', 4),
 (5, 'Historia y Nosotros', 'Historia', 5),
-(6, 'Galería Fotográfica', 'Galeria', 6),
+(6, 'GalerÃ­a FotogrÃ¡fica', 'Galeria', 6),
 (7, 'Mensajes y Multimedia', 'Multimedia', 7),
 (8, 'Contacto y Mapas', 'Contacto', 8),
 (9, 'Puntos Doctrinales', 'Doctrina', 9),
-(10, 'Pie de Página (Footer)', 'Footer', 10);
+(10, 'Pie de PÃ¡gina (Footer)', 'Footer', 10);
 
--- Ajustamos el autoincremental de la secuencia por si insertamos más manualmente después
+-- Ajustamos el autoincremental de la secuencia por si insertamos mÃ¡s manualmente despuÃ©s
 SELECT setval('iciar_iglesias_secciones_id_seq', (SELECT MAX(id) FROM iciar_iglesias_secciones));
 
 -- =========================================================================
--- INSERTAR DISEÑOS (VARIANTES)
+-- INSERTAR DISEÃ‘OS (VARIANTES)
 -- =========================================================================
 
 -- 1. NAVBAR
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(1, 'Clásico Sólido Pegajoso', '_NavbarClasico', 'Menú tradicional con fondo de color sólido.'),
-(1, 'Pastilla Flotante (Glassmorphism)', '_NavbarFlotante', 'Menú centrado con efecto cristal.'),
+(1, 'ClÃ¡sico SÃ³lido Pegajoso', '_NavbarClasico', 'MenÃº tradicional con fondo de color sÃ³lido.'),
+(1, 'Pastilla Flotante (Glassmorphism)', '_NavbarFlotante', 'MenÃº centrado con efecto cristal.'),
 (1, 'Transparente Superpuesto', '_NavbarTransparente', 'Se funde con la imagen de la cabecera.'),
 (1, 'Editorial Minimalista', '_NavbarEditorial', 'Fondo limpio, letras elegantes estilo revista.');
 
 -- 2. HERO
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(2, 'Clásico Centrado', '_HeroCentrado', 'Imagen de fondo oscura con texto al centro.'),
-(2, 'Cuadrícula Bento', '_HeroBento', 'Mosaico interactivo moderno con botones gigantes.'),
-(2, 'Carrusel Dinámico', '_HeroCarrusel', 'Las imágenes rotan de fondo automáticamente.'),
-(2, 'Modo Transmisión (Cine)', '_HeroCine', 'Un reproductor de YouTube gigante es el protagonista.'),
-(2, 'Estilo Editorial', '_HeroEditorial', 'Letras gigantes y una foto artística estilo periódico.'),
-(2, 'Pantalla Dividida con Mapa', '_HeroSplit', 'Información a un lado, Google Maps al otro.'),
-(2, 'Minimalista a la Izquierda', '_HeroMinimalista', 'Sin imagen de fondo, diseño limpio y rápido.');
+(2, 'ClÃ¡sico Centrado', '_HeroCentrado', 'Imagen de fondo oscura con texto al centro.'),
+(2, 'CuadrÃ­cula Bento', '_HeroBento', 'Mosaico interactivo moderno con botones gigantes.'),
+(2, 'Carrusel DinÃ¡mico', '_HeroCarrusel', 'Las imÃ¡genes rotan de fondo automÃ¡ticamente.'),
+(2, 'Modo TransmisiÃ³n (Cine)', '_HeroCine', 'Un reproductor de YouTube gigante es el protagonista.'),
+(2, 'Estilo Editorial', '_HeroEditorial', 'Letras gigantes y una foto artÃ­stica estilo periÃ³dico.'),
+(2, 'Pantalla Dividida con Mapa', '_HeroSplit', 'InformaciÃ³n a un lado, Google Maps al otro.'),
+(2, 'Minimalista a la Izquierda', '_HeroMinimalista', 'Sin imagen de fondo, diseÃ±o limpio y rÃ¡pido.');
 
 -- 3. AVISOS
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(3, 'Cuadrícula de Tarjetas', '_AvisosGrid', 'Tarjetas con bordes de color laterales.'),
-(3, 'Lista Compacta (Sidebar)', '_AvisosSidebar', 'Diseño vertical apilado, ahorra espacio.'),
-(3, 'Líneas Editoriales', '_AvisosEditorial', 'Texto puro con líneas divisorias sobrias.'),
-(3, 'Tarjetas Glass/Neón', '_AvisosGlass', 'Estilo oscuro con fondos translúcidos.');
+(3, 'CuadrÃ­cula de Tarjetas', '_AvisosGrid', 'Tarjetas con bordes de color laterales.'),
+(3, 'Lista Compacta (Sidebar)', '_AvisosSidebar', 'DiseÃ±o vertical apilado, ahorra espacio.'),
+(3, 'LÃ­neas Editoriales', '_AvisosEditorial', 'Texto puro con lÃ­neas divisorias sobrias.'),
+(3, 'Tarjetas Glass/NeÃ³n', '_AvisosGlass', 'Estilo oscuro con fondos translÃºcidos.');
 
 -- 4. EVENTOS
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(4, 'Tarjeta Vertical Clásica', '_EventosVertical', 'Imagen arriba, fecha sobresaliente y texto abajo.'),
-(4, 'Tarjeta Horizontal Apaisada', '_EventosHorizontal', 'Imagen a la izquierda, información a la derecha.'),
-(4, 'Panorámico Editorial', '_EventosPanoramico', 'Imágenes muy anchas con texto sofisticado.'),
-(4, 'Moderno Neón', '_EventosNeox', 'Caja de fecha superpuesta en la foto.');
+(4, 'Tarjeta Vertical ClÃ¡sica', '_EventosVertical', 'Imagen arriba, fecha sobresaliente y texto abajo.'),
+(4, 'Tarjeta Horizontal Apaisada', '_EventosHorizontal', 'Imagen a la izquierda, informaciÃ³n a la derecha.'),
+(4, 'PanorÃ¡mico Editorial', '_EventosPanoramico', 'ImÃ¡genes muy anchas con texto sofisticado.'),
+(4, 'Moderno NeÃ³n', '_EventosNeox', 'Caja de fecha superpuesta en la foto.');
 
 -- 5. HISTORIA
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(5, 'Texto Centrado Simple', '_HistoriaCentrada', 'Lectura fácil, sin cajas ni bordes.'),
+(5, 'Texto Centrado Simple', '_HistoriaCentrada', 'Lectura fÃ¡cil, sin cajas ni bordes.'),
 (5, 'Caja Destacada', '_HistoriaCaja', 'El texto se encierra en una tarjeta blanca con sombra.'),
 (5, 'Revista a Dos Columnas', '_HistoriaColumnas', 'Texto dividido con Letra Capital gigante.'),
-(5, 'Título Fijo Lateral', '_HistoriaSticky', 'El título acompaña la lectura al hacer scroll.');
+(5, 'TÃ­tulo Fijo Lateral', '_HistoriaSticky', 'El tÃ­tulo acompaÃ±a la lectura al hacer scroll.');
 
 -- 6. GALERIA
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(6, 'Cuadrícula 1:1', '_GaleriaCuadrada', 'Todas las fotos se recortan en cuadrados perfectos.'),
+(6, 'CuadrÃ­cula 1:1', '_GaleriaCuadrada', 'Todas las fotos se recortan en cuadrados perfectos.'),
 (6, 'Mosaico (Masonry)', '_GaleriaMasonry', 'Las fotos respetan sus proporciones originales.'),
-(6, 'Modo Cine 16:9', '_GaleriaCine', 'Fotos rectangulares panorámicas.'),
-(6, 'Retrato 3:4', '_GaleriaRetrato', 'Exposición fotográfica vertical estilo galería de arte.');
+(6, 'Modo Cine 16:9', '_GaleriaCine', 'Fotos rectangulares panorÃ¡micas.'),
+(6, 'Retrato 3:4', '_GaleriaRetrato', 'ExposiciÃ³n fotogrÃ¡fica vertical estilo galerÃ­a de arte.');
 
 -- 7. MULTIMEDIA
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(7, 'Cuadrícula de Videos', '_MultiGrid', 'Grid tradicional de videos en 2 columnas.'),
+(7, 'CuadrÃ­cula de Videos', '_MultiGrid', 'Grid tradicional de videos en 2 columnas.'),
 (7, 'Carrusel Horizontal', '_MultiScroll', 'Los videos se deslizan hacia los lados (Estilo Netflix).'),
 (7, 'Video Gigante', '_MultiGigante', 'Un video grande abarcando todo el ancho.'),
-(7, 'Reproductor Limpio', '_MultiLimpio', 'Sin marcos ni fondos, integrado al diseño.');
+(7, 'Reproductor Limpio', '_MultiLimpio', 'Sin marcos ni fondos, integrado al diseÃ±o.');
 
 -- 8. CONTACTO / MAPAS (Bloques independientes)
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(8, 'Grid de Contacto Moderno', '_ContactoBento', 'Cajas grandes para ubicación y WhatsApp.'),
+(8, 'Grid de Contacto Moderno', '_ContactoBento', 'Cajas grandes para ubicaciÃ³n y WhatsApp.'),
 (8, 'Tarjeta Minimalista', '_ContactoTarjeta', 'Toda la info condensada en una sola caja blanca.'),
 (8, 'Mapa Gigante Final', '_MapaGigante', 'El mapa ocupa el 100% de la pantalla horizontal.');
 
 -- 9. DOCTRINA
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
-(9, 'Acordeón Universal', '_Doctrina', 'Se adapta automáticamente a los colores elegidos.');
+(9, 'AcordeÃ³n Universal', '_Doctrina', 'Se adapta automÃ¡ticamente a los colores elegidos.');
 
 -- 10. FOOTER
 INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, descripcion) VALUES
@@ -3560,7 +2812,7 @@ INSERT INTO iciar_iglesias_secciones_disenos (seccion_id, nombre, ruta_vista, de
 (10, 'Dividido en 2 Columnas', '_FooterDividido', 'Contacto a la izquierda, redes a la derecha.');
 
 -- =====================================================================
--- INSERT DE PRUEBA: ESTADO PÚBLICO (PUB) Y BORRADOR (BOR) PARA IGLESIA ID = 1
+-- INSERT DE PRUEBA: ESTADO PÃšBLICO (PUB) Y BORRADOR (BOR) PARA IGLESIA ID = 1
 -- =====================================================================
 
 INSERT INTO iciar_iglesias_web_diseno (iglesia_id, estado, configuracion_json, fecha_actualizacion) 
@@ -3623,6 +2875,7 @@ VALUES
     }'::jsonb, 
     NOW()
 );
+
 
 
 
