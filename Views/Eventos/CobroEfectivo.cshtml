@@ -1,4 +1,4 @@
-﻿@model IEnumerable<dynamic>
+@model IEnumerable<dynamic>
 @{
     Layout = "Principal";
     ViewData["Title"] = "Cobro en Efectivo";
@@ -151,7 +151,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
 <script>
     const formatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 

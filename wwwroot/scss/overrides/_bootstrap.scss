@@ -1,0 +1,29 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/overrides/_bootstrap.scss
+// =========================================================================
+
+@import '../abstracts/variables';
+
+.text-primary {
+  color: $color-primary !important;
+}
+
+.text-secondary {
+  color: $text-muted !important;
+}
+
+.bg-light {
+  background-color: $bg-surface !important;
+}
+
+.border-primary {
+  border-color: $color-primary !important;
+}
+
+.border-secondary {
+  border-color: $color-secondary !important;
+}
+
+.bg-dark {
+  background-color: $color-primary-dark !important;
+}

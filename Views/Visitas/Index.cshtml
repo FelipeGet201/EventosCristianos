@@ -1,4 +1,4 @@
-﻿@model RedAJP.Models.VisitasViewModel
+@model RedAJP.Models.VisitasViewModel
 @{
     Layout = "Principal";
     ViewData["Title"] = "Actividad del Sitio";
@@ -89,7 +89,7 @@
 
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card border-0 shadow h-100" style="background: linear-gradient(135deg, #002b36 0%, #004d40 100%); color: white; border-radius: 15px;">
+            <div class="card border-0 shadow h-100" style="background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%); color: white; border-radius: 15px;">
                 <div class="card-body text-center d-flex flex-column justify-content-center">
                     <h6 class="text-uppercase opacity-75 small fw-bold mb-1">Visitas en el Rango</h6>
                     <h1 class="display-4 fw-bold text-warning mb-0">@Model.TotalEnRango.ToString("N0")</h1>
@@ -205,7 +205,7 @@
 <div class="modal fade" id="modalHistorial" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-info text-white border-0" style="background-color: #00838f !important;">
+            <div class="modal-header text-white border-0" style="background-color: var(--primary-dark) !important;">
                 <h5 class="modal-title fw-bold"><i class="fa-solid fa-shoe-prints me-2"></i> Recorrido del Usuario</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -229,12 +229,12 @@
     </div>
 </div>
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/lib/chartjs/chart.umd.js"></script>
+    <script src="~/lib/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/lib/datatables/dataTables.bootstrap5.min.js"></script>
     <script>
         $(document).ready(function() {
-            const tableStyle = { responsive: true, language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }, order: [[0, 'desc']] };
+            const tableStyle = { responsive: true, language: { url: '/lib/datatables/es-ES.json' }, order: [[0, 'desc']] };
             $('#tablaVisitas').DataTable(tableStyle);
             $('#tablaBitacora').DataTable(tableStyle);
 

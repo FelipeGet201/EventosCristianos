@@ -1,0 +1,23 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/components/_footer.scss
+// =========================================================================
+
+@import '../abstracts/variables';
+
+footer {
+  background-color: $bg-footer !important;
+  color: rgba($text-light, 0.85);
+  border-top: 3px solid $color-amber-accent;
+  padding: 1.5rem 0;
+  margin-top: auto;
+  font-size: 0.9rem;
+
+  a {
+    color: $color-secondary;
+
+    &:hover {
+      color: #F2C85C;
+      text-decoration: none;
+    }
+  }
+}

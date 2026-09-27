@@ -1,0 +1,47 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/components/_tables.scss
+// =========================================================================
+
+@import '../abstracts/variables';
+
+.table {
+  color: $text-main;
+  background-color: $bg-card;
+  border-color: $border-subtle-color;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+
+  thead {
+    background-color: $color-primary-dark;
+    color: $text-light;
+
+    th {
+      border-bottom: 2px solid $color-amber-accent;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      padding: 0.9rem 1rem;
+      color: $text-light;
+      background-color: $color-primary-dark;
+    }
+  }
+
+  tbody tr {
+    transition: $transition-fast;
+
+    &:hover {
+      background-color: rgba($color-secondary, 0.12) !important;
+    }
+  }
+
+  td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+  }
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: rgba($bg-surface, 0.35);
+  color: $text-main;
+}

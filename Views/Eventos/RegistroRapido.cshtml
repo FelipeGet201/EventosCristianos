@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = "Principal";
     ViewData["Title"] = "Registro Rápido Interactivo";
 }
@@ -64,7 +64,7 @@
         display: flex; align-items: center; justify-content: center;
         transition: all 0.2s;
     }
-    .btn-stepper:active { background: #00838f; transform: scale(0.9); }
+    .btn-stepper:active { background: var(--primary); transform: scale(0.9); }
 
     /* =========================================
        3. PINES DEL MAPA
@@ -78,7 +78,7 @@
     }
     .pin-disponible { background: linear-gradient(135deg, #27ae60, #1e8449); color: white; }
     .pin-agotado { background: linear-gradient(135deg, #7f8c8d, #555); color: #ccc; cursor: not-allowed; }
-    .pin-mio { background: linear-gradient(135deg, #f1c40f, #f39c12); color: #002b36; border-color: #002b36; animation: pulseMio 2s infinite; }
+    .pin-mio { background: linear-gradient(135deg, #f1c40f, #f39c12); color: var(--primary-dark); border-color: var(--primary-dark); animation: pulseMio 2s infinite; }
 
     @@keyframes pulseMio { 
         0% { box-shadow: 0 0 0 0px rgba(243, 156, 18, 0.7); } 
@@ -89,7 +89,7 @@
     .btn-borrar-pin {
         position: absolute; top: -8px; right: -8px; width: 20px; height: 20px;
         background: #e74c3c; color: white; border-radius: 50%; font-size: 10px;
-        display: none; align-items: center; justify-content: center; border: 1.5px solid #002b36; 
+        display: none; align-items: center; justify-content: center; border: 1.5px solid var(--primary-dark); 
     }
     .pin-mio .btn-borrar-pin { display: flex; }
 
@@ -168,8 +168,7 @@
         </div>
     </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+<script src="~/lib/signalr/signalr.min.js"></script>
 <script>
     // 1. DECLARACIÓN DE VARIABLES (Una sola vez)
     const configMapa = @Html.Raw(ViewBag.MapaJson);

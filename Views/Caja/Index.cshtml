@@ -1,4 +1,4 @@
-﻿@using RedAJP.Globales
+@using RedAJP.Globales
 @model List<RedAJP.Models.MovimientoCaja>
 
 @{
@@ -44,7 +44,7 @@
     });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="~/lib/chartjs/chart.umd.js"></script>
 
 <div class="container-fluid fade-in py-4">
 
@@ -62,9 +62,9 @@
             {
                 @if (ViewBag.TotalPendienteSincronizar > 0)
                 {
-                    <div class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2 rounded-pill d-flex align-items-center me-1 shadow-sm animate-pulse" data-bs-toggle="tooltip" title="Hay dinero retenido en Stripe esperando ser conciliado en el sistema.">
-                        <i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>
-                        <span class="fw-bold">Stripe por Validar: @(((decimal)ViewBag.TotalPendienteSincronizar).ToString("C", cultura))</span>
+                    <div class="badge bg-danger text-white border border-white px-3 py-2 rounded-pill d-flex align-items-center me-1 shadow-sm animate-pulse" data-bs-toggle="tooltip" title="Hay dinero retenido en Stripe esperando ser conciliado en el sistema.">
+                        <i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>
+                        <span class="fw-bold text-white">Stripe por Validar: @(((decimal)ViewBag.TotalPendienteSincronizar).ToString("C", cultura))</span>
                     </div>
                     
                     <button type="button" class="btn btn-warning shadow-sm d-flex align-items-center fw-bold text-dark rounded-pill px-3" onclick="sincronizarStripe()" id="btnSyncStripe">

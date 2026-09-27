@@ -1,4 +1,4 @@
-﻿@using RedAJP.Globales
+@using RedAJP.Globales
 @model RedAJP.Controllers.ColoresController.CatalogoViewModel
 @{
     Layout = "~/Views/Shared/Principal.cshtml";
@@ -15,8 +15,8 @@
 </script>
 <style>
     .text-main { color: #073238 !important; }
-    .colorlab-header-card { background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 5px solid #002b36 !important; }
-    .colorlab-icon-wrapper { background-color: #002b36; color: #ffffff; border-radius: 12px; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(13, 202, 240, 0.3); }
+    .colorlab-header-card { background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 5px solid var(--primary-dark) !important; }
+    .colorlab-icon-wrapper { background-color: var(--primary-dark); color: #ffffff; border-radius: 12px; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(13, 202, 240, 0.3); }
     
     .mini-swatch { height: 40px; flex-grow: 1; transition: transform 0.2s; cursor: pointer; position: relative; }
     .mini-swatch:hover { transform: scaleY(1.2); z-index: 10; border-radius: 4px; }

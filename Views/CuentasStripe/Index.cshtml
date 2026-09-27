@@ -1,4 +1,4 @@
-﻿@model RedAJP.Models.StripeCuentasViewModel
+@model RedAJP.Models.StripeCuentasViewModel
 @{
     Layout = "Principal";
     ViewData["Title"] = "Auditoría de Cuentas Stripe";
@@ -35,8 +35,8 @@
 
     /* --- CABECERA OSCURA --- */
     .th-cabecera {
-        background-color: #002b36;
-        color: #ffffff;
+        background-color: var(--primary-dark, #6C1919);
+        color: #ffffff !important;
         padding: 1.5rem 2rem;
         display: flex;
         justify-content: space-between;
@@ -51,6 +51,11 @@
         display: flex;
         align-items: center;
         gap: 10px;
+        color: #ffffff !important;
+    }
+
+    .th-titulo i {
+        color: var(--acento-dorado, #d4af37) !important;
     }
 
     .th-badges {

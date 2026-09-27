@@ -1,4 +1,4 @@
-﻿@using RedAJP.Globales
+@using RedAJP.Globales
 @model List<RedAJP.Models.EditaUsuario>
 
 @{
@@ -74,7 +74,7 @@
 
         <div class="row align-items-center mb-3 g-3">
             <div class="col-12 col-md-6">
-                <h2 class="fw-bold mb-0" style="color: #002b36;">
+                <h2 class="fw-bold mb-0" style="color: var(--primary-dark);">
                     <i class="fa-solid fa-users me-2 text-warning"></i>Usuarios
                 </h2>
                 <span class="text-dark opacity-75 small fw-semibold">Administración de sistema</span>
@@ -102,7 +102,7 @@
                 <input type="text" id="buscadorUsuarios" class="form-control border-0 shadow-none bg-white py-2 ps-0" placeholder="Buscar usuario..." onkeyup="filtrarTabla()">
             </div>
 
-            <div class="badge shadow-sm px-3 py-2 d-none d-md-flex align-items-center rounded-pill me-auto" style="background-color: #d8f4f9; color: #005a66; font-size: 0.85rem;">
+            <div class="badge shadow-sm px-3 py-2 d-none d-md-flex align-items-center rounded-pill me-auto" style="background-color: var(--bg-surface); color: var(--primary-dark); font-size: 0.85rem;">
                 <i class="fa-solid fa-circle-info me-2"></i>Registros nuevos vía Login
             </div>
 

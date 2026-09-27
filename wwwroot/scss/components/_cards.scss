@@ -1,0 +1,167 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/components/_cards.scss
+// =========================================================================
+
+@import '../abstracts/variables';
+@import '../abstracts/mixins';
+
+.card {
+  background-color: $bg-card;
+  border: $border-subtle;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-sm;
+  transition: $transition-base;
+  overflow: hidden;
+
+  &.card-hover:hover, &:hover {
+    box-shadow: $shadow-md;
+    border-color: rgba($color-amber-accent, 0.4);
+  }
+
+  .card-header {
+    background: linear-gradient(135deg, $color-primary-dark 0%, $color-primary 100%);
+    border-bottom: $border-subtle;
+    font-weight: 700;
+    color: $text-light !important;
+    padding: 1.25rem 1.5rem;
+
+    h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+      color: $text-light !important;
+    }
+  }
+
+  .card-footer {
+    background-color: rgba($bg-surface, 0.3);
+    border-top: $border-subtle;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .card-title {
+    color: $text-main;
+    font-weight: 700;
+  }
+}
+
+// TARJETA DESTACADA (Compacta & Hero con Brillo Disimulado)
+.card-hero {
+  background: linear-gradient(135deg, #4A1212 0%, #6C1919 45%, #8C2323 100%);
+  border: 1px solid rgba($color-secondary, 0.35);
+  border-radius: $border-radius-lg;
+  color: $text-light;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  h1, h2, h3, h4, h5, h6 {
+    color: $text-light !important;
+  }
+
+  // Brillo disimulado de izquierda a derecha (Shimmer Sweep)
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.02) 20%, 
+      rgba($color-secondary, 0.22) 50%, 
+      rgba(255, 255, 255, 0.02) 80%, 
+      transparent 100%
+    );
+    transform: skewX(-20deg);
+    animation: shimmerSweep 6s infinite ease-in-out;
+    pointer-events: none;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px rgba(74, 18, 18, 0.25);
+  }
+
+  &.locked {
+    border-left: 5px solid $color-amber-accent;
+  }
+}
+
+@keyframes shimmerSweep {
+  0% { left: -150%; }
+  40%, 100% { left: 150%; }
+}
+
+// Botón de Info en el Hero
+.btn-hero-info {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: $text-light !important;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: $border-radius-pill;
+  padding: 0.5rem 1.4rem;
+  transition: $transition-fast;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+
+  &:hover {
+    background: #ffffff;
+    color: $text-main !important;
+    border-color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Botones de Estado en el Hero (Inscribirse, Pagar, etc.)
+.btn-status-register {
+  background: linear-gradient(135deg, $color-secondary 0%, $color-secondary-dark 100%) !important;
+  color: $text-main !important;
+  border: none !important;
+  font-weight: 700 !important;
+  border-radius: $border-radius-pill !important;
+  padding: 0.55rem 1.5rem !important;
+  box-shadow: 0 4px 14px rgba($color-secondary, 0.35);
+  transition: $transition-fast !important;
+  text-decoration: none !important;
+
+  &:hover {
+    background: linear-gradient(135deg, lighten($color-secondary, 10%) 0%, $color-secondary 100%) !important;
+    color: $text-main !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba($color-secondary, 0.45);
+  }
+}
+
+// Caja de fecha (Glassmorphism)
+.date-badge {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: $border-radius-sm;
+  padding: 10px 16px;
+  text-align: center;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .date-month {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: $color-secondary;
+    letter-spacing: 1px;
+  }
+
+  .date-day {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: $text-light;
+    line-height: 1;
+  }
+}

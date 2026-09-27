@@ -1,598 +1,871 @@
-﻿/* =========================================
-   ARCHIVO: css/estilos_pagina.css
-   TEMA: ARRECIFE VIVO + SISTEMA NÁUTICO
-   ========================================= */
-
-/* ---------------------------------------------------------
-   1. VARIABLES Y CONFIGURACIÓN BASE
-   --------------------------------------------------------- */
+@import url("../../lib/fonts/outfit.css");
 :root {
-    --header-footer: #002b36; /* Azul Profundo */
-    --acento-dorado: #ffb74d; /* Dorado */
-    --acento-coral: #ff7043; /* Coral */
-    --pez-azul: #00bcd4; /* Cyan */
-    --alga-verde: #4db6ac; /* Verde Agua */
-    --texto-arena: #cfd8dc; /* Gris Claro */
-    --blanco-puro: #ffffff;
+  --primary: #8C2323;
+  --primary-dark: #6C1919;
+  --primary-light: #A63A3A;
+  --secondary: #DAA520;
+  --amber-accent: #D98A2B;
+  --bg-body: #FAF4EB;
+  --bg-card: #FFFDF9;
+  --header-footer: #4A1212;
+  --texto-principal: #3E2321;
+  --texto-arena: #FAF4EB;
+  --acento-dorado: #DAA520;
+  --acento-coral: #D98A2B;
 }
 
 html {
-    background-color: var(--header-footer);
-    overscroll-behavior-y: none;
+  background-color: #FAF4EB;
+  overscroll-behavior-y: none;
+  scroll-behavior: smooth;
 }
 
 body {
-    background-color: transparent;
-    position: relative;
-    min-height: 100vh;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #FAF4EB;
+  color: #3E2321;
+  font-family: "Outfit", "Segoe UI", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
-/* Resets Bootstrap */
+*:focus {
+  outline: none !important;
+}
+
 .nav-link:focus, .nav-link:active, .btn:focus,
 .form-control:focus, .form-check-input:focus {
-    box-shadow: none !important;
-    outline: none !important;
+  box-shadow: 0 0 0 0.2rem rgba(140, 35, 35, 0.18) !important;
+  border-color: rgba(140, 35, 35, 0.5) !important;
 }
 
-/* ---------------------------------------------------------
-   2. ELEMENTOS UI (BOTONES, FOOTER, MODAL)
-   --------------------------------------------------------- */
-
-/* Botón Náutico General */
-.btn-nautico {
-    background-color: var(--header-footer);
-    color: var(--blanco-puro);
-    border-radius: 50px;
-    font-weight: 600;
-    transition: all 0.3s;
-    border: 1px solid transparent;
+::selection {
+  background-color: rgba(140, 35, 35, 0.2);
+  color: #6C1919;
 }
 
-    .btn-nautico:hover {
-        background-color: var(--acento-dorado);
-        color: var(--header-footer);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 183, 77, 0.4);
-    }
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: "Outfit", "Segoe UI", sans-serif;
+  color: #3E2321;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
 
-/* Boyas Sociales y Carrito */
+.text-white h1, .text-white h2, .text-white h3, .text-white h4, .text-white h5, .text-white h6,
+.card-header h1, .card-header h2, .card-header h3, .card-header h4, .card-header h5, .card-header h6,
+.card-hero h1, .card-hero h2, .card-hero h3, .card-hero h4, .card-hero h5, .card-hero h6,
+.navbar h1, .navbar h2, .navbar h3, .navbar h4, .navbar h5, .navbar h6,
+.th-cabecera h1, .th-cabecera h2, .th-cabecera h3, .th-cabecera h4, .th-cabecera h5, .th-cabecera h6,
+.bg-dark h1, .bg-dark h2, .bg-dark h3, .bg-dark h4, .bg-dark h5, .bg-dark h6,
+.bg-primary h1, .bg-primary h2, .bg-primary h3, .bg-primary h4, .bg-primary h5, .bg-primary h6,
+.bg-danger h1, .bg-danger h2, .bg-danger h3, .bg-danger h4, .bg-danger h5, .bg-danger h6 {
+  color: inherit !important;
+}
+
+h1, .h1 {
+  font-size: 2.2rem;
+}
+
+h2, .h2 {
+  font-size: 1.75rem;
+}
+
+h3, .h3 {
+  font-size: 1.4rem;
+}
+
+p {
+  color: #3E2321;
+  line-height: 1.6;
+}
+
+.text-muted {
+  color: #7A5B58 !important;
+}
+
+.text-gold {
+  color: #C78E20 !important;
+}
+
+.text-primary-custom {
+  color: #8C2323 !important;
+}
+
+a {
+  color: #8C2323;
+  text-decoration: none;
+  transition: all 0.15s ease-in-out;
+}
+a:hover {
+  color: #6C1919;
+  text-decoration: underline;
+}
+
+.btn-nautico, .btn-custom-primary {
+  background-color: #8C2323;
+  color: #FAF4EB;
+  border: 1px solid transparent;
+  border-radius: 50px;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.25s ease-in-out;
+}
+.btn-nautico:hover, .btn-nautico:focus, .btn-custom-primary:hover, .btn-custom-primary:focus {
+  background-color: #6C1919;
+  color: #FAF4EB;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(140, 35, 35, 0.35);
+}
+.btn-nautico:active, .btn-custom-primary:active {
+  transform: translateY(0);
+}
+.btn-nautico, .btn-custom-primary {
+  box-shadow: 0 3px 10px rgba(62, 35, 33, 0.05);
+}
+
+.btn-custom-secondary {
+  background-color: #DAA520;
+  color: #3E2321;
+  border: 1px solid transparent;
+  border-radius: 50px;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.25s ease-in-out;
+}
+.btn-custom-secondary:hover, .btn-custom-secondary:focus {
+  background-color: #B58311;
+  color: #FAF4EB;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(218, 165, 32, 0.35);
+}
+.btn-custom-secondary:active {
+  transform: translateY(0);
+}
+.btn-custom-secondary {
+  box-shadow: 0 3px 10px rgba(62, 35, 33, 0.05);
+}
+
+.btn-custom-amber {
+  background-color: #D98A2B;
+  color: #FAF4EB;
+  border: 1px solid transparent;
+  border-radius: 50px;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.25s ease-in-out;
+}
+.btn-custom-amber:hover, .btn-custom-amber:focus {
+  background-color: #C97D1A;
+  color: #FAF4EB;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(217, 138, 43, 0.35);
+}
+.btn-custom-amber:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background-color: #8C2323 !important;
+  border-color: #8C2323 !important;
+  color: #FAF4EB !important;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.25s ease-in-out;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background-color: #6C1919 !important;
+  border-color: #6C1919 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(140, 35, 35, 0.3);
+}
+
+.btn-secondary {
+  background-color: #DAA520 !important;
+  border-color: #DAA520 !important;
+  color: #3E2321 !important;
+  border-radius: 50px;
+  font-weight: 600;
+}
+.btn-secondary:hover {
+  background-color: #B58311 !important;
+  border-color: #B58311 !important;
+  color: #FAF4EB !important;
+}
+
+.btn-outline-primary {
+  color: #8C2323 !important;
+  border-color: #8C2323 !important;
+  border-radius: 50px;
+  font-weight: 600;
+}
+.btn-outline-primary:hover {
+  background-color: #8C2323 !important;
+  color: #FAF4EB !important;
+}
+
 .social-buoy {
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background-color: rgba(255,255,255,0.05);
-    color: var(--acento-dorado);
-    margin: 0 5px;
-    text-decoration: none;
-    border: 1px solid rgba(255,183,77,0.3);
-    transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: rgba(255, 253, 249, 0.15);
+  color: #DAA520;
+  margin: 0 4px;
+  border: 1px solid rgba(218, 165, 32, 0.35);
+  transition: all 0.25s ease-in-out;
+}
+.social-buoy i {
+  font-size: 1rem !important;
+  color: inherit;
+}
+.social-buoy:hover {
+  background-color: #DAA520;
+  color: #6C1919;
+  border-color: #DAA520;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(218, 165, 32, 0.4);
 }
 
-    .social-buoy i {
-        margin: 0 !important;
-        font-size: 1rem !important;
-        color: inherit;
-    }
-
-    .social-buoy:hover {
-        background-color: var(--acento-coral);
-        color: white;
-        border-color: var(--acento-coral);
-        transform: translateY(-3px);
-        box-shadow: 0 0 15px rgba(255, 112, 67, 0.6);
-    }
-
-/* Hover específico del carrito */
 #menuCarrito:hover .social-buoy {
-    transform: scale(1.1);
-    background-color: var(--blanco-puro) !important;
-    box-shadow: 0 0 10px rgba(255, 183, 77, 0.6);
+  background-color: #FFFDF9 !important;
+  color: #8C2323 !important;
+  transform: scale(1.1);
+  box-shadow: 0 4px 14px rgba(140, 35, 35, 0.25);
 }
 
-    #menuCarrito:hover .social-buoy i {
-        color: var(--acento-coral) !important;
-    }
+.card {
+  background-color: #FFFDF9;
+  border: 1px solid #E2D1BC;
+  border-radius: 16px;
+  box-shadow: 0 3px 10px rgba(62, 35, 33, 0.05);
+  transition: all 0.25s ease-in-out;
+  overflow: hidden;
+}
+.card.card-hover:hover, .card:hover {
+  box-shadow: 0 8px 24px rgba(62, 35, 33, 0.08);
+  border-color: rgba(217, 138, 43, 0.4);
+}
+.card .card-header {
+  background: linear-gradient(135deg, #6C1919 0%, #8C2323 100%);
+  border-bottom: 1px solid #E2D1BC;
+  font-weight: 700;
+  color: #FAF4EB !important;
+  padding: 1.25rem 1.5rem;
+}
+.card .card-header h1, .card .card-header h2, .card .card-header h3, .card .card-header h4, .card .card-header h5, .card .card-header h6, .card .card-header .h1, .card .card-header .h2, .card .card-header .h3, .card .card-header .h4, .card .card-header .h5, .card .card-header .h6 {
+  color: #FAF4EB !important;
+}
+.card .card-footer {
+  background-color: rgba(245, 234, 217, 0.3);
+  border-top: 1px solid #E2D1BC;
+  padding: 0.75rem 1.25rem;
+}
+.card .card-title {
+  color: #3E2321;
+  font-weight: 700;
+}
 
-/* Footer */
+.card-hero {
+  background: linear-gradient(135deg, #4A1212 0%, #6C1919 45%, #8C2323 100%);
+  border: 1px solid rgba(218, 165, 32, 0.35);
+  border-radius: 24px;
+  color: #FAF4EB;
+  box-shadow: 0 14px 35px rgba(74, 18, 18, 0.12);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-hero h1, .card-hero h2, .card-hero h3, .card-hero h4, .card-hero h5, .card-hero h6 {
+  color: #FAF4EB !important;
+}
+.card-hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.02) 20%, rgba(218, 165, 32, 0.22) 50%, rgba(255, 255, 255, 0.02) 80%, transparent 100%);
+  transform: skewX(-20deg);
+  animation: shimmerSweep 6s infinite ease-in-out;
+  pointer-events: none;
+}
+.card-hero:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(74, 18, 18, 0.25);
+}
+.card-hero.locked {
+  border-left: 5px solid #D98A2B;
+}
+
+@keyframes shimmerSweep {
+  0% {
+    left: -150%;
+  }
+  40%, 100% {
+    left: 150%;
+  }
+}
+.btn-hero-info {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #FAF4EB !important;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: 50px;
+  padding: 0.5rem 1.4rem;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+}
+.btn-hero-info:hover {
+  background: #ffffff;
+  color: #3E2321 !important;
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-status-register {
+  background: linear-gradient(135deg, #DAA520 0%, #B58311 100%) !important;
+  color: #3E2321 !important;
+  border: none !important;
+  font-weight: 700 !important;
+  border-radius: 50px !important;
+  padding: 0.55rem 1.5rem !important;
+  box-shadow: 0 4px 14px rgba(218, 165, 32, 0.35);
+  transition: all 0.15s ease-in-out !important;
+  text-decoration: none !important;
+}
+.btn-status-register:hover {
+  background: linear-gradient(135deg, rgb(89.5090196078%, 72.1333333333%, 28.5301960784%) 0%, #DAA520 100%) !important;
+  color: #3E2321 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(218, 165, 32, 0.45);
+}
+
+.date-badge {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  padding: 10px 16px;
+  text-align: center;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.date-badge .date-month {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #DAA520;
+  letter-spacing: 1px;
+}
+.date-badge .date-day {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #FAF4EB;
+  line-height: 1;
+}
+
+.form-control, .form-select {
+  background-color: #FFFDF9;
+  border: 1px solid #E2D1BC;
+  color: #3E2321;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  transition: all 0.15s ease-in-out;
+}
+.form-control:focus, .form-select:focus {
+  background-color: #ffffff;
+  border-color: #8C2323;
+  box-shadow: 0 0 0 0.2rem rgba(140, 35, 35, 0.18);
+  color: #3E2321;
+}
+.form-control::placeholder, .form-select::placeholder {
+  color: #8C6965;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #3E2321;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.form-check-input {
+  border: 1px solid #E2D1BC;
+}
+.form-check-input:checked {
+  background-color: #8C2323;
+  border-color: #8C2323;
+}
+
+.badge {
+  font-weight: 600;
+  padding: 0.4em 0.8em;
+  border-radius: 50px;
+}
+
+.bg-primary {
+  background-color: #8C2323 !important;
+}
+
+.bg-secondary {
+  background-color: #DAA520 !important;
+  color: #3E2321 !important;
+}
+
+.bg-warning {
+  background-color: #E67E22 !important;
+  color: #ffffff !important;
+}
+
+.bg-success {
+  background-color: #388E3C !important;
+}
+
+.bg-danger {
+  background-color: #C0392B !important;
+}
+
+.bg-info {
+  background-color: #8E44AD !important;
+}
+
+.modal-content {
+  background-color: #FFFDF9;
+  border: none;
+  border-radius: 24px;
+  box-shadow: 0 14px 35px rgba(74, 18, 18, 0.12);
+  overflow: hidden;
+}
+
+.modal-header {
+  background-color: #4A1212;
+  color: #FAF4EB;
+  border-bottom: 2px solid #D98A2B;
+  padding: 1.25rem 1.5rem;
+}
+.modal-header .modal-title {
+  color: #FAF4EB !important;
+  font-weight: 700;
+}
+.modal-header .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.modal-body {
+  padding: 1.5rem;
+  color: #3E2321;
+}
+
+.modal-footer {
+  background-color: rgba(245, 234, 217, 0.4);
+  border-top: 1px solid #E2D1BC;
+  padding: 1rem 1.5rem;
+}
+
+.swal2-popup {
+  background: #FFFDF9 !important;
+  border: 1px solid rgba(218, 165, 32, 0.35) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 14px 35px rgba(74, 18, 18, 0.12) !important;
+  padding: 1.8rem 1.5rem !important;
+  font-family: "Outfit", "Segoe UI", system-ui, -apple-system, sans-serif !important;
+  color: #3E2321 !important;
+}
+
+.swal2-title {
+  color: #6C1919 !important;
+  font-family: "Outfit", "Segoe UI", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 1.6rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.swal2-html-container {
+  color: #3E2321 !important;
+  font-size: 1.05rem !important;
+  line-height: 1.6 !important;
+}
+
+.swal2-confirm.btn-swal-confirm {
+  background: linear-gradient(135deg, #8C2323 0%, #6C1919 100%) !important;
+  color: #FAF4EB !important;
+  border: none !important;
+  border-radius: 50px !important;
+  font-weight: 700 !important;
+  padding: 0.65rem 2rem !important;
+  font-size: 0.95rem !important;
+  box-shadow: 0 4px 14px rgba(140, 35, 35, 0.3) !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer !important;
+}
+.swal2-confirm.btn-swal-confirm:hover {
+  background: linear-gradient(135deg, #6C1919 0%, #4A1212 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(140, 35, 35, 0.4) !important;
+}
+
+.swal2-cancel.btn-swal-cancel {
+  background: #F5EAD9 !important;
+  color: #3E2321 !important;
+  border: 1px solid #E2D1BC !important;
+  border-radius: 50px !important;
+  font-weight: 600 !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.95rem !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer !important;
+}
+.swal2-cancel.btn-swal-cancel:hover {
+  background: rgba(218, 165, 32, 0.2) !important;
+  color: #3E2321 !important;
+}
+
+.swal2-icon.swal2-success {
+  border-color: #388E3C !important;
+  color: #388E3C !important;
+}
+.swal2-icon.swal2-success [class^=swal2-success-line] {
+  background-color: #388E3C !important;
+}
+.swal2-icon.swal2-success .swal2-success-ring {
+  border-color: rgba(56, 142, 60, 0.3) !important;
+}
+
+.swal2-icon.swal2-error {
+  border-color: #C0392B !important;
+  color: #C0392B !important;
+}
+.swal2-icon.swal2-error [class^=swal2-x-mark-line] {
+  background-color: #C0392B !important;
+}
+
+.swal2-icon.swal2-warning {
+  border-color: #DAA520 !important;
+  color: #DAA520 !important;
+}
+
+.swal2-icon.swal2-info {
+  border-color: #8C2323 !important;
+  color: #8C2323 !important;
+}
+
+.table {
+  color: #3E2321;
+  background-color: #FFFDF9;
+  border-color: #E2D1BC;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.table thead {
+  background-color: #6C1919;
+  color: #FAF4EB;
+}
+.table thead th {
+  border-bottom: 2px solid #D98A2B;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  padding: 0.9rem 1rem;
+  color: #FAF4EB;
+  background-color: #6C1919;
+}
+.table tbody tr {
+  transition: all 0.15s ease-in-out;
+}
+.table tbody tr:hover {
+  background-color: rgba(218, 165, 32, 0.12) !important;
+}
+.table td {
+  padding: 0.85rem 1rem;
+  vertical-align: middle;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: rgba(245, 234, 217, 0.35);
+  color: #3E2321;
+}
+
+.navbar {
+  background-color: #4A1212 !important;
+  box-shadow: 0 8px 24px rgba(62, 35, 33, 0.08);
+  border-bottom: 3px solid #D98A2B;
+  padding: 0.75rem 1rem;
+}
+.navbar .navbar-brand {
+  color: #FAF4EB !important;
+  font-weight: 800;
+  font-size: 1.35rem;
+  text-decoration: none !important;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+}
+.navbar .navbar-brand:hover, .navbar .navbar-brand:focus, .navbar .navbar-brand:active {
+  text-decoration: none !important;
+  color: #DAA520 !important;
+}
+.navbar .navbar-brand i {
+  text-decoration: none !important;
+  color: #DAA520 !important;
+}
+.navbar .navbar-brand span {
+  color: #DAA520;
+  text-decoration: none !important;
+  display: inline-block;
+}
+.navbar .navbar-brand span.nombre-largo {
+  color: #DAA520 !important;
+  font-weight: 800;
+  font-size: 1.35rem;
+}
+.navbar .nav-link {
+  color: rgba(250, 244, 235, 0.95) !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  padding: 0.5rem 0.95rem !important;
+  border-radius: 50px;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.navbar .nav-link i {
+  font-size: 1.05rem !important;
+  color: #DAA520 !important;
+}
+.navbar .nav-link span {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  color: #FAF4EB;
+}
+.navbar .nav-link:hover, .navbar .nav-link.active {
+  color: #DAA520 !important;
+  background-color: rgba(255, 255, 255, 0.12);
+  text-decoration: none !important;
+}
+.navbar .nav-link:hover span, .navbar .nav-link.active span {
+  color: #DAA520 !important;
+}
+.navbar .dropdown-menu {
+  background-color: #FFFDF9;
+  border: 1px solid #E2D1BC;
+  box-shadow: 0 8px 24px rgba(62, 35, 33, 0.08);
+  border-radius: 16px;
+  padding: 0.5rem;
+}
+.navbar .dropdown-menu .dropdown-item {
+  color: #3E2321;
+  border-radius: 10px;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none !important;
+}
+.navbar .dropdown-menu .dropdown-item:hover {
+  background-color: rgba(140, 35, 35, 0.1);
+  color: #6C1919;
+}
+
+.badge-dinamico {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background-color: #D98A2B;
+  color: #ffffff;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 50px;
+  border: 2px solid #4A1212;
+  font-weight: 700;
+  line-height: 1;
+}
+
 footer {
-    background-color: var(--header-footer);
-    color: var(--texto-arena);
-    border-top: none;
-    font-size: 0.9rem;
+  background-color: #3A0E0E !important;
+  color: rgba(250, 244, 235, 0.85);
+  border-top: 3px solid #D98A2B;
+  padding: 1.5rem 0;
+  margin-top: auto;
+  font-size: 0.9rem;
+}
+footer a {
+  color: #DAA520;
+}
+footer a:hover {
+  color: #F2C85C;
+  text-decoration: none;
 }
 
-/* Sistema de Mensajes (Modal Burbuja) */
-.modal-nautico .modal-content {
-    border: none;
-    border-radius: 30px;
-    background-color: var(--blanco-puro);
-    box-shadow: 0 25px 50px rgba(0, 43, 54, 0.5);
-    padding: 10px;
-    text-align: center;
+.login-card-modern {
+  background: rgba(255, 253, 249, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(217, 138, 43, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 14px 35px rgba(74, 18, 18, 0.12);
+  overflow: hidden;
+  transition: all 0.25s ease-in-out;
+}
+.login-card-modern:hover {
+  box-shadow: 0 18px 40px rgba(108, 25, 25, 0.18);
+  border-color: rgba(217, 138, 43, 0.5);
 }
 
-.modal-nautico .modal-header {
-    border-bottom: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 20px;
+.login-header-modern {
+  padding: 35px 30px 15px;
+  text-align: center;
+  background: linear-gradient(to bottom, rgba(232, 200, 114, 0.15) 0%, rgba(255, 255, 255, 0) 100%);
 }
 
-.modal-icono-grande {
-    font-size: 4.5rem;
-    margin-bottom: 15px;
+.login-wheat-icon {
+  font-size: 3.2rem;
+  color: #DAA520;
+  margin-bottom: 12px;
+  display: inline-block;
+  filter: drop-shadow(0 2px 4px rgba(181, 131, 17, 0.25));
 }
 
-.modal-titulo-nautico {
-    color: var(--header-footer);
-    font-weight: 800;
-    font-size: 1.6rem;
+.login-title {
+  color: #6C1919;
+  font-weight: 800;
+  font-size: 1.75rem;
+  margin-bottom: 4px;
 }
 
-.modal-nautico .btn-close {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    opacity: 0.3;
+.login-subtitle {
+  color: #7A5B58;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
-.modal-nautico .modal-body {
-    font-size: 1.1rem;
-    color: #546e7a;
-    padding: 10px 30px 20px 30px;
+.login-body {
+  padding: 10px 32px 35px;
 }
 
-.modal-nautico .modal-footer {
-    border-top: none;
-    justify-content: center;
-    padding-bottom: 25px;
+.form-floating > .form-control {
+  background-color: #FAF5EF !important;
+  border: 1.5px solid #E2D1BC !important;
+  border-radius: 10px;
+  color: #3E2321 !important;
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+}
+.form-floating > .form-control:focus {
+  background-color: #ffffff !important;
+  border-color: #8C2323 !important;
+  box-shadow: 0 0 0 0.2rem rgba(140, 35, 35, 0.18) !important;
+  transform: translateY(-1px);
 }
 
-.modal-nautico.tipo-error .modal-icono-grande {
-    color: var(--acento-coral);
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #FAF5EF inset !important;
+  -webkit-text-fill-color: #3E2321 !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
-.modal-nautico.tipo-exito .modal-icono-grande {
-    color: var(--alga-verde);
+.form-floating > label {
+  color: #7A5B58;
+  font-weight: 500;
+  padding-left: 15px;
+}
+.form-floating > label i {
+  color: #B58311;
+  transition: color 0.2s;
 }
 
-.modal-nautico.tipo-info .modal-icono-grande {
-    color: var(--pez-azul);
+.form-floating > .form-control:focus ~ label > i {
+  color: #8C2323;
 }
 
-/* ---------------------------------------------------------
-   3. BARRA DE NAVEGACIÓN (ESTILOS BASE)
-   --------------------------------------------------------- */
-.navbar-nautica {
-    background-color: var(--header-footer);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    border-bottom: 2px solid var(--acento-dorado);
+.btn-login-action {
+  background: linear-gradient(135deg, #8C2323 0%, #6C1919 100%);
+  color: #FAF4EB !important;
+  border: none;
+  border-radius: 50px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 13px 20px;
+  width: 100%;
+  box-shadow: 0 6px 18px rgba(140, 35, 35, 0.25);
+  transition: all 0.25s ease-in-out;
+}
+.btn-login-action:hover, .btn-login-action:focus {
+  background: linear-gradient(135deg, #6C1919 0%, #4A1212 100%);
+  color: #FAF4EB !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(140, 35, 35, 0.35);
+}
+.btn-login-action:active {
+  transform: translateY(0);
 }
 
-.navbar-brand {
-    font-weight: bold;
-    letter-spacing: 1px;
-    color: var(--blanco-puro) !important;
-    font-size: 1.1rem;
+.link-forgot {
+  color: #8C2323;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease-in-out;
+}
+.link-forgot:hover {
+  color: #6C1919;
+  text-decoration: underline;
 }
 
-    .navbar-brand:hover {
-        color: var(--pez-azul) !important;
-        transition: 0.3s;
-    }
-
-.nav-link {
-    color: var(--texto-arena) !important;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-/* DROPDOWNS */
-.dropdown-menu {
-    background-color: var(--header-footer);
-    border: 1px solid var(--acento-dorado);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-    border-radius: 10px;
-    margin-top: 5px;
+.footer-register {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #E2D1BC;
+  text-align: center;
 }
 
-.dropdown-item {
-    color: var(--texto-arena);
-    padding: 8px 20px;
-    transition: all 0.2s;
-    font-size: 0.9rem;
+.link-register {
+  color: #6C1919;
+  font-weight: 700;
+  text-decoration: none;
+}
+.link-register:hover {
+  color: #8C2323;
+  text-decoration: underline;
 }
 
-/* --- CORRECCIÓN DEFINITIVA ESTADO ACTIVO --- */
-/* Usamos selectores más específicos para ganarle a Bootstrap */
-.navbar-nav .dropdown-menu .dropdown-item.active,
-.navbar-nav .dropdown-menu .dropdown-item:active {
-    background-color: rgba(255, 183, 77, 0.15) !important; /* Fondo Dorado Sutil */
-    color: var(--acento-dorado) !important; /* Texto Dorado */
-    font-weight: 700 !important;
-    padding-left: 25px !important; /* Desplazamiento */
+.text-primary {
+  color: #8C2323 !important;
 }
 
-    /* Forzar el color del icono también */
-    .navbar-nav .dropdown-menu .dropdown-item.active i,
-    .navbar-nav .dropdown-menu .dropdown-item:active i {
-        color: var(--acento-dorado) !important;
-    }
-
-/* Hover normal */
-.dropdown-item:hover, .dropdown-item:focus {
-    background-color: rgba(255, 183, 77, 0.1);
-    color: var(--acento-dorado);
-    padding-left: 25px;
+.text-secondary {
+  color: #7A5B58 !important;
 }
 
-.dropdown-item i {
-    width: 20px;
-    text-align: center;
-    margin-right: 8px;
-    color: var(--alga-verde);
+.bg-light {
+  background-color: #F5EAD9 !important;
 }
 
-.dropdown-item:hover i {
-    color: var(--acento-dorado);
+.border-primary {
+  border-color: #8C2323 !important;
 }
 
-.dropdown-divider {
-    border-top: 1px solid rgba(255,255,255,0.1);
+.border-secondary {
+  border-color: #DAA520 !important;
 }
 
-.dropdown-header {
-    color: var(--acento-coral);
-    font-weight: bold;
-    font-size: 0.7rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-@media (max-width: 1199px) and (min-width: 992px) {
-    .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario) {
-        padding: 0.5rem 0.5rem !important; /* Reduce espacio lateral */
-    }
-
-    .navbar-nautica .navbar-nav .nav-item .nav-link span {
-        font-size: 0.6rem; /* Texto ligeramente más pequeño */
-    }
-
-    /* === NUEVO: COMPRIMIR BOTÓN DE USUARIO EN PANTALLAS MEDIANAS === */
-
-    /* 1. Ocultar el texto del nombre */
-    .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario .nombre-usuario-texto {
-        display: none !important;
-    }
-
-    /* 2. Quitar el ancho mínimo forzado para que el botón se encoja */
-    .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario {
-        min-width: auto !important;
-        padding: 8px 12px !important;
-    }
-
-        /* 3. Acercar la flechita al círculo quitando el margen derecho sobrante */
-        .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario div.rounded-circle {
-            margin-right: 4px !important;
-        }
-}
-
-
-/* ===========================================================
-   4. RESPONSIVE: MÓVIL Y TABLET (max-width: 991px)
-   =========================================================== */
-@media (max-width: 991px) {
-    .navbar-collapse {
-        background-color: rgba(0, 43, 54, 0.98);
-        padding: 20px;
-        border-radius: 0 0 20px 20px;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        margin-top: 10px;
-        text-align: center;
-    }
-
-    .navbar-nav {
-        width: 100%;
-    }
-
-        .navbar-nav .nav-item {
-            width: 100%;
-            margin-bottom: 2px;
-        }
-
-        /* Enlaces Centrados */
-        .navbar-nav .nav-link {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 0 !important;
-            font-size: 1.1rem;
-            color: var(--texto-arena);
-        }
-
-            .navbar-nav .nav-link i {
-                font-size: 1.2rem;
-                margin-right: 10px !important;
-                color: var(--pez-azul);
-                width: auto;
-            }
-
-            /* Activo Móvil */
-            .navbar-nav .nav-link.active, .navbar-nav .nav-link.active i {
-                color: var(--acento-dorado) !important;
-                font-weight: bold;
-            }
-
-        /* Dropdowns Móvil */
-        .navbar-nav .dropdown-menu {
-            width: 80%;
-            background-color: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--acento-dorado);
-            border-radius: 15px;
-            text-align: center;
-            margin: 5px 0 15px 0;
-            padding: 10px 0;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-    .dropdown-item {
-        justify-content: center;
-        padding: 10px;
-    }
-
-    .border-end {
-        border: none !important;
-    }
-
-    .navbar-toggler {
-        margin-left: 10px;
-    }
-
-    /* --- AJUSTE CARRITO MÓVIL (BOYA BRILLANTE) --- */
-    .navbar-nautica #menuCarrito .social-buoy {
-        background: linear-gradient(135deg, var(--pez-azul) 0%, #00838f 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        box-shadow: 0 0 15px rgba(0, 188, 212, 0.6) !important;
-        width: 38px !important;
-        height: 38px !important;
-        display: flex !important;
-    }
-
-        .navbar-nautica #menuCarrito .social-buoy i {
-            color: white !important;
-            font-size: 0.9rem !important;
-            margin: 0 !important;
-        }
-
-    /* Botón Usuario Móvil */
-    .user-avatar-btn {
-        margin-top: 20px;
-        width: 100%;
-        background-color: rgba(255, 183, 77, 0.1);
-        border: 1px solid var(--acento-dorado);
-        border-radius: 50px;
-        display: flex !important;
-        justify-content: center !important;
-        padding: 10px !important;
-    }
-
-    /* Iconos generales de boyas en móvil (redes sociales) */
-    .social-buoy i {
-        color: var(--acento-dorado) !important;
-    }
-}
-
-@media (max-width: 576px) {
-    .card-title {
-        font-size: 0.9rem !important; /* Título más pequeño */
-    }
-
-    .card-body {
-        padding: 1rem !important; /* Menos relleno interno */
-    }
-
-    .fs-5 {
-        font-size: 1rem !important; /* Precio más pequeño */
-    }
-
-    .btn-sm {
-        padding: 0.25rem 0.75rem !important; /* Botón "Ver" más compacto */
-        font-size: 0.75rem !important;
-    }
-}
-
-/* ===========================================================
-   5. RESPONSIVE: ESCRITORIO (min-width: 992px)
-   MENÚ APILADO (Icono Arriba)
-   =========================================================== */
-@media (min-width: 992px) {
-    .navbar-nautica {
-        padding: 0;
-        min-height: 75px;
-    }
-
-        /* 1. Estructura Vertical (Icono Arriba / Texto Abajo) */
-        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario) {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 0.5rem 1rem !important;
-            height: 100%;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-            /* 2. Iconos generales (ESTADO REPOSO: COLOR ARENA) */
-            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario) i {
-                font-size: 1.4rem;
-                margin-bottom: 4px;
-                margin-right: 0 !important;
-                /* Color neutro base */
-                color: var(--texto-arena) !important;
-                transition: all 0.3s ease;
-            }
-
-            /* 3. Texto general */
-            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario) span {
-                font-size: 0.7rem;
-                font-weight: 700;
-                letter-spacing: 0.5px;
-                text-transform: uppercase;
-                line-height: 1;
-                display: block;
-            }
-
-        /* 4. Flecha Dropdown General */
-        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menu-usuario).dropdown-toggle::after {
-            margin-left: 0;
-            margin-top: 3px;
-            display: block;
-            border-top: 0.3em solid;
-            border-right: 0.3em solid transparent;
-            border-left: 0.3em solid transparent;
-            opacity: 0.6;
-            color: inherit;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* 5. Hover/Active (CORREGIDO: AHORA TIENE LA FUERZA PARA GANARLE AL GRIS) */
-        /* Agregamos los mismos :not(...) aquí para igualar la especificidad */
-        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario):hover,
-        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario).active,
-        .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario).show {
-            color: var(--acento-dorado) !important;
-        }
-
-            /* FORZAR ICONO DORADO AL PASAR MOUSE O ESTAR ACTIVO */
-            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario):hover i,
-            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario).active i,
-            .navbar-nautica .navbar-nav .nav-item .nav-link:not(#menuCarrito):not(#menu-usuario).show i {
-                color: var(--acento-dorado) !important;
-                transform: translateY(-2px);
-            }
-
-        /* Limpieza Bordes */
-        .navbar-nautica .navbar-nav .nav-item.border-start-lg {
-            border-left: none !important;
-        }
-
-        /* --- EXCEPCIÓN 1: CARRITO (Horizontal) --- */
-        .navbar-nautica .navbar-nav .nav-item .nav-link#menuCarrito {
-            padding: 0.5rem 1rem !important;
-            display: flex;
-            align-items: center;
-            height: 100%;
-        }
-
-    #menuCarrito .social-buoy i {
-        color: var(--header-footer) !important;
-    }
-
-    #menuCarrito:hover .social-buoy {
-        background-color: var(--blanco-puro) !important;
-        transform: scale(1.1);
-    }
-
-        #menuCarrito:hover .social-buoy i {
-            color: var(--acento-coral) !important;
-        }
-
-    /* --- EXCEPCIÓN 2: BOTÓN USUARIO (Estilo Horizontal) --- */
-    .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 8px 20px !important;
-        height: auto !important;
-        margin-top: auto;
-        margin-bottom: auto;
-        min-width: 180px;
-    }
-
-        /* Avatar */
-        .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario div.rounded-circle {
-            margin-right: 10px !important;
-            margin-bottom: 0 !important;
-            width: 28px;
-            height: 28px;
-        }
-
-        /* Nombre */
-        .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario span {
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin: 0 !important;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 140px;
-            text-align: left;
-            display: block !important;
-        }
-
-        /* Flecha */
-        .navbar-nautica .navbar-nav .nav-item .nav-link#menu-usuario::after {
-            margin-left: 10px !important;
-            margin-top: 0 !important;
-            display: inline-block !important;
-            position: static !important;
-            border-top: 0.3em solid;
-            opacity: 0.8;
-            color: inherit;
-        }
-
-    /* Contenedor estilo píldora */
-    .user-avatar-btn {
-        border: 1px solid var(--acento-dorado);
-        border-radius: 50px;
-        background: rgba(255,255,255,0.08);
-    }
-}
-
-/* ===========================================================
-   6. PARCHE GLOBAL: APROVECHAR ESPACIO EN MÓVILES
-   (Agregado al final para sobrescribir reglas anteriores)
-   =========================================================== */
-
-@media (max-width: 576px) {
-    /* 1. Reducir el margen lateral del contenedor principal */
-    /* Bootstrap trae 12px o 15px por defecto. Lo bajamos a 5px */
-    .container, .container-fluid {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
-    }
-
-    /* 2. Ajustar las filas para que no se desborden por el cambio anterior */
-    .row {
-        margin-left: -4px !important;
-        margin-right: -4px !important;
-    }
-
-    /* 3. Columnas: Menos espacio entre ellas para ganar ancho real */
-    .col, [class*="col-"] {
-        padding-left: 4px !important;
-        padding-right: 4px !important;
-    }
-
-    /* 4. Tarjetas: Reducir el "relleno" interno en móviles */
-    /* A veces las tarjetas tienen mucho aire adentro. Esto lo compacta un poco */
-    .card-body {
-        padding: 1rem !important; /* 16px es suficiente en móvil */
-    }
-
-    /* Si tienes títulos display muy grandes, los ajustamos */
-    h1, .display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
-        font-size: 1.8rem !important; /* Tamaño controlado para que no rompa el ancho */
-        word-wrap: break-word; /* Evita que palabras largas salgan de la pantalla */
-    }
+.bg-dark {
+  background-color: #6C1919 !important;
 }

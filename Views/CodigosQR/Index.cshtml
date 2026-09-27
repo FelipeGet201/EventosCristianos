@@ -1,4 +1,4 @@
-﻿@using RedAJP.Globales
+@using RedAJP.Globales
 @using RedAJP.Servicios
 @model List<RedAJP.Controllers.CodigoQRViewModel>
 
@@ -15,12 +15,12 @@
 
 <style>
     .btn-nautico {
-        background-color: var(--header-footer, #002b36);
+        background-color: var(--primary-dark);
         color: white;
     }
 
         .btn-nautico:hover {
-            background-color: var(--pez-azul, #005a66);
+            background-color: var(--primary);
             color: white;
         }
 
@@ -221,7 +221,7 @@
     <div class="mb-4 fade-in">
         <div class="row align-items-center mb-3 g-3">
             <div class="col-12 col-md-6">
-                <h2 class="fw-bold mb-0" style="color: #002b36;">
+                <h2 class="fw-bold mb-0" style="color: var(--primary-dark);">
                     <i class="fa-solid fa-qrcode me-2 text-warning"></i>Códigos QR
                 </h2>
                 <span class="text-dark opacity-75 small fw-semibold">Generador y administrador de QR</span>

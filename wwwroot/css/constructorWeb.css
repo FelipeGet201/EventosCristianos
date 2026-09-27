@@ -1,4 +1,4 @@
-﻿
+
 html, body {
     height: 100% !important;
     width: 100% !important;
@@ -6,7 +6,7 @@ html, body {
     padding: 0 !important;
     overflow: hidden !important;
     font-family: 'Inter', sans-serif;
-    background-color: #002b36 !important;
+    background-color: #4A1212 !important;
 }
 /* Evitar que el lienzo crezca hacia arriba y oculte el header */
 .app-canvas-container {
@@ -23,7 +23,7 @@ html, body {
     right: 0;
     bottom: 0;
     z-index: 1; /* Cambia 9999 por 1 */
-    background-color: #002b36;
+    background-color: #4A1212;
 }
 /* El elemento clonado que arrastras */
 .sortable-fallback {
@@ -46,7 +46,7 @@ html, body {
     display: none;
     position: fixed;
     inset: 0;
-    background: #002b36;
+    background: #4A1212;
     z-index: 10000;
     flex-direction: column;
     align-items: center;
@@ -58,8 +58,8 @@ html, body {
 
 .app-toolbar {
     height: 65px;
-    background: #002b36;
-    border-bottom: 2px solid #005f73;
+    background: #4A1212;
+    border-bottom: 2px solid #E5952B;
     display: flex;
     justify-content: space-between;
     align-items: center;

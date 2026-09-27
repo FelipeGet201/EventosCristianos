@@ -4,7 +4,7 @@
     ViewData["Title"] = Model.Titulo;
 }
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="~/lib/select2/select2.min.css" rel="stylesheet" />
 
 <style>
     /* Estilos Glassmorphism */
@@ -58,7 +58,7 @@
         background: #fff;
         border: 2px solid #e0e0e0;
         border-radius: 15px;
-        color: #546e7a;
+        color: var(--text-muted);
         text-align: left;
         font-weight: 600;
         transition: 0.2s;
@@ -70,9 +70,9 @@
         }
 
         .btn-option.selected {
-            background: #e0f7fa;
-            border-color: #00bcd4;
-            color: #006064;
+            background: rgba(140, 35, 35, 0.1);
+            border-color: var(--primary);
+            color: var(--primary-dark);
         }
 
     /* Estrellas y Emojis */
@@ -103,7 +103,7 @@
     /* Rangos */
     .custom-range {
         width: 100%;
-        accent-color: #ff7043;
+        accent-color: var(--primary);
         height: 8px;
         cursor: pointer;
     }
@@ -117,7 +117,7 @@
         text-align: center;
         border-radius: 12px;
         border: 2px solid #e0e0e0;
-        color: #546e7a;
+        color: var(--text-main);
     }
 
     /* --- EFECTO: BURBUJAS DE CRISTAL (Versión Suave) --- */
@@ -171,7 +171,7 @@
     }
 
     .select2-container--default .select2-selection--single .select2-selection__rendered {
-        color: #546e7a !important;
+        color: var(--text-main) !important;
         padding-left: 0 !important;
         line-height: normal !important;
     }
@@ -221,7 +221,7 @@
                     }
                     else
                     {
-                        <span>Hola Pescador!, Te Invitamos a Responder esta Encuesta.</span>
+                        <span>¡Hola!, Te invitamos a responder esta encuesta.</span>
                     }
                 </div>
             }
@@ -436,8 +436,8 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/lib/confetti/confetti.browser.min.js"></script>
+    <script src="~/lib/select2/select2.min.js"></script>
 
     <script>
         window.addEventListener('load', function() {
@@ -679,7 +679,7 @@
         // 3 segundos de fiesta
         var end = Date.now() + duration;
         // Colores del tema
-        var colors = ['#ffb74d', '#ff7043', '#00bcd4', '#ffffff'];
+        var colors = ['#8C2323', '#DAA520', '#E5952B', '#FFFDF9'];
         (function frame() {
         // Lanza confeti desde la izquierda
         confetti({

@@ -1,0 +1,117 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/components/_navbar.scss
+// =========================================================================
+
+@import '../abstracts/variables';
+@import '../abstracts/mixins';
+
+.navbar {
+  background-color: $bg-header !important;
+  box-shadow: $shadow-md;
+  border-bottom: 3px solid $color-amber-accent;
+  padding: 0.75rem 1rem;
+
+  .navbar-brand {
+    color: $text-light !important;
+    font-weight: 800;
+    font-size: 1.35rem;
+    text-decoration: none !important;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+
+    &:hover, &:focus, &:active {
+      text-decoration: none !important;
+      color: $color-secondary !important;
+    }
+
+    i {
+      text-decoration: none !important;
+      color: $color-secondary !important;
+    }
+
+    span {
+      color: $color-secondary;
+      text-decoration: none !important;
+      display: inline-block;
+
+      &.nombre-largo {
+        color: $color-secondary !important;
+        font-weight: 800;
+        font-size: 1.35rem;
+      }
+    }
+  }
+
+  .nav-link {
+    color: rgba($text-light, 0.95) !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    padding: 0.5rem 0.95rem !important;
+    border-radius: $border-radius-pill;
+    transition: $transition-fast;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+
+    i {
+      font-size: 1.05rem !important;
+      color: $color-secondary !important;
+    }
+
+    span {
+      font-size: 0.95rem !important;
+      font-weight: 600 !important;
+      text-decoration: none !important;
+      color: $text-light;
+    }
+
+    &:hover, &.active {
+      color: $color-secondary !important;
+      background-color: rgba(255, 255, 255, 0.12);
+      text-decoration: none !important;
+
+      span {
+        color: $color-secondary !important;
+      }
+    }
+  }
+
+  .dropdown-menu {
+    background-color: $bg-card;
+    border: $border-subtle;
+    box-shadow: $shadow-md;
+    border-radius: $border-radius-md;
+    padding: 0.5rem;
+
+    .dropdown-item {
+      color: $text-main;
+      border-radius: $border-radius-sm;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      transition: $transition-fast;
+      text-decoration: none !important;
+
+      &:hover {
+        background-color: rgba($color-primary, 0.1);
+        color: $color-primary-dark;
+      }
+    }
+  }
+}
+
+// Badge dinámico sobre iconos del menú
+.badge-dinamico {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background-color: $color-amber-accent;
+  color: #ffffff;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: $border-radius-pill;
+  border: 2px solid $bg-header;
+  font-weight: 700;
+  line-height: 1;
+}

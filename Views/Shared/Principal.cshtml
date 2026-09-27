@@ -38,7 +38,7 @@
     bool verMenuHerramientas = p_Visitas || p_Material || p_Formatos || p_Encuestas || p_GeneradorQR || p_Colores || p_Biblioteca || p_Cupones;
     bool verMenuGestion = p_Caja || p_Usuarios || p_Grupos || p_Roles || p_ValidaTransferencias || p_AlertasCorreos || p_PuedeVerEstadisticas || p_PuedeVerDatosStripe;
 
-    string inicialUsuario = esMiembro ? User.Identity.Name.Substring(0, 1).ToUpper() : "U";
+    string inicialUsuario = esMiembro && User.Identity != null && !string.IsNullOrEmpty(User.Identity.Name) ? User.Identity.Name.Trim().Substring(0, 1).ToUpper() : "U";
 
     int nContadorAlertasGestion = 0;
     int nContadorAlertasMovilAgrup = 0;
@@ -57,42 +57,16 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <meta name="theme-color" content="#002b36">
+    <meta name="theme-color" content="#4A1212">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>@ViewData["Title"] - Eventos Cristianos</title>
     <link rel="icon" type="image/png" href="~/Images/favicon.ico">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
 
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
     <link rel="stylesheet" href="~/css/estilos_pagina.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/movimiento_peces.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/mascota.css" asp-append-version="true" />
 </head>
-
-@if (esMiembro && !bOcultarMascotaVista)
-{
-    <div id="mascota-flotante" class="mascota-oculta-inicial" role="button" aria-label="Dar ofrenda" data-reset="@TempData["ResetMascota"]">
-
-        <div class="mensaje-mascota"><strong>¡Hola!</strong> <br> Te invitamos a apoyar la Obra de Dios. ¿Te animas?</div>
-
-        <button class="boton-cerrar-mascota" aria-label="Cerrar mascota">×</button>
-
-        <i class="fa-solid fa-heart corazon-icon-boya"></i>
-
-        <div class="brazos-corazon">
-            <div class="mano-corazon mano-izq"></div>
-            <div class="mano-corazon mano-der"></div>
-        </div>
-
-        <div class="rostro-corazon">
-            <div class="contenedor-ojos">
-                <div class="ojo-mascota"><div class="pupila-mascota"></div></div>
-                <div class="ojo-mascota"><div class="pupila-mascota"></div></div>
-            </div>
-            <div class="boca-mascota"></div>
-        </div>
-    </div>
-}
 
 <body class="d-flex flex-column min-vh-100">
     <style>
@@ -139,17 +113,7 @@
         .ajp-largo{
             display: none;
         }
-        
-        @@media (min-width: 992px) {            
-            .nav-link span {
-                font-size: 0.6rem !important;
-            }
-        }
-        @@media (min-width: 1280px) {
-            .nav-link span {
-                font-size: 0.7rem !important;
-            }
-        }
+
 
         @@media (max-width: 991px) {
             .ajp-corto {
@@ -228,7 +192,7 @@
         }
 
             .ojo-global-btn:hover {
-                color: #00334e; /* Tu color azul náutico */
+                color: var(--primary-dark);
             }
 
         /* Clase para dar espacio al texto y que no choque con el icono */
@@ -241,18 +205,13 @@
             position: relative !important;
         }
     </style>
-    <div id="mar-animado"></div>
-
     <header>
         <nav class="navbar navbar-expand-lg navbar-nautica navbar-dark sticky-top shadow-sm">
             <div class="container">
 
-                <a class="navbar-brand d-flex align-items-center py-2 me-auto" href="@Url.Action("Index", "Home")">
-                    <img src="~/Images/ixoye.png" alt="Logo" height="50" class="me-2 rounded-circle" onerror="this.src='/Images/favicon.ico'">
-    
-                    <span class="fw-bold tracking-wide nombre-corto">EC</span>
-    
-                    <span class="fw-bold tracking-wide nombre-largo">Eventos Cristianos</span>
+                <a class="navbar-brand d-flex align-items-center py-2 me-auto text-decoration-none" href="@Url.Action("Index", "Home")">
+                    <i class="fa-solid fa-cross fa-2x me-2" style="color: var(--acento-dorado);"></i>
+                    <span class="fw-bold tracking-wide nombre-largo text-decoration-none">Eventos Cristianos</span>
                 </a>
 
 
@@ -270,13 +229,8 @@
 
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" id="menu-nosotros" href="@Url.Action("Nosotros", "Home")">
-                                <i class="fa-solid fa-people-group"></i> <span>Nosotros</span>
-                            </a>
-                        </li>
-                        <li class="nav-item border-start-lg">
                             <a class="nav-link" id="menu-reuniones" href="@Url.Action("Index", "Reuniones")">
-                                <i class="fa-solid fa-map-location-dot"></i> <span>UBICACIONES</span>
+                                <i class="fa-solid fa-map-location-dot"></i> <span>Ubicaciones</span>
                             </a>
                         </li>
                         @if (esMiembro)
@@ -433,12 +387,9 @@
                             <li class="nav-item dropdown ms-lg-2">
                                 <a class="nav-link dropdown-toggle user-avatar-btn" href="#" id="menu-usuario" role="button" data-bs-toggle="dropdown" style="min-width: auto;">
 
-                                    <div class="rounded-circle text-dark d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px; background-color: var(--acento-dorado);">
-                                        
-                                        <i class="position-relative letra-nombre" style="font-style: normal; display: inline-flex;">
-                                            <span class="fw-bold small">@inicialUsuario</span>
-
-                                        </i>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm"
+                                         style="width: 30px; height: 30px; background-color: var(--acento-dorado); color: var(--header-footer, #4A1212) !important; font-weight: 800; font-size: 0.95rem; line-height: 1; flex-shrink: 0;">
+                                        @inicialUsuario
                                     </div>
 
                                     <span class="nombre-usuario-texto small fw-bold text-truncate" style="max-width: 150px; color: var(--acento-dorado);">
@@ -477,13 +428,13 @@
                 </div>
             }
             <div class="mb-3">
-                <i class="fa-solid fa-anchor me-2" style="color: var(--acento-dorado); opacity: 0.8;"></i>
+                <i class="fa-solid fa-cross me-2" style="color: var(--acento-dorado); opacity: 0.9;"></i>
                 <span class="fw-bold text-white tracking-wide">Plataforma de Eventos Cristianos</span>
             </div>
 
             <div class="mb-4 px-3">
                 <small class="fst-italic" style="color: var(--texto-arena); font-size: 0.85rem;">
-                    "Y les dijo: Venid en pos de mí, y os haré pescadores de hombres." <br> (Mateo 4:19)
+                    "La mies es mucha, mas los obreros pocos; rogad al Señor de la mies que envíe obreros a su mies." <br> (Lucas 10:2)
                 </small>
             </div>
 
@@ -513,33 +464,9 @@
         </div>
     </footer>
 
-    <div class="modal fade modal-nautico" id="modalUniversal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <i id="modalIcono" class="modal-icono-grande fa-solid fa-circle-info"></i>
-                    <h5 class="modal-title modal-titulo-nautico" id="modalTitulo">Mensaje</h5>
-                </div>
-
-                <div class="modal-body">
-                    <p class="mb-0" id="modalMensaje">...</p>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-nautico px-4 py-2" data-bs-dismiss="modal">
-                        Entendido
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/movimiento_peces.js" asp-append-version="true"></script>
-    <script src="~/js/mascota.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
 
     <script>
 
@@ -556,39 +483,35 @@
             }
         }
 
-        // B. Función para mostrar el Modal Mensaje
-                function mostrarMensaje(titulo, mensaje, tipo = 'info') {
-            $('#modalTitulo').text(titulo); // El título lo dejamos como texto plano por seguridad
-            $('#modalMensaje').html(mensaje); // <--- CAMBIO AQUÍ: Usamos .html() en lugar de .text()
+        // B. Función para mostrar Notificaciones con SweetAlert2
+        function mostrarMensaje(titulo, mensaje, tipo = 'info', onConfirm = null) {
+            let swalIcon = 'info';
+            if (tipo === 'exito' || tipo === 'success') swalIcon = 'success';
+            else if (tipo === 'error' || tipo === 'danger') swalIcon = 'error';
+            else if (tipo === 'alerta' || tipo === 'warning') swalIcon = 'warning';
 
-            var modalEl = $('#modalUniversal');
-            var iconoEl = $('#modalIcono');
-
-            // Limpiamos estilos previos
-            modalEl.removeClass('tipo-error tipo-exito tipo-alerta tipo-info');
-            iconoEl.attr('class', 'modal-icono-grande');
-
-            // Aplicamos nuevo estilo
-            switch(tipo) {
-                case 'error':
-                    modalEl.addClass('tipo-error');
-                    iconoEl.addClass('fa-solid fa-circle-xmark');
-                    break;
-                case 'exito':
-                    modalEl.addClass('tipo-exito');
-                    iconoEl.addClass('fa-solid fa-circle-check');
-                    break;
-                case 'alerta':
-                    modalEl.addClass('tipo-alerta');
-                    iconoEl.addClass('fa-solid fa-triangle-exclamation');
-                    break;
-                default: // info
-                    modalEl.addClass('tipo-info');
-                    iconoEl.addClass('fa-solid fa-circle-info');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: titulo || 'Notificación',
+                    html: mensaje,
+                    icon: swalIcon,
+                    confirmButtonText: 'Entendido',
+                    customClass: {
+                        popup: 'swal2-popup',
+                        title: 'swal2-title',
+                        htmlContainer: 'swal2-html-container',
+                        confirmButton: 'btn-swal-confirm',
+                        cancelButton: 'btn-swal-cancel'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed && typeof onConfirm === 'function') {
+                        onConfirm();
+                    }
+                });
+            } else {
+                alert((titulo ? titulo + '\n' : '') + (mensaje ? mensaje.replace(/<[^>]*>?/gm, '') : ''));
             }
-
-            var myModal = new bootstrap.Modal(document.getElementById('modalUniversal'));
-            myModal.show();
         }
 
         // C. Auto-detectar mensajes del Backend (TempData) al cargar
@@ -674,8 +597,8 @@
                             <form id="formVinculacionExistente" action="@Url.Action("GuardarSolicitud", "Vinculacion")" method="POST">
                                 <div id="vistaBienvenida">
                                     <div class="text-center mb-4">
-                                        <i class="fa-solid fa-map-location-dot fa-3x mb-3" style="color: var(--header-footer, #00334e);"></i>
-                                        <h3 class="fw-bold" style="color: var(--header-footer, #00334e);">¡Hola, Pescador!</h3>
+                                        <i class="fa-solid fa-map-location-dot fa-3x mb-3" style="color: var(--header-footer, #4A1212);"></i>
+                                        <h3 class="fw-bold" style="color: var(--header-footer, #4A1212);">¡Bienvenido!</h3>
                                         <p id="textoBienvenidaVinculacion" class="text-muted fs-5">¿De qué iglesia nos visitas?</p>
                                     </div>
 
@@ -739,7 +662,7 @@
                                         <div class="col-md-12">
                                             <label for="v_mapa" class="form-label small fw-bold text-secondary mb-1">3. Pega la ubicación de Tu Iglesia en Google Maps <span class="text-danger">*</span></label>
                                             <div class="input-group shadow-sm rounded-3 overflow-hidden border" style="border-color: #dee2e6;">
-                                                <span class="input-group-text bg-white border-0"><i class="fa-solid fa-map-location-dot" style="color: #00838f;"></i></span>
+                                                <span class="input-group-text bg-white border-0"><i class="fa-solid fa-map-location-dot" style="color: var(--primary);"></i></span>
                                                 <input type="url" id="v_mapa" name="mapa_url" class="form-control border-0 bg-white" placeholder="https://maps.app.goo.gl/..." required>
                                             </div>
                                         </div>
@@ -755,10 +678,7 @@
                                             <div id="errorHorarios" class="text-danger mt-1 small fw-bold" style="display: none;">
                                                 <i class="fa-solid fa-circle-exclamation"></i> Debes ingresar al menos un horario válido (hora y actividad).
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="card border-info border-opacity-25 shadow-sm rounded-4 mb-4" style="border-color: #00838f !important;">
+                                                                      <div class="card border-opacity-25 shadow-sm rounded-4 mb-4" style="border-color: var(--primary) !important;">
                                         <a class="card-header bg-light text-decoration-none d-flex justify-content-between align-items-center"
                                         data-bs-toggle="collapse"
                                         href="#seccionOpcional" 
@@ -767,14 +687,14 @@
                                         aria-controls="seccionOpcional" 
                                         style="border-radius: 1rem; cursor: pointer;">
                                             <div>
-                                                <h6 class="text-info fw-bold mb-1" style="color: #00838f !important;">
+                                                <h6 class="fw-bold mb-1" style="color: var(--primary) !important;">
                                                     <i class="fa-solid fa-heart me-2"></i>¿Podrías ayudarnos con algunos datos extra? (Opcional)
                                                     </h6>
                                                 <small class="text-muted d-block" style="font-size: 0.8rem;">
                                                     Toca aquí para ver algunos campos extra.
                                                     </small>
                                             </div>
-                                            <i class="fa-solid fa-chevron-down text-info transition-icon" id="iconoColapso" style="color: #00838f !important; transition: transform 0.3s ease;"></i>
+                                            <i class="fa-solid fa-chevron-down transition-icon" id="iconoColapso" style="color: var(--primary) !important; transition: transform 0.3s ease;"></i>
                                         </a>
 
                                         <div class="collapse" id="seccionOpcional">
@@ -805,7 +725,7 @@
                                     </div>
 
                                     <div class="d-grid mt-4">
-                                        <button type="submit" id="btnEnviarNuevaIglesia" class="btn text-white rounded-pill py-3 fw-bold shadow-sm" style="background-color: #00334e;">
+                                        <button type="submit" id="btnEnviarNuevaIglesia" class="btn text-white rounded-pill py-3 fw-bold shadow-sm" style="background-color: var(--primary-dark);">
                                             <i class="fa-solid fa-paper-plane me-2"></i>Enviar Solicitud
                                         </button>
                                     </div>
@@ -880,8 +800,8 @@
                 }
             </style>
 
-            <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-            <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+            <link href="~/lib/select2/select2.min.css" rel="stylesheet" />
+            <script src="~/lib/select2/select2.min.js"></script>
 
             <script>
                 $(document).ready(function () {

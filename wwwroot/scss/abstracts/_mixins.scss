@@ -1,0 +1,56 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/abstracts/_mixins.scss
+// =========================================================================
+
+@import 'variables';
+
+// Mixin para elevación en hover de tarjetas y botones
+@mixin hover-lift($translateY: -3px, $shadow: $shadow-md) {
+  transition: $transition-base;
+  &:hover {
+    transform: translateY($translateY);
+    box-shadow: $shadow;
+  }
+}
+
+// Mixin para botones estilizados
+@mixin button-variant($bg-color, $text-color, $hover-bg, $hover-text: $text-color) {
+  background-color: $bg-color;
+  color: $text-color;
+  border: 1px solid transparent;
+  border-radius: $border-radius-pill;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  transition: $transition-base;
+
+  &:hover, &:focus {
+    background-color: $hover-bg;
+    color: $hover-text;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba($bg-color, 0.35);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Mixin para flexbox centrado
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Mixins para responsive breakpoints
+@mixin mobile {
+  @media (max-width: 575.98px) { @content; }
+}
+
+@mixin tablet {
+  @media (max-width: 991.98px) { @content; }
+}
+
+@mixin desktop {
+  @media (min-width: 992px) { @content; }
+}

@@ -1,0 +1,98 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/components/_buttons.scss
+// =========================================================================
+
+@import '../abstracts/variables';
+@import '../abstracts/mixins';
+
+// Botón Principal Institucional (Reemplazo moderno de .btn-nautico)
+.btn-nautico, .btn-custom-primary {
+  @include button-variant($color-primary, $text-light, $color-primary-dark, $text-light);
+  box-shadow: $shadow-sm;
+}
+
+.btn-custom-secondary {
+  @include button-variant($color-secondary, $text-main, $color-secondary-dark, $text-light);
+  box-shadow: $shadow-sm;
+}
+
+.btn-custom-amber {
+  @include button-variant($color-amber-accent, $text-light, #C97D1A, $text-light);
+}
+
+// Sobreescrituras elegantes de botones estándar de Bootstrap
+.btn-primary {
+  background-color: $color-primary !important;
+  border-color: $color-primary !important;
+  color: $text-light !important;
+  border-radius: $border-radius-pill;
+  font-weight: 600;
+  transition: $transition-base;
+
+  &:hover, &:focus {
+    background-color: $color-primary-dark !important;
+    border-color: $color-primary-dark !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba($color-primary, 0.3);
+  }
+}
+
+.btn-secondary {
+  background-color: $color-secondary !important;
+  border-color: $color-secondary !important;
+  color: $text-main !important;
+  border-radius: $border-radius-pill;
+  font-weight: 600;
+
+  &:hover {
+    background-color: $color-secondary-dark !important;
+    border-color: $color-secondary-dark !important;
+    color: $text-light !important;
+  }
+}
+
+.btn-outline-primary {
+  color: $color-primary !important;
+  border-color: $color-primary !important;
+  border-radius: $border-radius-pill;
+  font-weight: 600;
+
+  &:hover {
+    background-color: $color-primary !important;
+    color: $text-light !important;
+  }
+}
+
+// Iconos de Boyas Sociales / Acciones rápidas
+.social-buoy {
+  @include flex-center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: rgba($bg-card, 0.15);
+  color: $color-secondary;
+  margin: 0 4px;
+  border: 1px solid rgba($color-secondary, 0.35);
+  transition: $transition-base;
+
+  i {
+    font-size: 1rem !important;
+    color: inherit;
+  }
+
+  &:hover {
+    background-color: $color-secondary;
+    color: $color-primary-dark;
+    border-color: $color-secondary;
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 4px 12px rgba($color-secondary, 0.4);
+  }
+}
+
+// Carrito especial
+#menuCarrito:hover .social-buoy {
+  background-color: $bg-card !important;
+  color: $color-primary !important;
+  transform: scale(1.1);
+  box-shadow: 0 4px 14px rgba($color-primary, 0.25);
+}

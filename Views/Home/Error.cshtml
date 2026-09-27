@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = "Principal";
     ViewData["Title"] = "Error";
 }
@@ -6,11 +6,11 @@
 <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 60vh;">
 
     <div class="text-center mb-4">
-        <i class="fa-solid fa-fish fa-flip-vertical fa-5x text-secondary" style="opacity: 0.5;"></i>
+        <i class="fa-solid fa-cross fa-5x text-secondary" style="opacity: 0.5;"></i>
         <i class="fa-solid fa-question fa-3x text-warning position-absolute" style="margin-left: -20px; margin-top: -20px;"></i>
     </div>
 
-    <h1 class="display-4 fw-bold" style="color: var(--header-footer);">¡Aguas turbulentas!</h1>
+    <h1 class="display-4 fw-bold" style="color: var(--header-footer);">¡Algo salió mal!</h1>
 
     <p class="lead text-center text-muted" style="max-width: 600px;">
         Ocurrió un error inesperado al procesar tu solicitud.
@@ -18,7 +18,7 @@
 
     <div class="mt-4">
         <a href="@Url.Action("Login", "Home")" class="btn btn-nautico px-4 py-2 rounded-pill">
-            <i class="fa-solid fa-anchor me-2"></i> Regresar a puerto seguro
+            <i class="fa-solid fa-house me-2"></i> Regresar al Inicio
         </a>
     </div>
 

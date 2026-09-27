@@ -1,4 +1,4 @@
-﻿@model RedAJP.Models.DistribucionAlojamientosViewModel
+@model RedAJP.Models.DistribucionAlojamientosViewModel
 @{
     Layout = "Principal";
     ViewData["Title"] = "Distribución de Alojamientos";
@@ -20,8 +20,8 @@
     color: white !important; /* Texto blanco */
 }
 </style>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<link href="~/lib/select2/select2.min.css" rel="stylesheet" />
+<link href="~/lib/select2/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <div id="loadingOverlay" class="d-none position-fixed w-100 h-100 top-0 start-0 bg-dark bg-opacity-75" style="z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;">
     <div class="spinner-border text-light" style="width: 3.5rem; height: 3.5rem; border-width: 0.35em;" role="status"></div>
@@ -707,8 +707,8 @@
 </template>
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="~/lib/jquery/jquery.min.js"></script>
+<script src="~/lib/select2/select2.min.js"></script>
 
 <script>
     // -----------------------------------------------------------

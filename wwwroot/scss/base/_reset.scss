@@ -1,0 +1,55 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/base/_reset.scss
+// =========================================================================
+
+@import '../abstracts/variables';
+@import '../abstracts/mixins';
+
+// Exposición de CSS Custom Properties globales para compatibilidad dinámica con JS
+:root {
+  --primary: #{$color-primary};
+  --primary-dark: #{$color-primary-dark};
+  --primary-light: #{$color-primary-light};
+  --secondary: #{$color-secondary};
+  --amber-accent: #{$color-amber-accent};
+  --bg-body: #{$bg-body};
+  --bg-card: #{$bg-card};
+  --header-footer: #{$bg-header};
+  --texto-principal: #{$text-main};
+  --texto-arena: #{$text-light};
+  --acento-dorado: #{$color-secondary};
+  --acento-coral: #{$color-amber-accent};
+}
+
+html {
+  background-color: $bg-body;
+  overscroll-behavior-y: none;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: $bg-body;
+  color: $text-main;
+  font-family: $font-family-base;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+// Resets y focus states globales
+*:focus {
+  outline: none !important;
+}
+
+.nav-link:focus, .nav-link:active, .btn:focus,
+.form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba($color-primary, 0.18) !important;
+  border-color: rgba($color-primary, 0.5) !important;
+}
+
+::selection {
+  background-color: rgba($color-primary, 0.2);
+  color: $color-primary-dark;
+}

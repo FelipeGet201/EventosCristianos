@@ -1,0 +1,59 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/abstracts/_variables.scss
+// TEMA: SEGANDO LA MIES 2.0 - PALETA PASTEL CÁLIDA CUIDADOSA DE LA VISTA
+// =========================================================================
+
+// 1. PALETA CROMÁTICA PRINCIPAL (Tonos Pastel Cálidos)
+$color-primary:         #8C2323 !default; // Carmesí Borgoña Principal
+$color-primary-dark:    #6C1919 !default; // Borgoña Oscuro Profundo
+$color-primary-light:   #A63A3A !default; // Carmesí Pastel Suave
+
+$color-secondary:       #DAA520 !default; // Ocre Cosecha / Trigo
+$color-secondary-dark:  #B58311 !default;
+$color-secondary-light: #E8C872 !default; // Dorado Trigo Pastel Suave
+$color-cream-gold:      #F5E5C0 !default; // Crema Trigo Pastel
+
+$color-amber-accent:    #D98A2B !default; // Terracota Ámbar Suave
+
+// 2. FONDOS Y SUPERFICIES (Pastel Suave que no Lastima los Ojos)
+$bg-body:               #FAF4EB !default; // Crema Arena Pastel (Anti-fatiga visual)
+$bg-surface:            #F5EAD9 !default; // Beige Suave
+$bg-card:               #FFFDF9 !default; // Marfil Cálido para Tarjetas
+$bg-input:              #FAF5EF !default; // Fondo Suave para Inputs
+$bg-header:             #4A1212 !default; // Encabezado Granate Profundo
+$bg-footer:             #3A0E0E !default; // Pie de Página Granate
+
+// 3. TIPOGRAFÍA Y TEXTOS
+$text-main:             #3E2321 !default; // Chocolate Cálido Suave
+$text-muted:            #7A5B58 !default; // Arcilla Suave Secundario
+$text-light:            #FAF4EB !default; // Texto Claro
+$text-gold:             #C78E20 !default; // Dorado Mies Destacado
+
+// 4. ESTADOS DEL SISTEMA (Tonos Suaves Pastel)
+$state-success:         #388E3C !default; // Verde Cosecha Suave
+$state-warning:         #E67E22 !default; // Naranja Trigo Suave
+$state-danger:          #C0392B !default; // Rojo Carmesí Suave
+$state-info:            #8E44AD !default; // Morado Suave (Sin azul)
+
+// 5. FUENTES
+$font-family-base:      'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
+$font-family-heading:   'Outfit', 'Segoe UI', sans-serif !default;
+
+// 6. BORDES Y RADIOS
+$border-radius-sm:      10px !default;
+$border-radius-md:      16px !default;
+$border-radius-lg:      24px !default;
+$border-radius-pill:    50px !default;
+
+$border-subtle-color:   #E2D1BC !default;
+$border-subtle:         1px solid $border-subtle-color !default;
+$border-accent:         2px solid $color-amber-accent !default;
+
+// 7. SOMBRAS SUAVES CÁLIDAS
+$shadow-sm:             0 3px 10px rgba(62, 35, 33, 0.05) !default;
+$shadow-md:             0 8px 24px rgba(62, 35, 33, 0.08) !default;
+$shadow-lg:             0 14px 35px rgba(74, 18, 18, 0.12) !default;
+
+// 8. TRANSICIONES
+$transition-base:       all 0.25s ease-in-out !default;
+$transition-fast:       all 0.15s ease-in-out !default;

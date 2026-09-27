@@ -1,10 +1,10 @@
-﻿@model RedAJP.Models.ImportacionMiembrosViewModel
+@model RedAJP.Models.ImportacionMiembrosViewModel
 @{
     Layout = "Principal";
     ViewData["Title"] = "Agregar Miembros";
 }
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="~/lib/select2/select2.min.css" rel="stylesheet" />
 
 <script>
     window.addEventListener('load', function() {
@@ -248,7 +248,7 @@
     </tr>
 </template>
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/lib/select2/select2.min.js"></script>
 
     <script>
         // Como ya estamos en la sección de scripts, es seguro usar jQuery directamente

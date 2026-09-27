@@ -1,0 +1,135 @@
+// =========================================================================
+// ARCHIVO: wwwroot/scss/components/_modals.scss
+// =========================================================================
+
+@import '../abstracts/variables';
+
+.modal-content {
+  background-color: $bg-card;
+  border: none;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+}
+
+.modal-header {
+  background-color: $bg-header;
+  color: $text-light;
+  border-bottom: 2px solid $color-amber-accent;
+  padding: 1.25rem 1.5rem;
+
+  .modal-title {
+    color: $text-light !important;
+    font-weight: 700;
+  }
+
+  .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+  color: $text-main;
+}
+
+.modal-footer {
+  background-color: rgba($bg-surface, 0.4);
+  border-top: $border-subtle;
+  padding: 1rem 1.5rem;
+}
+
+// =========================================================================
+// INTEGRACIÓN Y ESTILIZADO DE SWEETALERT2 (Paleta Segando la Mies 2.0)
+// =========================================================================
+.swal2-popup {
+  background: $bg-card !important;
+  border: 1px solid rgba($color-secondary, 0.35) !important;
+  border-radius: $border-radius-lg !important;
+  box-shadow: $shadow-lg !important;
+  padding: 1.8rem 1.5rem !important;
+  font-family: $font-family-base !important;
+  color: $text-main !important;
+}
+
+.swal2-title {
+  color: $color-primary-dark !important;
+  font-family: $font-family-heading !important;
+  font-weight: 800 !important;
+  font-size: 1.6rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.swal2-html-container {
+  color: $text-main !important;
+  font-size: 1.05rem !important;
+  line-height: 1.6 !important;
+}
+
+.swal2-confirm.btn-swal-confirm {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%) !important;
+  color: $text-light !important;
+  border: none !important;
+  border-radius: $border-radius-pill !important;
+  font-weight: 700 !important;
+  padding: 0.65rem 2rem !important;
+  font-size: 0.95rem !important;
+  box-shadow: 0 4px 14px rgba($color-primary, 0.3) !important;
+  transition: $transition-fast !important;
+  cursor: pointer !important;
+
+  &:hover {
+    background: linear-gradient(135deg, $color-primary-dark 0%, #4A1212 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba($color-primary, 0.4) !important;
+  }
+}
+
+.swal2-cancel.btn-swal-cancel {
+  background: $bg-surface !important;
+  color: $text-main !important;
+  border: 1px solid $border-subtle-color !important;
+  border-radius: $border-radius-pill !important;
+  font-weight: 600 !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.95rem !important;
+  transition: $transition-fast !important;
+  cursor: pointer !important;
+
+  &:hover {
+    background: rgba($color-secondary, 0.2) !important;
+    color: $text-main !important;
+  }
+}
+
+// Personalización de íconos SweetAlert2
+.swal2-icon.swal2-success {
+  border-color: $state-success !important;
+  color: $state-success !important;
+
+  [class^='swal2-success-line'] {
+    background-color: $state-success !important;
+  }
+  .swal2-success-ring {
+    border-color: rgba($state-success, 0.3) !important;
+  }
+}
+
+.swal2-icon.swal2-error {
+  border-color: $state-danger !important;
+  color: $state-danger !important;
+
+  [class^='swal2-x-mark-line'] {
+    background-color: $state-danger !important;
+  }
+}
+
+.swal2-icon.swal2-warning {
+  border-color: $color-secondary !important;
+  color: $color-secondary !important;
+}
+
+.swal2-icon.swal2-info {
+  border-color: $color-primary !important;
+  color: $color-primary !important;
+}
