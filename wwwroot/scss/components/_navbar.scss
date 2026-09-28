@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // ARCHIVO: wwwroot/scss/components/_navbar.scss
 // =========================================================================
 
@@ -20,6 +20,11 @@
     letter-spacing: -0.01em;
     display: inline-flex;
     align-items: center;
+    margin-right: 1.25rem;
+
+    @media (min-width: 992px) {
+      margin-right: 2.25rem !important;
+    }
 
     &:hover, &:focus, &:active {
       text-decoration: none !important;

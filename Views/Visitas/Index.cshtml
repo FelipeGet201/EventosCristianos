@@ -1,4 +1,4 @@
-@model RedAJP.Models.VisitasViewModel
+﻿@model RedAJP.Models.VisitasViewModel
 @{
     Layout = "Principal";
     ViewData["Title"] = "Actividad del Sitio";
@@ -89,26 +89,26 @@
 
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card border-0 shadow h-100" style="background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%); color: white; border-radius: 15px;">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                    <h6 class="text-uppercase opacity-75 small fw-bold mb-1">Visitas en el Rango</h6>
-                    <h1 class="display-4 fw-bold text-warning mb-0">@Model.TotalEnRango.ToString("N0")</h1>
+            <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 16px; border-top: 4px solid var(--primary) !important;">
+                <div class="card-body text-center d-flex flex-column justify-content-center py-4">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-2" style="letter-spacing: 0.5px;">Visitas en el Rango</h6>
+                    <h1 class="display-4 fw-bold mb-0" style="color: var(--primary);">@Model.TotalEnRango.ToString("N0")</h1>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 15px;">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                    <h6 class="text-uppercase text-muted small fw-bold mb-1">Entradas Hoy</h6>
+            <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 16px; border-top: 4px solid #198754 !important;">
+                <div class="card-body text-center d-flex flex-column justify-content-center py-4">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-2" style="letter-spacing: 0.5px;">Entradas Hoy</h6>
                     <h1 class="display-4 fw-bold text-success mb-0">@Model.VisitasHoy</h1>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 15px;">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                    <h6 class="text-uppercase text-muted small fw-bold mb-1">Acceso Principal</h6>
-                    <h3 class="fw-bold text-primary mb-0"><i class="fa-solid fa-@(Model.DispositivoTop == "Celular" ? "mobile-screen" : "desktop") me-2"></i>@Model.DispositivoTop</h3>
+            <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 16px; border-top: 4px solid var(--secondary, #0d6efd) !important;">
+                <div class="card-body text-center d-flex flex-column justify-content-center py-4">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-2" style="letter-spacing: 0.5px;">Acceso Principal</h6>
+                    <h3 class="fw-bold mb-0" style="color: var(--primary);"><i class="fa-solid fa-@(Model.DispositivoTop == "Celular" ? "mobile-screen" : "desktop") me-2"></i>@Model.DispositivoTop</h3>
                 </div>
             </div>
         </div>

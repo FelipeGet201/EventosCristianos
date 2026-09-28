@@ -1,4 +1,4 @@
-@model RedAJP.Models.Usuario
+﻿@model RedAJP.Models.Usuario
 
 @{
     Layout = "Principal";
@@ -57,22 +57,17 @@
                         </div>
 
                         <div class="col-12 mb-3">
-                            
-
-
-                                @* 2. BADGES DE LOS GRUPOS (DINÁMICOS) *@
-                                @if (ViewBag.GruposUsuario != null)
+                            @* 2. BADGES DE LOS GRUPOS (DINÁMICOS) *@
+                            @if (ViewBag.GruposUsuario != null)
+                            {
+                                @foreach (var grupo in (List<string>)ViewBag.GruposUsuario)
                                 {
-                                    @foreach (var grupo in (List<string>)ViewBag.GruposUsuario)
-                                    {
-                                        <span class="badge rounded-pill shadow-sm"
-                                              style="background-color: var(--primary); font-size: 0.85rem; padding: 0.6em 1.2em; border: 1px solid rgba(255,255,255,0.1); opacity: 0.9;">
-                                            <i class="fa-solid fa-users me-1"></i> @grupo
-                                        </span>
-                                    }
+                                    <span class="badge rounded-pill shadow-sm"
+                                          style="background-color: var(--primary); font-size: 0.85rem; padding: 0.6em 1.2em; border: 1px solid rgba(255,255,255,0.1); opacity: 0.9;">
+                                        <i class="fa-solid fa-users me-1"></i> @grupo
+                                    </span>
                                 }
-
-                            </div>
+                            }
                         </div>
 
                         <div class="col-12 mt-2 mb-2">
@@ -181,14 +176,14 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-2 mt-5 pt-3 border-top">
-                        <button type="button" id="btnEditar" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" onclick="activarEdicion()">
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 pb-1 border-top">
+                        <button type="button" id="btnEditar" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold shadow-sm" onclick="activarEdicion()">
                             <i class="fa-solid fa-pen-to-square me-2"></i> Modificar Datos
                         </button>
 
                         <div id="accionesEdicion" class="d-none animate-fade">
-                            <a href="@Url.Action("Index", "Perfil")" class="btn btn-light border rounded-pill px-4 me-2 text-muted">Cancelar</a>
-                            <button type="submit" class="btn btn-nautico rounded-pill px-4 shadow">
+                            <a href="@Url.Action("Index", "Perfil")" class="btn btn-light border rounded-pill px-4 py-2 me-2 text-muted fw-semibold">Cancelar</a>
+                            <button type="submit" class="btn btn-nautico rounded-pill px-4 py-2 shadow-sm fw-bold">
                                 <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Cambios
                             </button>
                         </div>

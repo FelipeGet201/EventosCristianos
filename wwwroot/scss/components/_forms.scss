@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // ARCHIVO: wwwroot/scss/components/_forms.scss
 // =========================================================================
 
@@ -56,19 +56,33 @@
   color: $text-main !important;
 }
 
-.bg-warning {
+.bg-warning:not([class*="bg-opacity-"]) {
   background-color: $state-warning !important;
   color: #ffffff !important;
 }
 
-.bg-success {
+.bg-success:not([class*="bg-opacity-"]) {
   background-color: $state-success !important;
 }
 
-.bg-danger {
+.bg-danger:not([class*="bg-opacity-"]) {
   background-color: $state-danger !important;
 }
 
-.bg-info {
+.bg-info:not([class*="bg-opacity-"]) {
   background-color: $state-info !important;
+}
+
+.badge-status-activo {
+  background-color: #d1e7dd !important;
+  color: #0f5132 !important;
+  border: 1px solid #badbcc !important;
+  font-weight: 700 !important;
+}
+
+.badge-status-inactivo {
+  background-color: #e2e3e5 !important;
+  color: #41464b !important;
+  border: 1px solid #d3d6d8 !important;
+  font-weight: 700 !important;
 }

@@ -1,4 +1,4 @@
-@using RedAJP.Globales
+﻿@using RedAJP.Globales
 @model List<RedAJP.Models.EditaUsuario>
 
 @{
@@ -153,11 +153,11 @@
                                                 <div class="d-lg-none d-flex align-items-center">
                                                     @if (item.Activo)
                                                     {
-                                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Activo</span>
+                                                        <span class="badge rounded-pill badge-status-activo" style="background-color: #d1e7dd !important; color: #0f5132 !important; border: 1px solid #badbcc !important; font-weight: 700; padding: 0.4em 0.8em;">Activo</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">Inactivo</span>
+                                                        <span class="badge rounded-pill badge-status-inactivo" style="background-color: #e2e3e5 !important; color: #41464b !important; border: 1px solid #d3d6d8 !important; font-weight: 700; padding: 0.4em 0.8em;">Inactivo</span>
                                                     }
 
                                                     @if (item.Email_Verificado)
@@ -183,11 +183,11 @@
                                 <td class="d-none d-lg-table-cell">
                                     @if (item.Activo)
                                     {
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Activo</span>
+                                        <span class="badge rounded-pill badge-status-activo" style="background-color: #d1e7dd !important; color: #0f5132 !important; border: 1px solid #badbcc !important; font-weight: 700; padding: 0.4em 0.8em;">Activo</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">Inactivo</span>
+                                        <span class="badge rounded-pill badge-status-inactivo" style="background-color: #e2e3e5 !important; color: #41464b !important; border: 1px solid #d3d6d8 !important; font-weight: 700; padding: 0.4em 0.8em;">Inactivo</span>
                                     }
 
                                     @if (item.Email_Verificado)
@@ -434,9 +434,9 @@
         // 2. Configurar el badge de Estado (Activo/Inactivo)
         let spanEstado = document.getElementById('Detalle_Estado');
         if(activo) {
-            spanEstado.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill">Activo</span>';
+            spanEstado.innerHTML = '<span class="badge rounded-pill badge-status-activo" style="background-color: #d1e7dd !important; color: #0f5132 !important; border: 1px solid #badbcc !important; font-weight: 700; padding: 0.4em 0.8em;">Activo</span>';
         } else {
-            spanEstado.innerHTML = '<span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">Inactivo</span>';
+            spanEstado.innerHTML = '<span class="badge rounded-pill badge-status-inactivo" style="background-color: #e2e3e5 !important; color: #41464b !important; border: 1px solid #d3d6d8 !important; font-weight: 700; padding: 0.4em 0.8em;">Inactivo</span>';
         }
 
         // 3. Configurar el ícono de Verificación
