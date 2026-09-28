@@ -976,3 +976,18 @@ input:-webkit-autofill:active {
   color: var(--primary-dark) !important;
   border: 1px solid rgba(14, 165, 233, 0.3) !important;
 }
+
+.footer-contact-badge {
+  color: var(--texto-arena) !important;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transition: all 0.25s ease-in-out;
+}
+
+.footer-contact-badge:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
