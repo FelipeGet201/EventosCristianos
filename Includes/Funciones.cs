@@ -1096,26 +1096,56 @@ namespace RedAJP.Globales
             try
             {
                 string sql = @"
-                    SELECT ""Origen"", ""Url_Enlace""
+                    SELECT ""Id_Archivo"", ""Origen"", ""Url_Enlace"", ""Titulo""
                     FROM ""Rec_Archivos""
-                    WHERE ""Origen"" IN ('Terminos_Eventos', 'Aviso_Privacidad')
+                    WHERE ""Origen"" IN ('Terminos_Eventos', 'Aviso_Privacidad', 'Formatos', 'Recursos')
                     ORDER BY ""Fecha_Creacion"" DESC";
+
+                var items = new List<(int Id, string Origen, string UrlEnlace, string Titulo)>();
 
                 using (var cmd = new NpgsqlCommand(sql, conexion))
                 using (var r = await cmd.ExecuteReaderAsync())
                 {
                     while (await r.ReadAsync())
                     {
+                        int id = r["Id_Archivo"] != DBNull.Value ? Convert.ToInt32(r["Id_Archivo"]) : 0;
                         string origen = r["Origen"]?.ToString() ?? "";
                         string url = r["Url_Enlace"]?.ToString() ?? "";
+                        string titulo = r["Titulo"]?.ToString() ?? "";
+                        items.Add((id, origen, url, titulo));
+                    }
+                }
 
-                        if (origen == "Terminos_Eventos" && string.IsNullOrEmpty(urlTerminos))
+                // 1. Prioridad: Coincidencia exacta por Origen ('Terminos_Eventos' y 'Aviso_Privacidad')
+                foreach (var item in items)
+                {
+                    string urlFinal = !string.IsNullOrWhiteSpace(item.UrlEnlace) ? item.UrlEnlace : $"/Formatos/Ver/{item.Id}";
+
+                    if (item.Origen == "Terminos_Eventos" && string.IsNullOrEmpty(urlTerminos))
+                    {
+                        urlTerminos = urlFinal;
+                    }
+                    else if (item.Origen == "Aviso_Privacidad" && string.IsNullOrEmpty(urlPrivacidad))
+                    {
+                        urlPrivacidad = urlFinal;
+                    }
+                }
+
+                // 2. Fallback: Si no se encontró por Origen específico, buscar por palabras clave en el título
+                if (string.IsNullOrEmpty(urlTerminos) || string.IsNullOrEmpty(urlPrivacidad))
+                {
+                    foreach (var item in items)
+                    {
+                        string urlFinal = !string.IsNullOrWhiteSpace(item.UrlEnlace) ? item.UrlEnlace : $"/Formatos/Ver/{item.Id}";
+                        string tituloLower = item.Titulo.ToLowerInvariant();
+
+                        if (string.IsNullOrEmpty(urlTerminos) && (tituloLower.Contains("termino") || tituloLower.Contains("término") || tituloLower.Contains("condicion") || tituloLower.Contains("condición")))
                         {
-                            urlTerminos = url;
+                            urlTerminos = urlFinal;
                         }
-                        else if (origen == "Aviso_Privacidad" && string.IsNullOrEmpty(urlPrivacidad))
+                        if (string.IsNullOrEmpty(urlPrivacidad) && (tituloLower.Contains("privacidad") || tituloLower.Contains("aviso")))
                         {
-                            urlPrivacidad = url;
+                            urlPrivacidad = urlFinal;
                         }
                     }
                 }
