@@ -2,32 +2,30 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# 1. Copiamos el archivo de proyecto (RedAJP.csproj)
-COPY ["RedAJP.csproj", "."]
+# 1. Copiamos el archivo de proyecto (MinisterioCorban.csproj)
+COPY ["MinisterioCorban.csproj", "."]
 
 # 2. Restauramos las dependencias
-RUN dotnet restore "./RedAJP.csproj"
+RUN dotnet restore "./MinisterioCorban.csproj"
 
 # 3. Copiamos todo el resto del código
 COPY . .
 
 # 4. Publicamos la aplicación en modo Release
-RUN dotnet publish "RedAJP.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "MinisterioCorban.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # ETAPA 2: Runtime (Imagen final ligera)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
-# --- CORRECCIÓN CRÍTICA PARA RENDER ---
+# --- CONFIGURACIÓN PARA RENDER ---
 # Forzamos explícitamente a la app a usar el puerto 8080
 ENV ASPNETCORE_HTTP_PORTS=8080
-# --------------------------------------
-
-# 5. Exponemos el puerto
 EXPOSE 8080
+# ---------------------------------
 
-# 6. Traemos los archivos compilados de la etapa anterior
+# 5. Traemos los archivos compilados de la etapa anterior
 COPY --from=build /app/publish .
 
-# 7. Punto de entrada
-ENTRYPOINT ["dotnet", "RedAJP.dll"]
+# 6. Punto de entrada
+ENTRYPOINT ["dotnet", "MinisterioCorban.dll"]
