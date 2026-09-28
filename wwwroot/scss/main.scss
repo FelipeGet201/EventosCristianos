@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // ARCHIVO PRINCPAL DE ESTILOS: wwwroot/scss/main.scss
 // CONCEPTO: SEGANDO LA MIES 2.0
 // =========================================================================
@@ -8,6 +8,7 @@
 @import 'abstracts/mixins';
 
 // 2. Base
+@import 'base/fonts';
 @import 'base/reset';
 @import 'base/typography';
 

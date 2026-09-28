@@ -1556,7 +1556,7 @@ namespace RedAJP.Controllers
             // =====================================================================
             // CONFIGURACIÓN: Nombre exacto del titular de la cuenta oficial
             // =====================================================================
-            string titularOficialOrganizacion = "Alianza Juvenil Los Pescadores";
+            string titularOficialOrganizacion = "Ministerio Corbán";
             int totalProcesados = 0;
 
             var configuracionesStripe = new Dictionary<string, string> {
@@ -1696,8 +1696,9 @@ namespace RedAJP.Controllers
                                     continue;
                                 }
 
-                                // Comparación estricta del titular individual
-                                esOficialFinal = titularDeLaCuentaStripe.Equals(titularOficialOrganizacion, StringComparison.OrdinalIgnoreCase);
+                                // Comparación del titular individual (admite tanto Ministerio Corbán como Alianza Juvenil Los Pescadores por compatibilidad)
+                                esOficialFinal = titularDeLaCuentaStripe.Equals(titularOficialOrganizacion, StringComparison.OrdinalIgnoreCase)
+                                              || titularDeLaCuentaStripe.Equals("Alianza Juvenil Los Pescadores", StringComparison.OrdinalIgnoreCase);
                             }
                             catch
                             {

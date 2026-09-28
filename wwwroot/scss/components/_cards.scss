@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // ARCHIVO: wwwroot/scss/components/_cards.scss
 // =========================================================================
 
@@ -55,6 +55,18 @@
 
   &.text-white .card-title {
     color: #ffffff !important;
+  }
+
+  &.border-top-primary {
+    border-top: 4px solid var(--primary) !important;
+  }
+
+  &.border-top-success {
+    border-top: 4px solid #388E3C !important;
+  }
+
+  &.border-top-secondary {
+    border-top: 4px solid var(--secondary) !important;
   }
 }
 

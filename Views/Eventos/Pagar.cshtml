@@ -117,8 +117,8 @@
     }
 
     .vencido-text {
-        color: #dc3545;
-        font-weight: 700;
+        color: #b45309;
+        font-weight: 600;
         font-size: 0.8rem;
     }
 
@@ -138,7 +138,7 @@
 <div class="container py-3 py-md-4 fade-in payment-container">
 
     <div class="text-center mb-3">
-        <img src="~/Images/logo_corban.png" class="logo-img rounded-circle" alt="Ministerio Corbán" asp-append-version="true">
+        <img src="~/Images/logo.png" class="logo-img rounded-circle" alt="Ministerio Corbán" asp-append-version="true">
         <h2 class="fw-bold text-dark drop-shadow-sm mb-0 fs-3">Portal de Pagos</h2>
         <div class="mt-2">
             @if (esTransferencia && permitirTarjeta)
@@ -237,18 +237,19 @@
             </div>
         </form>
 
-        <div class="event-card position-relative overflow-hidden text-center rounded-4 shadow-sm" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem; color: white; background-color: #212529; border: none;">
+        <div class="event-card position-relative overflow-hidden text-center rounded-4 shadow-sm" style="padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; color: white; background: var(--card-header-bg, #0A3A35); border: none;">
             
             <div class="position-absolute top-0 start-0 w-100 h-100"
-                 style="background-image: url('@(string.IsNullOrEmpty(ViewBag.ImagenEvento as string) ? "/Images/logo_corban.png" : ViewBag.ImagenEvento)');
+                 style="background-image: url('@(string.IsNullOrEmpty(ViewBag.ImagenEvento as string) ? "/Images/logo.png" : ViewBag.ImagenEvento)');
                         background-size: cover;
                         background-position: center;
-                        filter: blur(15px);
+                        filter: blur(20px);
+                        opacity: 0.3;
                         transform: scale(1.1);
                         z-index: 0;">
             </div>
             
-            <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark" style="opacity: 0.7; z-index: 1;"></div>
+            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(135deg, rgba(10, 58, 53, 0.9) 0%, rgba(13, 122, 104, 0.85) 100%); z-index: 1;"></div>
 
             <div class="position-relative" style="z-index: 2;">
                 <h3 class="fw-bold mb-2 text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.5);">@Model.TituloEvento</h3>
@@ -344,7 +345,7 @@
                                                     <div class="fw-bold text-dark small">@pago.Concepto</div>
                                                     @if (pago.EsVencido)
                                                     {
-                                                        <div class="vencido-text"><i class="fa-solid fa-circle-exclamation me-1"></i> Vence: @pago.FechaLimite.ToString("dd/MMM")</div>
+                                                        <div class="vencido-text"><i class="fa-solid fa-clock-rotate-left me-1" style="color: #b45309;"></i> Vence: @pago.FechaLimite.ToString("dd/MMM")</div>
                                                     }
                                                     else
                                                     {
@@ -415,14 +416,14 @@
                                                 <input type="hidden" name="token" value="@ViewBag.Token" />
                                                 <input type="hidden" name="idEvento" value="@Model.IdEvento" />
                                                 <input type="hidden" name="CodigoCuponAplicado" id="hdnCuponStripe" />
-                                                <button type="submit" class="btn btn-primary rounded-pill fw-bold w-100 py-3 shadow-sm px-4" style="background-color: #0f4c5c; border:none;">
+                                                <button type="submit" class="btn btn-primary rounded-pill fw-bold w-100 py-3 shadow-sm px-4" style="background-color: var(--primary) !important; border:none;">
                                                     <i class="fa-regular fa-credit-card me-2"></i> Pagar Ahora
                                                 </button>
                                             </form>
                                             <div id="noticeComision" class="text-center mt-2 px-2" style="display:@(Model.CobrarComisionExtra && Model.ComisionPlataforma > 0 ? "block" : "none");">
                                                 <i class="fa-brands fa-stripe fa-lg mb-1" style="color: #635bff; opacity: 0.8;"></i>
                                                 <small class="text-muted d-block opacity-75" style="font-size: 0.65rem; line-height: 1.2; text-align: justify; text-align-last: center;">
-                                                    Los <strong>Gastos de Gestión</strong> son la comisión cobrada por el proveedor por el uso de pagos vía web. Este cargo es operativo y ajeno a la AJP, sin relación alguna con algún miembro de la directiva ni la alianza.
+                                                    Los <strong>Gastos de Gestión</strong> son la comisión cobrada por el proveedor por el uso de pagos vía web. Este cargo es operativo y ajeno a la organización, sin relación alguna con miembros de la directiva.
                                                 </small>
                                             </div>
                                         }
@@ -789,7 +790,7 @@
         }
         ctx.font = 'bold 11px sans-serif';
         ctx.fillStyle = '#334155';
-        ctx.fillText('CÓDIGO DE ACCESO OFICIAL - RED AJP', width / 2, height - 10);
+        ctx.fillText('CÓDIGO DE ACCESO OFICIAL - MINISTERIO CORBÁN', width / 2, height - 10);
 
         return canvas;
     }

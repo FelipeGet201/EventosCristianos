@@ -1,4 +1,4 @@
-@model RedAJP.Models.ComunidadFormViewModel
+﻿@model RedAJP.Models.ComunidadFormViewModel
 @{
     Layout = "Principal";
     ViewData["Title"] = "Redactar Mensaje";
@@ -67,7 +67,7 @@
                                     <div class="col-md-5">
                                         <div class="option-card" onclick="seleccionarIdentidad(true, this)">
                                             <i class="fa-solid fa-building-columns option-icon"></i>
-                                            <div class="option-title">Directiva AJP</div>
+                                            <div class="option-title">Directiva Corbán</div>
                                             <div class="option-desc">Mensaje institucional. Se publicará a nombre del equipo oficial.</div>
                                         </div>
                                     </div>
@@ -551,7 +551,7 @@
         function prepararResumen() {
             let actuaComoDirectiva = document.getElementById('hidden-es-directivo').value === 'true';
             document.getElementById('res-de').innerHTML = actuaComoDirectiva 
-                ? '<i class="fa-solid fa-building-columns text-primary me-1"></i> Directiva AJP' 
+                ? '<i class="fa-solid fa-building-columns text-primary me-1"></i> Directiva Corbán' 
                 : '<i class="fa-solid fa-user text-primary me-1"></i> Usuario Normal';
             
             let dest = document.getElementById('hidden-destinatario').value;

@@ -1,7 +1,22 @@
-// =========================================================================
+﻿// =========================================================================
 // ARCHIVO: wwwroot/scss/components/_widgets.scss
 // =========================================================================
 
 @import '../abstracts/variables';
 @import '../abstracts/mixins';
 
+.badge-status-activo {
+  background-color: rgba($state-success, 0.15) !important;
+  color: #2e7331 !important;
+  border: 1px solid rgba($state-success, 0.3) !important;
+  font-weight: 700;
+  padding: 0.4em 0.8em;
+}
+
+.badge-status-inactivo {
+  background-color: rgba($text-muted, 0.15) !important;
+  color: $text-muted !important;
+  border: 1px solid rgba($text-muted, 0.3) !important;
+  font-weight: 700;
+  padding: 0.4em 0.8em;
+}

@@ -1,4 +1,4 @@
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -190,7 +190,7 @@ namespace RedAJP.Controllers
                             {
                                 bool anonimo = (bool)r["Es_Anonimo"];
                                 bool esInst = (bool)r["Es_Institucional"];
-                                string nombreAutor = anonimo ? "Anónimo" : (esInst ? "Directiva AJP" : r["NombreCompleto"]?.ToString() ?? "Desconocido");
+                                string nombreAutor = anonimo ? "Anónimo" : (esInst ? "Directiva Corbán" : r["NombreCompleto"]?.ToString() ?? "Desconocido");
                                 bool yoOro = Convert.ToInt32(r["YoOro"]) > 0;
                                 bool oracionGlobal = (bool)r["Oracion_Atendida"];
                                 int autorId = r["Id_Usuario_Autor"] != DBNull.Value ? (int)r["Id_Usuario_Autor"] : 0;
@@ -221,7 +221,7 @@ namespace RedAJP.Controllers
             }
             catch (Exception ex) { MostrarMensaje("Error", ex.Message, TipoMensaje.Error); }
 
-            var listaOrdenada = lista.OrderBy(x => x.NombreAutor == "Directiva AJP" ? 0 : (x.Tipo_Mensaje == "Oracion" ? 1 : 2)).ThenByDescending(x => x.Fecha_Creacion).ToList();
+            var listaOrdenada = lista.OrderBy(x => x.NombreAutor == "Directiva Corbán" ? 0 : (x.Tipo_Mensaje == "Oracion" ? 1 : 2)).ThenByDescending(x => x.Fecha_Creacion).ToList();
             ViewBag.PuedeCrear = User.TienePermiso(Modulo, PermisoCrear);
             ViewBag.EsAdmin = esAdmin;
             ViewBag.EsDirectivo = esDirectivo;
@@ -409,7 +409,7 @@ namespace RedAJP.Controllers
 
                                 modelo.Oracion_Atendida = (autorId == idUserLogueado) ? oracionGlobal : yoOro;
                                 modelo.Motivo_Rechazo = r["Motivo_Rechazo"]?.ToString();
-                                modelo.NombreAutor = anonimo ? "Anónimo" : (esInstMsg ? "Directiva AJP" : r["NombreCompleto"].ToString());
+                                modelo.NombreAutor = anonimo ? "Anónimo" : (esInstMsg ? "Directiva Corbán" : r["NombreCompleto"].ToString());
                                 modelo.TotalReacciones = Convert.ToInt32(r["TotalReacciones"]);
                                 modelo.UsuarioReacciono = Convert.ToInt32(r["MiReaccion"]) > 0;
                             }
@@ -503,7 +503,7 @@ namespace RedAJP.Controllers
                                 if (idResponde == modelo.Id_Usuario_Autor && modelo.Es_Anonimo)
                                     nombreRespuesta = "Anónimo";
                                 else
-                                    nombreRespuesta = esInstResp ? "Directiva AJP" : r["NombreCompleto"].ToString();
+                                    nombreRespuesta = esInstResp ? "Directiva Corbán" : r["NombreCompleto"].ToString();
 
                                 modelo.Respuestas.Add(new ComunidadRespuestaItem
                                 {
@@ -729,7 +729,7 @@ namespace RedAJP.Controllers
         {
             using (var libro = new ClosedXML.Excel.XLWorkbook())
             {
-                var hoja = libro.Worksheets.Add("Destinatarios AJP");
+                var hoja = libro.Worksheets.Add("Destinatarios Corbán");
 
                 // 1. Dar formato al encabezado principal
                 var rangoEncabezado = hoja.Range("A1:B1");
@@ -760,7 +760,7 @@ namespace RedAJP.Controllers
                 using (var ms = new System.IO.MemoryStream())
                 {
                     libro.SaveAs(ms);
-                    return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Plantilla_Usuarios_AJP.xlsx");
+                    return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Plantilla_Usuarios_Corban.xlsx");
                 }
             }
         }

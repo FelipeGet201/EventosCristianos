@@ -111,7 +111,7 @@
                 else if (item.Tipo_Mensaje == "Queja") { icono = "fa-triangle-exclamation"; colorBorde = "border-danger"; }
                 else if (item.Tipo_Mensaje == "Visita") { icono = "fa-house-chimney-user"; colorBorde = "border-success"; }
 
-                bool esInstitucional = item.NombreAutor == "Directiva AJP";
+                bool esInstitucional = item.NombreAutor == "Directiva Corbán";
                 bool esPendiente = item.Estado == "PEN";
                 bool esPrivado = item.Destinatario == "Especificos";
                 bool resaltarNoLeido = !item.EsLeido && !esPendiente;

@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // ARCHIVO: wwwroot/scss/components/_buttons.scss
 // =========================================================================
 
@@ -34,6 +34,20 @@
   &:hover {
     background-color: var(--secondary-dark) !important;
     border-color: var(--secondary-dark) !important;
+    color: #ffffff !important;
+  }
+}
+
+.btn-tertiary {
+  background-color: var(--tertiary) !important;
+  border-color: var(--tertiary) !important;
+  color: var(--text-main) !important;
+  border-radius: $border-radius-pill;
+  font-weight: 600;
+
+  &:hover {
+    background-color: var(--secondary) !important;
+    border-color: var(--secondary) !important;
     color: #ffffff !important;
   }
 }

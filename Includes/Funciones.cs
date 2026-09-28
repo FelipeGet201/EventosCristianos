@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Npgsql;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using Stripe;
@@ -245,12 +245,12 @@ namespace RedAJP.Globales
 
                 // Separamos la cadena por comas o punto y coma, y quitamos espacios en blanco
                 var listaDestinos = emailDestino.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                                                .Select(e => new { email = e.Trim(), name = "Usuario AJP" })
+                                                .Select(e => new { email = e.Trim(), name = "Usuario" })
                                                 .ToArray();
 
                 var datosCorreo = new
                 {
-                    sender = new { name = "Soporte AJP", email = "soporte@lospescadores.org" },
+                    sender = new { name = "Soporte Ministerio Corbán", email = "soporte@ministeriocorban.shop" },
                     to = listaDestinos, // <--- Aquí pasamos el arreglo generado
                     subject = asunto,
                     htmlContent = cuerpoHTML
@@ -500,7 +500,7 @@ namespace RedAJP.Globales
         // =========================================================
         public static string GenerarCodigoEntrega()
         {
-            // Lista de palabras temáticas (Náuticas / Bíblicas / AJP)
+            // Lista de palabras temáticas (Bíblicas / Corbán)
             string[] palabras = {
                 "PEZ", "RED", "MAR", "LUZ", "SAL", "FE", "SOL", "OLA",
                 "RIO", "VIDA", "AMOR", "PAZ", "ROCA", "FARO", "NAVE",

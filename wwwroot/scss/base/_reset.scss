@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // ARCHIVO: wwwroot/scss/base/_reset.scss
 // =========================================================================
 
@@ -12,6 +12,7 @@
   --primary-light: #{$color-primary-light};
   --secondary: #{$color-secondary};
   --secondary-dark: #{$color-secondary-dark};
+  --tertiary: #{$color-tertiary};
   --amber-accent: #{$color-amber-accent};
   --bg-body: #{$bg-body};
   --bg-surface: #{$bg-surface};
@@ -37,6 +38,7 @@
     --primary-light: #{map-get($theme-map, 'primary-light')};
     --secondary: #{map-get($theme-map, 'secondary')};
     --secondary-dark: #{map-get($theme-map, 'secondary-dark')};
+    --tertiary: #{map-get($theme-map, 'tertiary')};
     --bg-body: #{map-get($theme-map, 'bg-body')};
     --bg-surface: #{map-get($theme-map, 'bg-surface')};
     --bg-card: #{map-get($theme-map, 'bg-card')};

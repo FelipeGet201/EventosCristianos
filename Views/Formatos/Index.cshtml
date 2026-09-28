@@ -1,10 +1,10 @@
-@using RedAJP.Globales
+﻿@using RedAJP.Globales
 @using System.Web
 @using System.Security.Claims
 @model List<RedAJP.Models.FormatoViewModel>
 @{
     Layout = "Principal";
-    ViewData["Title"] = "Recursos y Formatos AJP";
+    ViewData["Title"] = "Recursos y Formatos";
 
     // 1. Variables Globales y de Permisos
     bool p_Crear = User.TienePermiso(Parametros.Modulos.Material, Parametros.Permisos.Crear);
@@ -198,7 +198,7 @@
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
                     <div class="flex-grow-1">
                         <h2 class="fw-bold mb-1 text-dark" style="color: var(--header-footer) !important; font-size: 1.75rem;">
-                            Recursos y Formatos AJP
+                            Recursos y Formatos
                         </h2>
                         <p class="text-muted mb-0">Documentación, formatos y contenido de interés.</p>
                     </div>

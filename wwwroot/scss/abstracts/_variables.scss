@@ -1,4 +1,4 @@
-// =========================================================================
+﻿// =========================================================================
 // ARCHIVO: wwwroot/scss/abstracts/_variables.scss
 // SISTEMA DE TEMAS JUVENILES
 // CAMBIA AQUÍ EL TEMA ACTIVO: 'aventurero' O 'moderno'
@@ -11,36 +11,37 @@ $active-theme: 'aventurero' !default;
 // --- 2. DEFINICIÓN DEL MAPA COMPLETO DE TEMAS JUVENILES ---
 $themes: (
   'aventurero': (
-    'primary': #E05A2B,          // Terracota Atardecer Vibrante
-    'primary-dark': #B84318,     // Terracota Oscuro
-    'primary-light': #F97316,    // Naranja Atardecer
-    'secondary': #F59E0B,        // Dorado Sol
-    'secondary-dark': #D97706,
-    'bg-body': #FAF6F0,          // Crema Marfil Cálido
-    'bg-surface': #F4EAD9,       // Beige Crema Suave
-    'bg-card': #FFFFFF,          // Blanco Marfil
-    'bg-header': #0A3A35,        // Verde Esmeralda Menta Profundo (Fresco y Juvenil)
-    'bg-footer': #072B27,        // Pie Esmeralda Noche
-    'text-main': #1F2937,        // Texto Principal Oscuro Cálido
-    'text-muted': #6B7280,       // Gris Suave
-    'text-header': #FFFFFF,      // Texto sobre Encabezado
-    'hero-gradient': 'linear-gradient(135deg, #B84318 0%, #E05A2B 50%, #F97316 100%)',
-    'card-header-bg': 'linear-gradient(135deg, #B84318 0%, #E05A2B 100%)'
+    'primary': #B45309,          // Dorado Ámbar Trigo Cálido (Elegante, sin ser chillón ni rojizo)
+    'primary-dark': #78350F,     // Ámbar tostado profundo
+    'primary-light': #D97706,    // Ámbar dorado suave
+    'secondary': #D97706,        // Trigo Sol (Dorado de las insignias y cruz en el navbar)
+    'secondary-dark': #92400E,   // Trigo ámbar tostado
+    'tertiary': #DFB796,         // Tono pastel suave arena/beige
+    'bg-body': #FAF6F0,          // Crema Cálido (mantiene el fondo acogedor del screenshot)
+    'bg-surface': #F4EAD9,       // Beige suave
+    'bg-card': #FFFFFF,          // Blanco puro
+    'bg-header': #0A3A35,        // Verde Esmeralda Menta Profundo (exacto del screenshot)
+    'bg-footer': #072B27,        // Pie Esmeralda Noche (exacto del screenshot)
+    'text-main': #1F2937,        // Texto principal oscuro (legible y contrastado)
+    'text-muted': #6B7280,       // Gris suave neutro
+    'text-header': #FFFFFF,      // Texto blanco sobre encabezado
+    'hero-gradient': 'linear-gradient(135deg, #78350F 0%, #92400E 40%, #B45309 75%, #D97706 100%)', // Ámbar miel noble (cálido, sin exageración de rojo/naranja)
+    'card-header-bg': 'linear-gradient(135deg, #0A3A35 0%, #134E48 100%)'
   ),
-  'moderno': (
-    'primary': #0EA5E9,          // Azul Cian Eléctrico
-    'primary-dark': #0284C7,     // Azul Oceánico
-    'primary-light': #38BDF8,    // Cian Brillante
-    'secondary': #F43F5E,        // Coral Energético
+  'moderno': ('primary': #0EA5E9, // Azul Cian Eléctrico
+    'primary-dark': #0284C7, // Azul Oceánico
+    'primary-light': #38BDF8, // Cian Brillante
+    'secondary': #F43F5E, // Coral Energético
     'secondary-dark': #E11D48,
-    'bg-body': #F8FAFC,          // Gris Nube Limpio
-    'bg-surface': #F1F5F9,       // Pizarra Clarísimo
-    'bg-card': #FFFFFF,          // Blanco Puro
-    'bg-header': #0F172A,        // Azul Pizarra Noche
-    'bg-footer': #0F172A,        // Azul Pizarra Noche
-    'text-main': #1E293B,        // Texto Pizarra Oscuro
-    'text-muted': #64748B,       // Pizarra Suave
-    'text-header': #FFFFFF,      // Texto Blanco
+    'tertiary': #FDA4AF,
+    'bg-body': #F8FAFC, // Gris Nube Limpio
+    'bg-surface': #F1F5F9, // Pizarra Clarísimo
+    'bg-card': #FFFFFF, // Blanco Puro
+    'bg-header': #0F172A, // Azul Pizarra Noche
+    'bg-footer': #0F172A, // Azul Pizarra Noche
+    'text-main': #1E293B, // Texto Pizarra Oscuro
+    'text-muted': #64748B, // Pizarra Suave
+    'text-header': #FFFFFF, // Texto Blanco
     'hero-gradient': 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0EA5E9 100%)',
     'card-header-bg': 'linear-gradient(135deg, #0F172A 0%, #0EA5E9 100%)'
   )
@@ -49,51 +50,51 @@ $themes: (
 // --- 3. EXTRAER VALORES SASS DEL TEMA SELECCIONADO ---
 $theme-map: map-get($themes, $active-theme);
 
-$color-primary:         map-get($theme-map, 'primary') !default;
-$color-primary-dark:    map-get($theme-map, 'primary-dark') !default;
-$color-primary-light:   map-get($theme-map, 'primary-light') !default;
-$color-secondary:       map-get($theme-map, 'secondary') !default;
-$color-secondary-dark:  map-get($theme-map, 'secondary-dark') !default;
+$color-primary: map-get($theme-map, 'primary') !default;
+$color-primary-dark: map-get($theme-map, 'primary-dark') !default;
+$color-primary-light: map-get($theme-map, 'primary-light') !default;
+$color-secondary: map-get($theme-map, 'secondary') !default;
+$color-secondary-dark: map-get($theme-map, 'secondary-dark') !default;
+$color-tertiary: map-get($theme-map, 'tertiary') !default;
 $color-secondary-light: #E8C872 !default;
-$color-amber-accent:    #D98A2B !default;
+$color-amber-accent: #CA8A04 !default;
 
-$bg-body:               map-get($theme-map, 'bg-body') !default;
-$bg-surface:            map-get($theme-map, 'bg-surface') !default;
-$bg-card:               map-get($theme-map, 'bg-card') !default;
-$bg-input:              #FAF5EF !default;
-$bg-header:             map-get($theme-map, 'bg-header') !default;
-$bg-footer:             map-get($theme-map, 'bg-footer') !default;
+$bg-body: map-get($theme-map, 'bg-body') !default;
+$bg-surface: map-get($theme-map, 'bg-surface') !default;
+$bg-card: map-get($theme-map, 'bg-card') !default;
+$bg-input: #FAF5EF !default;
+$bg-header: map-get($theme-map, 'bg-header') !default;
+$bg-footer: map-get($theme-map, 'bg-footer') !default;
 
-$text-main:             map-get($theme-map, 'text-main') !default;
-$text-muted:            map-get($theme-map, 'text-muted') !default;
-$text-light:            #FAF4EB !default;
-$text-gold:             $color-secondary !default;
+$text-main: map-get($theme-map, 'text-main') !default;
+$text-muted: map-get($theme-map, 'text-muted') !default;
+$text-light: #FAF4EB !default;
+$text-gold: $color-secondary !default;
 
-$hero-gradient:         map-get($theme-map, 'hero-gradient') !default;
+$hero-gradient: map-get($theme-map, 'hero-gradient') !default;
 
 // --- 4. ESTADOS DEL SISTEMA ---
-$state-success:         #388E3C !default;
-$state-warning:         #E67E22 !default;
-$state-danger:          #C0392B !default;
-$state-info:            #8E44AD !default;
+$state-success: #388E3C !default;
+$state-warning: #E67E22 !default;
+$state-danger: #C0392B !default;
+$state-info: #8E44AD !default;
 
 // --- 5. FUENTES, BORDES Y SOMBRAS ---
-$font-family-base:      'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
-$font-family-heading:   'Outfit', 'Segoe UI', sans-serif !default;
+$font-family-base: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
+$font-family-heading: 'Outfit', 'Segoe UI', sans-serif !default;
 
-$border-radius-sm:      10px !default;
-$border-radius-md:      16px !default;
-$border-radius-lg:      24px !default;
-$border-radius-pill:    50px !default;
+$border-radius-sm: 10px !default;
+$border-radius-md: 16px !default;
+$border-radius-lg: 24px !default;
+$border-radius-pill: 50px !default;
 
-$border-subtle-color:   rgba(0, 0, 0, 0.08) !default;
-$border-subtle:         1px solid $border-subtle-color !default;
-$border-accent:         2px solid $color-amber-accent !default;
+$border-subtle-color: rgba(0, 0, 0, 0.08) !default;
+$border-subtle: 1px solid $border-subtle-color !default;
+$border-accent: 2px solid $color-amber-accent !default;
 
-$shadow-sm:             0 3px 10px rgba(0, 0, 0, 0.05) !default;
-$shadow-md:             0 8px 24px rgba(0, 0, 0, 0.08) !default;
-$shadow-lg:             0 14px 35px rgba(0, 0, 0, 0.12) !default;
+$shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.05) !default;
+$shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08) !default;
+$shadow-lg: 0 14px 35px rgba(0, 0, 0, 0.12) !default;
 
-$transition-base:       all 0.25s ease-in-out !default;
-$transition-fast:       all 0.15s ease-in-out !default;
-
+$transition-base: all 0.25s ease-in-out !default;
+$transition-fast: all 0.15s ease-in-out !default;

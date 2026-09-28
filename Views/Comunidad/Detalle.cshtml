@@ -13,7 +13,7 @@
     bool puedeRevisar = esDirectivo && !(esAutor && Model.Destinatario != "Directiva");
     var cultura = new System.Globalization.CultureInfo("es-MX");
 
-    bool esInstitucionalMsg = Model.NombreAutor == "Directiva AJP";
+    bool esInstitucionalMsg = Model.NombreAutor == "Directiva Corbán";
     bool respondeComoDirectiva = esDirectivo && (!esAutor || esInstitucionalMsg);
     bool tieneRespuestas = Model.Respuestas.Any();
     
@@ -232,7 +232,7 @@
                     @if(tieneRespuestas) {
                         @foreach(var resp in Model.Respuestas)
                         {
-                            bool esMia = (resp.Id_Usuario_Hilo == idUserLogueado && !resp.EsDeDirectiva) || (resp.EsDeDirectiva && esDirectivo && resp.Nombre_Responde == "Directiva AJP");
+                            bool esMia = (resp.Id_Usuario_Hilo == idUserLogueado && !resp.EsDeDirectiva) || (resp.EsDeDirectiva && esDirectivo && resp.Nombre_Responde == "Directiva Corbán");
                             <div class="d-flex @(esMia ? "justify-content-end" : "justify-content-start") w-100">
                                 <div class="chat-bubble shadow-sm @(esMia ? "chat-mine" : "chat-other")">
                                     <div class="d-flex justify-content-between align-items-center mb-1 gap-4">
@@ -261,7 +261,7 @@
                 @* Área de Respuesta *@
                 <div class="card shadow-sm border-0 rounded-4 mb-5 overflow-hidden">
                     @if(respondeComoDirectiva) {
-                        <div class="bg-warning text-dark text-center py-2 small fw-bold"><i class="fa-solid fa-building-columns me-2"></i> RESPONDIENDO COMO DIRECTIVA AJP</div>
+                        <div class="bg-warning text-dark text-center py-2 small fw-bold"><i class="fa-solid fa-building-columns me-2"></i> RESPONDIENDO COMO DIRECTIVA CORBÁN</div>
                     }
                     <div class="card-body p-2 bg-white">
                         <form action="@Url.Action("Responder")" method="post" class="d-flex align-items-end gap-2">

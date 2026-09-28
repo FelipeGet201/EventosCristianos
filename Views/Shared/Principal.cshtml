@@ -66,6 +66,7 @@
     <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
 
     <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
+    <link rel="stylesheet" href="~/lib/fonts/outfit.css" />
     <link rel="stylesheet" href="~/css/estilos_pagina.css" asp-append-version="true" />
 </head>
 
@@ -106,42 +107,26 @@
             align-items: center;
             justify-content: center;
         }
-              
 
-        .ajp-corto{
-            display: block;
-        }
-        .ajp-largo{
-            display: none;
-        }
-
-
-        @@media (max-width: 991px) {
-            .ajp-corto {
-                display: none;
-            }
-            .ajp-largo {
-                display: block;
-            }
-            .letra-nombre{
+        @media (max-width: 991.98px) {
+            .letra-nombre {
                 margin-left: 0.5rem;
             }
             .navbar-nav {
                 text-align: center;
             }
-                /* APLICAR BORDES SOLO A LOS ÍTEMS DE NIVEL SUPERIOR */
-                /* El selector '>' asegura que solo afecte a los hijos directos del menú principal */
-                .navbar-nav > .nav-item {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    border-left: none !important;
-                    padding: 10px 0;
-                }
+            /* APLICAR BORDES SOLO A LOS ÍTEMS DE NIVEL SUPERIOR */
+            .navbar-nav > .nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                border-left: none !important;
+                padding: 10px 0;
+            }
             /* QUITAR BORDES EN LOS ÍTEMS DENTRO DE DROPDOWNS */
             .dropdown-menu .dropdown-item {
-                border-bottom: none !important; /* Limpia las líneas internas */
-                padding: 10px 15px; /* Espaciado cómodo para el dedo */
+                border-bottom: none !important;
+                padding: 10px 15px;
             }
 
             .dropdown-menu {
@@ -149,9 +134,8 @@
                 text-align: center;
                 background-color: rgba(255, 255, 255, 0.05);
                 border: none;
-                padding: 0; /* Quitar padding extra del contenedor */
+                padding: 0;
             }
-            /* Mantener el <hr> funcional dentro de los dropdowns (para tus separadores lógicos) */
             .dropdown-divider {
                 border-top: 1px solid rgba(255,255,255,0.2) !important;
                 margin: 0.5rem 0;
@@ -165,45 +149,55 @@
             .user-avatar-btn {
                 justify-content: center !important;
             }
-        }        
+        }
 
-        @@media (max-width: 770px) {
-            .ajp-corto {
-                display: block;
-            }
-            .ajp-largo {
-                display: none;
-            }
-        }  
         /* Estilo del botón "Ojo" Para contraseñas */
-        .ojo-global-btn {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #6c757d;
-            cursor: pointer;
-            z-index: 10;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            transition: color 0.3s;
-        }
-
-            .ojo-global-btn:hover {
-                color: var(--primary-dark);
-            }
-
-        /* Clase para dar espacio al texto y que no choque con el icono */
-        .input-con-ojo-padding {
-            padding-right: 45px !important;
-        }
-
-        /* Aseguramos posicionamiento relativo en el padre */
         .contenedor-ojo-relativo {
             position: relative !important;
+        }
+
+        .input-con-ojo-padding {
+            padding-right: 48px !important;
+        }
+
+        .ojo-global-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            color: var(--secondary, #D97706);
+            cursor: pointer;
+            z-index: 10;
+            padding: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.15rem;
+            transition: all 0.2s ease-in-out;
+            line-height: 1;
+        }
+
+        .ojo-global-btn i {
+            color: inherit;
+            font-size: inherit;
+            pointer-events: none;
+        }
+
+        .ojo-global-btn:hover {
+            color: var(--primary-dark, #78350F) !important;
+            background-color: rgba(0, 0, 0, 0.05) !important;
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        .ojo-global-btn:focus,
+        .ojo-global-btn:active {
+            outline: none !important;
+            box-shadow: none !important;
         }
     </style>
     <header>
@@ -228,8 +222,8 @@
 
                 <div class="collapse navbar-collapse" id="menuPrincipal">
 
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-2">
-                        <li class="nav-item border-start-lg ms-lg-2">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-2 mt-2 mt-lg-0">
+                        <li class="nav-item border-start-lg ms-lg-4 me-lg-2">
                             <a class="nav-link" id="menu-eventos" href="@Url.Action("Index", "Eventos")">
                                 <i class="fa-solid fa-calendar-check"></i> <span>Eventos</span>
                             </a>
@@ -552,10 +546,14 @@
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'ojo-global-btn';
+                btn.setAttribute('tabindex', '-1');
+                btn.setAttribute('aria-label', 'Mostrar u ocultar contraseña');
                 btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
 
                 // 5. Lógica del click
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     const icono = btn.querySelector('i');
                     if (input.type === "password") {
                         input.type = "text";
@@ -566,6 +564,7 @@
                         icono.classList.remove("fa-eye-slash");
                         icono.classList.add("fa-eye");
                     }
+                    input.focus();
                 });
 
                 // 6. Insertar el botón en el contenedor
