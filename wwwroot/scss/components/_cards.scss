@@ -6,17 +6,24 @@
 @import '../abstracts/mixins';
 
 .card {
-  background-color: var(--bg-card) !important;
+  background-color: var(--bg-card);
   border: $border-subtle;
   border-radius: $border-radius-md;
   box-shadow: $shadow-sm;
   transition: $transition-base;
   overflow: hidden;
-  color: var(--texto-principal) !important;
+  color: var(--texto-principal);
 
   &.card-hover:hover, &:hover {
     box-shadow: $shadow-md;
     border-color: rgba(0, 0, 0, 0.15);
+  }
+
+  &.text-white, &[class*="bg-primary"], &[class*="bg-dark"] {
+    color: #ffffff !important;
+    h1, h2, h3, h4, h5, h6, .display-1, .display-2, .display-3, .display-4, .display-5, .display-6, p, span, small {
+      color: inherit !important;
+    }
   }
 
   .card-header {
@@ -42,8 +49,12 @@
   }
 
   .card-title {
-    color: var(--texto-principal) !important;
+    color: var(--texto-principal);
     font-weight: 700;
+  }
+
+  &.text-white .card-title {
+    color: #ffffff !important;
   }
 }
 
@@ -102,7 +113,7 @@
 .btn-hero-info {
   background: #ffffff !important;
   border: 1px solid #ffffff !important;
-  color: #072B27 !important;
+  color: var(--header-footer) !important;
   font-weight: 700;
   font-size: 0.9rem;
   border-radius: $border-radius-pill;
@@ -114,7 +125,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
   i, span, * {
-    color: #072B27 !important;
+    color: var(--header-footer) !important;
   }
 
   &:hover {
@@ -128,9 +139,9 @@
   }
 }
 
-// Botones de Estado en el Hero (Inscribirse -> Verde Esmeralda Noche)
+// Botones de Estado en el Hero (Inscribirse -> adaptado dinámicamente al tema)
 .btn-status-register {
-  background: linear-gradient(135deg, #072B27 0%, #0F4C42 100%) !important;
+  background: linear-gradient(135deg, var(--header-footer) 0%, var(--primary-dark) 100%) !important;
   color: #ffffff !important;
   border: none !important;
   font-weight: 700 !important;
@@ -141,18 +152,19 @@
   text-decoration: none !important;
 
   &:hover {
-    background: linear-gradient(135deg, #041F1C 0%, #072B27 100%) !important;
+    background: linear-gradient(135deg, var(--bg-footer) 0%, var(--header-footer) 100%) !important;
     color: #ffffff !important;
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   }
 }
 
-// Caja de fecha (Glassmorphism)
+// Caja de fecha (Glassmorphism con contraste impecable en ambos temas)
 .date-badge {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: $border-radius-sm;
   padding: 10px 16px;
   text-align: center;
@@ -166,14 +178,16 @@
     font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
-    color: $color-secondary;
-    letter-spacing: 1px;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    letter-spacing: 1.5px;
   }
 
   .date-day {
     font-size: 1.6rem;
     font-weight: 800;
-    color: $text-light;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     line-height: 1;
   }
 }

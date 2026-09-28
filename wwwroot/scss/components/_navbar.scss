@@ -108,19 +108,41 @@
       i {
         color: var(--primary);
         margin-right: 0.5rem;
+        transition: $transition-fast;
       }
 
       &:hover {
-        background-color: rgba(14, 165, 233, 0.12);
-        color: var(--primary);
+        background-color: var(--bg-surface);
+        color: var(--primary) !important;
 
         i {
-          color: var(--primary);
+          color: var(--primary) !important;
+        }
+      }
+
+      &.active, &:active {
+        background-color: var(--primary) !important;
+        color: #ffffff !important;
+
+        i {
+          color: #ffffff !important;
         }
       }
     }
   }
+
+  // Estilo cuando el botón del avatar de usuario está activo
+  .user-avatar-btn.active {
+    background-color: rgba(255, 255, 255, 0.16) !important;
+    border-radius: $border-radius-pill;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+
+    .nombre-usuario-texto {
+      color: #ffffff !important;
+    }
+  }
 }
+
 
 // Badge dinámico sobre iconos del menú
 .badge-dinamico {

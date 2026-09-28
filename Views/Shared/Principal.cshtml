@@ -377,20 +377,20 @@
                             }
 
                             <li class="nav-item dropdown ms-lg-2">
-                                <a class="nav-link dropdown-toggle user-avatar-btn" href="#" id="menu-usuario" role="button" data-bs-toggle="dropdown" style="min-width: auto;">
+                                <a class="nav-link dropdown-toggle user-avatar-btn d-flex align-items-center" href="#" id="menu-usuario" role="button" data-bs-toggle="dropdown" style="min-width: auto;">
 
                                     <div class="rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm"
-                                         style="width: 30px; height: 30px; background-color: var(--primary, #8C2323); color: #ffffff !important; font-weight: 800; font-size: 0.95rem; line-height: 1; flex-shrink: 0;">
+                                         style="width: 32px; height: 32px; background-color: var(--primary); color: #ffffff !important; font-weight: 800; font-size: 0.95rem; line-height: 1; flex-shrink: 0;">
                                         @inicialUsuario
                                     </div>
 
-                                    <span class="nombre-usuario-texto small fw-bold text-truncate" style="max-width: 150px; color: var(--primary-dark, #4A1212);">
+                                    <span class="nombre-usuario-texto small fw-bold text-truncate" style="max-width: 150px; color: var(--texto-header, #ffffff);">
                                         @User.Identity.Name
                                     </span>
                                 </a>
 
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li class="dropdown-header text-center">SESIÓN ACTIVA</li>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                    <li class="dropdown-header text-center small fw-bold" style="letter-spacing: 0.8px; color: var(--texto-muted);">SESIÓN ACTIVA</li>
                                     <li><a class="dropdown-item" id="submenu-miperfil" href="@Url.Action("Index", "Perfil")"><i class="fa-solid fa-address-card"></i> Mi Perfil</a></li>
 
                                     <li><hr class="dropdown-divider"></li>

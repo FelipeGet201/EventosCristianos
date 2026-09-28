@@ -68,8 +68,9 @@
 <style>
     /* ESTILOS ORIGINALES */
     .header-evento h2 {
-        text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-        color: white;
+        color: var(--texto-principal) !important;
+        font-weight: 800;
+        letter-spacing: -0.02em;
     }
 
     .badge-costo {
@@ -79,21 +80,24 @@
     }
 
     .btn-volver-arriba {
-        width: 40px;
-        height: 40px;
+        width: 42px;
+        height: 42px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: rgba(0,0,0,0.3);
-        border: 2px solid rgba(255,255,255,0.5);
-        color: white;
+        background-color: var(--bg-card);
+        border: 1px solid rgba(0,0,0,0.1);
+        color: var(--texto-principal);
+        border-radius: 50%;
         text-decoration: none;
-        transition: 0.2s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.2s ease;
     }
 
         .btn-volver-arriba:hover {
-            background-color: white;
-            color: var(--header-footer);
+            background-color: var(--primary);
+            color: #ffffff;
+            transform: scale(1.05);
         }
 
     .oculto {
@@ -585,7 +589,7 @@
                     }
                     else
                     {
-                        <span class="badge bg-info text-dark rounded-pill px-3 py-2"><i class="fa-solid fa-layer-group me-1"></i> Precios Variados</span>
+                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background-color: rgba(14, 165, 233, 0.15); color: var(--primary); border: 1px solid rgba(14, 165, 233, 0.3);"><i class="fa-solid fa-layer-group me-1"></i> Precios Variados</span>
                     }
                 </div>
 
@@ -1256,7 +1260,7 @@
                 @if (subtipos.Any())
                 {
                     <div class="col-md-2">
-                        <label class="form-label small fw-bold text-primary">Modalidad</label>
+                        <label class="form-label small fw-bold">Modalidad</label>
                         <select name="Asistentes[IDX].Id_Subtipo_Seleccionado" class="form-select sel-subtipo" required onchange="actualizarExtrasForm(this); calcularTotal()">
                             <option value="" data-costo="0">-- Selecciona --</option>
                             @foreach (var s in subtipos)

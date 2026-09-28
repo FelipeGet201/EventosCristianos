@@ -3,45 +3,47 @@
     ViewData["Title"] = "Correo Enviado";
 }
 
-<div class="container flex-grow-1 py-3 row justify-content-center align-items-center" style="min-height: 70vh;">
+<div class="container flex-grow-1 py-4 row justify-content-center align-items-center" style="min-height: 70vh;">
     <div class="col-12 col-md-8 col-lg-6">
 
-        <div class="card p-5 shadow-lg border-0 text-center mx-auto"
-             style="border-radius: 20px; background: rgba(255,255,255,0.96); backdrop-filter: blur(5px);">
+        <div class="card p-4 p-md-5 shadow-lg border-0 text-center mx-auto"
+             style="border-radius: 24px; background: var(--bg-card); backdrop-filter: blur(10px);">
 
             <div class="mb-4">
-                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-4">
-                    <i class="fa-solid fa-envelope-open-text fa-4x text-success"></i>
+                <div class="rounded-circle d-inline-flex p-4 shadow-sm" style="background-color: rgba(46, 125, 50, 0.12);">
+                    <i class="fa-solid fa-envelope-circle-check fa-4x" style="color: #2e7d32;"></i>
                 </div>
             </div>
 
-            <h2 class="fw-bold" style="color: var(--header-footer);">¡Casi listo!</h2>
+            <h2 class="fw-bold mb-2" style="color: var(--header-footer);">¡Casi listo!</h2>
 
-            <p class="lead mt-3 text-dark mb-1">
+            <p class="lead mt-2 mb-3" style="color: var(--texto-principal); font-size: 1.15rem;">
                 Hemos enviado un correo de confirmación.
             </p>
 
-            <p class="text-danger fw-bold small mb-4">
-                <i class="fa-regular fa-clock me-1"></i> Tienes 24 horas para confirmar tu cuenta antes de que expire el enlace.
-            </p>
-
-            <div class="alert alert-warning border-0 small text-muted mx-auto" style="max-width: 90%;">
-                <i class="fa-solid fa-circle-info me-1"></i>
-                Por favor revisa tu bandeja de entrada (y la carpeta de spam) y haz clic en el enlace para activar tu cuenta.
+            <div class="d-inline-flex align-items-center justify-content-center gap-2 px-3 py-1 mb-4 rounded-pill mx-auto"
+                 style="background-color: rgba(217, 119, 6, 0.12); color: var(--secondary-dark, #b45309); font-weight: 600; font-size: 0.85rem;">
+                <i class="fa-regular fa-clock"></i> Tienes 24 horas para confirmar tu cuenta antes de que expire el enlace.
             </div>
 
-            <div class="mt-4">
-                <a href="@Url.Action("Index", "Login")" class="btn btn-nautico rounded-pill px-5 fw-bold py-2">
+            <div class="p-3 mb-4 rounded-4 border-0 mx-auto text-start d-flex align-items-start gap-3" 
+                 style="max-width: 92%; background-color: var(--bg-surface); color: var(--texto-principal); font-size: 0.9rem;">
+                <i class="fa-solid fa-circle-info mt-1" style="color: var(--primary); font-size: 1.15rem; flex-shrink: 0;"></i>
+                <span>Por favor revisa tu bandeja de entrada (y la carpeta de spam) y haz clic en el enlace para activar tu cuenta.</span>
+            </div>
+
+            <div class="mt-2">
+                <a href="@Url.Action("Index", "Login")" class="btn btn-nautico rounded-pill px-5 fw-bold py-2 shadow-sm">
                     Volver al Login
                 </a>
             </div>
 
-            <div class="mt-4 pt-3 border-top">
-                <p class="small text-muted mb-0">
+            <div class="mt-4 pt-3 border-top" style="border-color: rgba(0,0,0,0.08) !important;">
+                <p class="small mb-0" style="color: var(--texto-muted);">
                     ¿No recibiste el correo o tienes dudas?
                     <br>
                     Contáctanos en:
-                    <a href="mailto:soporte@ministeriocorban.com" class="fw-bold text-decoration-none" style="color: var(--header-footer);">
+                    <a href="mailto:soporte@ministeriocorban.com" class="fw-bold text-decoration-none" style="color: var(--primary);">
                         soporte@ministeriocorban.com
                     </a>
                 </p>
@@ -51,18 +53,3 @@
 
     </div>
 </div>
-
-<style>
-    /* Estilo local para el botón si no lo toma del layout */
-    .btn-nautico {
-        background-color: var(--header-footer);
-        color: white;
-        transition: 0.3s;
-    }
-
-        .btn-nautico:hover {
-            background-color: var(--pez-azul);
-            color: white;
-            transform: translateY(-2px);
-        }
-</style>

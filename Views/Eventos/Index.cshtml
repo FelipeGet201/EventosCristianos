@@ -66,8 +66,9 @@
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 2px;
-        font-weight: 700;
-        color: var(--acento-dorado);
+        font-weight: 800;
+        color: #ffffff !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         line-height: 1;
         margin-bottom: 4px;
     }
@@ -316,7 +317,7 @@
 
                     <div class="col-12 col-md text-md-start">
                         <div class="d-inline-block mb-1">
-                            <span class="badge bg-warning text-dark border-0 rounded-1 small fw-bold"><i class="fa-solid fa-star me-1"></i> DESTACADO</span>
+                            <span class="badge rounded-pill small fw-bold px-3 py-1 shadow-xs" style="background: rgba(0, 0, 0, 0.28); color: #ffffff; backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.25);"><i class="fa-solid fa-star text-warning me-1"></i> DESTACADO</span>
                             @if (!ev.Activo)
                             {
                                 <span class="badge bg-danger ms-1">OCULTO</span>
@@ -329,8 +330,8 @@
 
                         <h3 class="fw-bold mb-1 text-white text-truncate">@ev.Titulo</h3>
 
-                        <div class="text-white-50 small d-flex align-items-center gap-3 flex-wrap justify-content-center justify-content-md-start">
-                            <span><i class="fa-regular fa-clock me-1 text-warning"></i> @ev.DiaSemHoraFormato</span>
+                        <div class="small d-flex align-items-center gap-3 flex-wrap justify-content-center justify-content-md-start" style="color: rgba(255, 255, 255, 0.9);">
+                            <span><i class="fa-regular fa-clock me-1 text-white"></i> @ev.DiaSemHoraFormato</span>
                             @if (ev.Requiere_Registro)
                             {
                                 <span class="d-none d-md-inline">|</span>
