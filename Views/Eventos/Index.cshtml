@@ -1,4 +1,4 @@
-@model RedAJP.Models.CalendarioViewModel
+﻿@model RedAJP.Models.CalendarioViewModel
 @{
     Layout = "Principal";
     ViewData["Title"] = "Calendario de Actividades";
@@ -274,10 +274,55 @@
             width: 100%;
             margin-top: 5px; /* Separación visual */
         }
+        .card-hero .hero-image-wrapper {
+            margin: 0 auto 1rem auto;
+            max-width: 280px;
+        }
+    }
+
+    /* Ambient glow & texture */
+    .eventos-ambient-container {
+        position: relative;
+    }
+    .eventos-ambient-container::before {
+        content: '';
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 85%;
+        max-width: 950px;
+        height: 380px;
+        background: radial-gradient(circle, rgba(230, 194, 128, 0.16) 0%, rgba(253, 251, 247, 0) 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Hero Image Wrapper */
+    .hero-image-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.2);
+    }
+    .hero-image-wrapper img {
+        transition: transform 0.4s ease;
+    }
+    .card-hero:hover .hero-image-wrapper img {
+        transform: scale(1.05);
+    }
+
+    /* Community cards micro-hover */
+    .community-guide-card {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .community-guide-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
     }
 </style>
 
-<div class="container py-5 fade-in">
+<div class="container py-5 fade-in eventos-ambient-container position-relative">
 
     <div class="row mb-4 align-items-center">
         <div class="col-md-6 col-12 mb-3 mb-md-0">
@@ -306,18 +351,37 @@
 
         <div class="card card-hero mb-5 @(ev.Bloqueado ? "locked" : "")">
             <div class="card-body p-3 p-md-4">
-                <div class="row align-items-center">
+                <div class="row align-items-center g-3 g-md-4">
 
-                    <div class="col-12 col-md-auto mb-3 mb-md-0">
-                        <div class="date-badge">
-                            <span class="date-month">@ev.MesAbreviado</span>
-                            <span class="date-day">@ev.DiaNumero</span>
+                    @if (!string.IsNullOrEmpty(ev.Imagen_Url))
+                    {
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <div class="hero-image-wrapper shadow-sm">
+                                <img src="@ev.Imagen_Url" alt="@ev.Titulo" class="w-100 object-fit-cover" style="min-height: 140px; max-height: 175px; object-fit: cover;">
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    <div class="date-badge py-1 px-2" style="min-width: 60px; transform: scale(0.9);">
+                                        <span class="date-month" style="font-size: 0.65rem;">@ev.MesAbreviado</span>
+                                        <span class="date-day" style="font-size: 1.4rem;">@ev.DiaNumero</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="col-12 col-md-auto mb-2 mb-md-0 text-center">
+                            <div class="date-badge">
+                                <span class="date-month">@ev.MesAbreviado</span>
+                                <span class="date-day">@ev.DiaNumero</span>
+                            </div>
+                        </div>
+                    }
 
-                    <div class="col-12 col-md text-md-start">
-                        <div class="d-inline-block mb-1">
-                            <span class="badge rounded-pill small fw-bold px-3 py-1 shadow-xs" style="background: rgba(0, 0, 0, 0.28); color: #ffffff; backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.25);"><i class="fa-solid fa-star text-warning me-1"></i> DESTACADO</span>
+                    <div class="col-12 @(!string.IsNullOrEmpty(ev.Imagen_Url) ? "col-md-5 col-lg-6" : "col-md") text-md-start">
+                        <div class="d-flex flex-wrap align-items-center gap-1 mb-2">
+                            <span class="badge rounded-pill small fw-bold px-3 py-1 shadow-xs" style="background: rgba(0, 0, 0, 0.28); color: #ffffff; backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.25);">
+                                <i class="fa-solid fa-star text-warning me-1"></i> DESTACADO
+                            </span>
                             @if (!ev.Activo)
                             {
                                 <span class="badge bg-danger ms-1">OCULTO</span>
@@ -326,21 +390,25 @@
                             {
                                 <span class="badge bg-warning text-dark border border-warning ms-1"><i class="fa-solid fa-lock me-1"></i> BLOQUEADO</span>
                             }
+
+                            <span class="badge rounded-pill px-3 py-1 ms-1 text-white shadow-xs hero-countdown-badge" data-fecha="@ev.Fecha_Inicio.ToString("yyyy-MM-ddTHH:mm:ss")" style="background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.25); font-size: 0.75rem;">
+                                <i class="fa-regular fa-clock me-1 text-warning"></i> <span class="countdown-text">Calculando...</span>
+                            </span>
                         </div>
 
-                        <h3 class="fw-bold mb-1 text-white text-truncate">@ev.Titulo</h3>
+                        <h3 class="fw-bold mb-2 text-white" style="letter-spacing: -0.3px; line-height: 1.25;">@ev.Titulo</h3>
 
-                        <div class="small d-flex align-items-center gap-3 flex-wrap justify-content-center justify-content-md-start" style="color: rgba(255, 255, 255, 0.9);">
+                        <div class="small d-flex align-items-center gap-3 flex-wrap justify-content-center justify-content-md-start" style="color: rgba(255, 255, 255, 0.92);">
                             <span><i class="fa-regular fa-clock me-1 text-white"></i> @ev.DiaSemHoraFormato</span>
                             @if (ev.Requiere_Registro)
                             {
-                                <span class="d-none d-md-inline">|</span>
+                                <span class="d-none d-md-inline opacity-50">|</span>
                                 <span><i class="fa-solid fa-users me-1"></i> @(ev.TotalAsistentesGlobal > 0 ? $"{ev.TotalAsistentesGlobal} Asistentes" : "Cupo Disponible")</span>
                             }
                         </div>
                     </div>
 
-                    <div class="col-12 col-md-auto mt-3 mt-md-0">
+                    <div class="col-12 col-md-auto mt-3 mt-md-0 ms-auto">
                         <div class="d-flex flex-wrap justify-content-md-end align-items-center gap-2">
 
                             @if (esAdmin)
@@ -495,9 +563,105 @@
         </div>
     }
 
+    <!-- SECCIÓN INSPIRADORA & GUÍA DE LA COMUNIDAD (Relleno armónico de valor) -->
+    <div class="row g-4 mt-2 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm p-4 p-md-5 text-center position-relative overflow-hidden" 
+                 style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(247, 242, 232, 0.8) 100%); border-radius: 20px; border: 1px solid rgba(230, 194, 128, 0.35);">
+                <div class="position-absolute top-0 end-0 p-4 opacity-10 pointer-events-none d-none d-md-block" style="font-size: 7.5rem; line-height: 1; color: var(--primary);">
+                    <i class="fa-solid fa-cross"></i>
+                </div>
+                <div class="mx-auto" style="max-width: 750px; position: relative; z-index: 1;">
+                    <span class="badge rounded-pill px-3 py-1 mb-3 text-uppercase fw-bold shadow-xs" style="background: rgba(230, 194, 128, 0.3); color: var(--header-footer, #072B27); font-size: 0.72rem; letter-spacing: 1.5px;">
+                        <i class="fa-solid fa-scroll me-1 text-warning"></i> Ánimo
+                    </span>
+                    <blockquote class="blockquote mb-3">
+                        <p class="fst-italic fw-medium text-dark mb-2" style="font-size: 1.15rem; line-height: 1.6;">
+                            "Los que sembraron con lágrimas, con regocijo segarán. Irá andando y llorando el que lleva la preciosa semilla; mas volverá a venir con regocijo, trayendo sus gavillas."
+                        </p>
+                    </blockquote>
+                    <figcaption class="blockquote-footer fw-bold mb-0" style="color: var(--primary);">
+                        Salmos 126:5-6 <cite title="Reina-Valera 1960">(RVR 1960)</cite>
+                    </figcaption>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 p-4 bg-white community-guide-card" style="border-radius: 16px; border-top: 3px solid var(--primary) !important;">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px; background: rgba(140, 35, 35, 0.1); color: var(--primary);">
+                        <i class="fa-solid fa-circle-info fa-lg"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">1. Consulta los Detalles</h6>
+                </div>
+                <p class="text-muted small mb-0">Toca el botón <strong>Info</strong> en cada evento para ver el detalle completo, modalidades de inscripción asi como datos adicionales o recomendaciones.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 p-4 bg-white community-guide-card" style="border-radius: 16px; border-top: 3px solid var(--acento-dorado, #E6C280) !important;">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px; background: rgba(230, 194, 128, 0.2); color: var(--header-footer);">
+                        <i class="fa-solid fa-ticket fa-lg"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">2. Aparta tu Lugar</h6>
+                </div>
+                <p class="text-muted small mb-0"><strong>Inscríbete</strong> y registra tus pagos a tiempo, con ello habrás asegurado tu cupo con anticipación.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 p-4 bg-white community-guide-card" style="border-radius: 16px; border-top: 3px solid #198754 !important;">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px; background: rgba(25, 135, 84, 0.1); color: #198754;">
+                        <i class="fa-solid fa-hands-praying fa-lg"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">3. Asiste y Comparte</h6>
+                </div>
+                <p class="text-muted small mb-0"><strong>Prepárate</strong> para un tiempo de Bendición! Te aseguramos que Dios tiene un plan para tí, NO TE LO PIERDAS!.</p>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
+    // Cuenta regresiva dinámica para el evento destacado
+    document.addEventListener('DOMContentLoaded', function() {
+        const countdownEl = document.querySelector('.hero-countdown-badge');
+        if (countdownEl) {
+            const fechaStr = countdownEl.getAttribute('data-fecha');
+            if (fechaStr) {
+                const fechaEvento = new Date(fechaStr).getTime();
+                const textEl = countdownEl.querySelector('.countdown-text');
+
+                function actualizar() {
+                    const ahora = new Date().getTime();
+                    const distancia = fechaEvento - ahora;
+
+                    if (distancia < 0) {
+                        textEl.innerText = 'En curso / Finalizado';
+                        return;
+                    }
+
+                    const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
+                    const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+
+                    if (dias > 0) {
+                        textEl.innerText = `Faltan ${dias}d ${horas}h ${minutos}m`;
+                    } else {
+                        textEl.innerText = `¡Es hoy! ${horas}h ${minutos}m`;
+                    }
+                }
+
+                actualizar();
+                setInterval(actualizar, 60000);
+            }
+        }
+    });
+
     window.addEventListener('load', function() {
         if (typeof activarMenu === 'function') {
             activarMenu('menu-eventos');
