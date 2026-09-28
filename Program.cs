@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using QuestPDF.Infrastructure;
@@ -149,7 +149,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Login}/{action=Index}/{id?}");
+    pattern: "{controller=Eventos}/{action=Index}/{id?}");
 
 app.MapHub<RedAJP.Hubs.EventosHub>("/eventosHub");
 app.Run();

@@ -44,10 +44,17 @@
   border-radius: $border-radius-pill;
   font-weight: 600;
 
-  &:hover {
+  &:hover, &:active, &.active {
     background-color: var(--primary) !important;
     color: #ffffff !important;
   }
+}
+
+.btn-check:checked + .btn-outline-primary,
+.btn-check:active + .btn-outline-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
 }
 
 // Iconos de Boyas Sociales / Acciones rápidas

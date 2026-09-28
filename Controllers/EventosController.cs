@@ -1118,7 +1118,7 @@ namespace RedAJP.Controllers
         /// Muestra el calendario. Filtra eventos privados para que solo sean visibles por Admins o usuarios que cumplan los requisitos.
         /// Oculta eventos pasados por defecto, pero permite al admin alternar su visualización.
         /// </summary>
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> Index(bool mostrarPasados = false)
         {
             var modelo = new CalendarioViewModel();

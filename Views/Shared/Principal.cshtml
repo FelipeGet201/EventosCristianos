@@ -209,7 +209,7 @@
         <nav class="navbar navbar-expand-lg navbar-light sticky-top shadow-sm">
             <div class="container">
 
-                <a class="navbar-brand d-flex align-items-center py-2 me-auto text-decoration-none" href="@Url.Action("Index", "Home")">
+                <a class="navbar-brand d-flex align-items-center py-2 me-auto text-decoration-none" href="@Url.Action("Index", "Eventos")">
                     <i class="fa-solid fa-cross fa-2x me-2" style="color: var(--primary, #8C2323);"></i>
                     <span class="fw-bold tracking-wide nombre-largo text-decoration-none">Ministerio Corbán</span>
                 </a>
@@ -228,20 +228,12 @@
                 <div class="collapse navbar-collapse" id="menuPrincipal">
 
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link" id="menu-reuniones" href="@Url.Action("Index", "Reuniones")">
-                                <i class="fa-solid fa-map-location-dot"></i> <span>Ubicaciones</span>
+                        <li class="nav-item border-start-lg">
+                            <a class="nav-link" id="menu-eventos" href="@Url.Action("Index", "Eventos")">
+                                <i class="fa-solid fa-calendar-check"></i> <span>Eventos</span>
                             </a>
                         </li>
-                        @if (esMiembro)
-                        {
-                            <li class="nav-item border-start-lg">
-                                <a class="nav-link" id="menu-eventos" href="@Url.Action("Index", "Eventos")">
-                                    <i class="fa-solid fa-calendar-check"></i> <span>Eventos</span>
-                                </a>
-                            </li>
-                        }
-                        else
+                        @if (!esMiembro)
                         {
                             <li class="nav-item border-start-lg">
                                 <a class="nav-link" id="menu-miembros" href="@Url.Action("Index", "Login")">

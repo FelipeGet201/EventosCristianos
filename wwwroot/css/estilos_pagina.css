@@ -188,8 +188,15 @@ a:hover {
   border-radius: 50px;
   font-weight: 600;
 }
-.btn-outline-primary:hover {
+.btn-outline-primary:hover, .btn-outline-primary:active, .btn-outline-primary.active {
   background-color: var(--primary) !important;
+  color: #ffffff !important;
+}
+
+.btn-check:checked + .btn-outline-primary,
+.btn-check:active + .btn-outline-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
   color: #ffffff !important;
 }
 
