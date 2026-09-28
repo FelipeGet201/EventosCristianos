@@ -138,7 +138,7 @@
 <div class="container py-3 py-md-4 fade-in payment-container">
 
     <div class="text-center mb-3">
-        <img src="~/Images/logo_ajp.jpg" class="logo-img">
+        <img src="~/Images/logo_corban.png" class="logo-img rounded-circle" alt="Ministerio Corbán" asp-append-version="true">
         <h2 class="fw-bold text-dark drop-shadow-sm mb-0 fs-3">Portal de Pagos</h2>
         <div class="mt-2">
             @if (esTransferencia && permitirTarjeta)
@@ -240,7 +240,7 @@
         <div class="event-card position-relative overflow-hidden text-center rounded-4 shadow-sm" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem; color: white; background-color: #212529; border: none;">
             
             <div class="position-absolute top-0 start-0 w-100 h-100"
-                 style="background-image: url('@(string.IsNullOrEmpty(ViewBag.ImagenEvento as string) ? "/Images/logo_ajp.jpg" : ViewBag.ImagenEvento)');
+                 style="background-image: url('@(string.IsNullOrEmpty(ViewBag.ImagenEvento as string) ? "/Images/logo_corban.png" : ViewBag.ImagenEvento)');
                         background-size: cover;
                         background-position: center;
                         filter: blur(15px);

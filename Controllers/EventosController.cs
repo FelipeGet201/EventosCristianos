@@ -8394,7 +8394,11 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                 var env = HttpContext.RequestServices.GetService<IWebHostEnvironment>();
                 if (env != null)
                 {
-                    string logoPath = Path.Combine(env.WebRootPath, "Images", "logo_ajp.jpg");
+                    string logoPath = Path.Combine(env.WebRootPath, "Images", "logo_corban.png");
+                    if (!System.IO.File.Exists(logoPath))
+                    {
+                        logoPath = Path.Combine(env.WebRootPath, "Images", "logo_ajp.jpg");
+                    }
                     if (System.IO.File.Exists(logoPath))
                     {
                         var image = ws.AddPicture(logoPath).MoveTo(ws.Cell("A1"), 15, 10);
