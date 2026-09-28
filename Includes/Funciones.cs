@@ -198,8 +198,8 @@ namespace RedAJP.Globales
             {
                 string apiKey = config["MailRelay:ApiKey"];
                 string dominioCuenta = config["MailRelay:Domain"];
-                string remitenteEmail = "soporte@lospescadores.org";
-                string remitenteNombre = "Soporte AJP";
+                string remitenteEmail = "soporte@ministeriocorban.shop";
+                string remitenteNombre = "Soporte Ministerio Corban";
 
                 if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(dominioCuenta))
                     return (false, "Faltan credenciales de MailRelay.");
