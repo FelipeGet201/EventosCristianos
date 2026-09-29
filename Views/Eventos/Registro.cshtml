@@ -1,4 +1,4 @@
-@using RedAJP.Models
+﻿@using RedAJP.Models
 @using RedAJP.Globales
 @using Npgsql
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
@@ -2432,6 +2432,20 @@
                                 <div>
                                     <div class="fw-bold text-dark mb-1">Estatus de Inscripción</div>
                                     <p class="small text-muted mb-0">Muestra si la inscripción está Completada, En Revisión de pago por administración o Por Pagar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="btn btn-sm btn-outline-secondary rounded-pill fw-bold flex-shrink-0" style="pointer-events: none; font-size: 0.75rem;">
+                                    <i class="fa-solid fa-folder-plus me-1 text-primary"></i> Mover a Grupo
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Agrupado de Inscripciones</div>
+                                    <p class="small text-muted mb-0">Cuando el evento lo permite, organiza a los participantes seleccionados en subgrupos o familias para filtrar y gestionar sus pagos por grupo.</p>
                                 </div>
                             </div>
                         </div>
