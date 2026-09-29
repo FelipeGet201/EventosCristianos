@@ -30,7 +30,7 @@
     // 4. Listas de Datos
     var preguntasDef = ViewBag.PreguntasDefinidas as List<PreguntaDefinicion> ?? new List<PreguntaDefinicion>();
     var registrados = ViewBag.Registrados as List<AsistenteRegistrado> ?? new List<AsistenteRegistrado>();
-    var subtipos = ViewBag.Subtipos as List<SubtipoEventoItem> ?? new List<SubtipoEventoItem>();
+    var subtipos = (ViewBag.Subtipos as List<SubtipoEventoItem> ?? new List<SubtipoEventoItem>()).OrderByDescending(x => x.Costo).ThenBy(x => x.Nombre).ToList();
     bool tieneHistorial = registrados.Count > 0;
     
     // Si está bloqueado, nunca abrimos el formulario inicial

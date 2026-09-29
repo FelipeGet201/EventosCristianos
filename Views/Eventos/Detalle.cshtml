@@ -1,4 +1,4 @@
-@using RedAJP.Globales
+﻿@using RedAJP.Globales
 @model RedAJP.Models.DetalleEventoViewModel
 
 @{
@@ -285,7 +285,7 @@
                                 </div>
 
                                 <div class="list-group list-group-flush rounded-bottom-4">
-                                    @foreach (var sub in Model.Subtipos)
+                                    @foreach (var sub in Model.Subtipos.OrderByDescending(x => x.Costo).ThenBy(x => x.Nombre))
                                     {
                                         int disponibles = sub.Cupo - sub.Ocupados;
                                         bool agotado = disponibles <= 0;

@@ -319,7 +319,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var sub in subtipos)
+                        @foreach (var sub in subtipos.OrderByDescending(x => x.Costo).ThenBy(x => x.Nombre))
                         {
                             int disponibles = sub.Cupo > 0 ? sub.Cupo - sub.Ocupados : 999999;
                             bool agotado = sub.Cupo > 0 && disponibles <= 0;
