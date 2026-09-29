@@ -93,11 +93,10 @@ namespace RedAJP.Controllers
         {
             if (!User.TienePermiso(Modulo, PermisoEditar))
             {
-                MostrarMensaje("Error", "No tienes permiso de edicion en esta ventana", TipoMensaje.Alerta);
+                MostrarMensaje("Error", "No tienes permiso de edición en esta ventana", TipoMensaje.Alerta);
                 return RedirectToAction("Index");
             }
 
-            var bAccesoARoles = User.TienePermiso(Parametros.Modulos.Roles, PermisoEditar);
             var idAdmin = int.Parse(User.FindFirst("IdUsuario").Value);
             string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "::1";
 
@@ -110,9 +109,9 @@ namespace RedAJP.Controllers
                     {
                         try
                         {
-                            // 1. OBTENER EL ROL ACTUAL (Para comparar)
+                            // 1. OBTENER EL ROL ACTUAL (Para comparar si hubo cambio de rol)
                             int idRolActual = 0;
-                            string sqlCheck = "SELECT \"Id_Rol\" FROM \"Sist_Usuarios\" WHERE \"Id_Usuario\"=@id";
+                            string sqlCheck = @"SELECT ""Id_Rol"" FROM ""Sist_Usuarios"" WHERE ""Id_Usuario""=@id";
                             using (var cmdCheck = new NpgsqlCommand(sqlCheck, conexion, transaccion))
                             {
                                 cmdCheck.Parameters.AddWithValue("@id", modelo.Id_Usuario);
@@ -120,19 +119,25 @@ namespace RedAJP.Controllers
                                 if (res != null) idRolActual = Convert.ToInt32(res);
                             }
 
-                            // 2. PREPARAR SQL DINÁMICO
+                            // 2. PREPARAR CAMBIO DE ROL
                             var sSetRol = "";
                             bool cambioRol = false;
 
-                            // Solo si es admin de roles Y el rol enviado es diferente al actual
-                            if (bAccesoARoles && modelo.Id_Rol != idRolActual)
+                            if (modelo.Id_Rol > 0)
                             {
-                                // Agregamos el cambio de rol Y regeneramos el sello en la misma línea
-                                sSetRol = ", \"Id_Rol\"=@rol, \"Sello_Seguridad\" = gen_random_uuid()";
-                                cambioRol = true;
+                                if (modelo.Id_Rol != idRolActual)
+                                {
+                                    // Se actualiza Id_Rol y se regenera el Sello_Seguridad para invalidar sesiones previas si cambió de rol
+                                    sSetRol = ", \"Id_Rol\"=@rol, \"Sello_Seguridad\" = gen_random_uuid()";
+                                    cambioRol = true;
+                                }
+                                else
+                                {
+                                    sSetRol = ", \"Id_Rol\"=@rol";
+                                }
                             }
 
-                            string sql = @$"UPDATE ""Sist_Usuarios"" 
+                            string sql = $@"UPDATE ""Sist_Usuarios"" 
                                    SET ""NombreCompleto""=@nom, 
                                        ""Email""=@em, 
                                        ""Nombre_Usuario""=@usr 
@@ -146,7 +151,7 @@ namespace RedAJP.Controllers
                                 cmd.Parameters.AddWithValue("@usr", modelo.Nombre_Usuario);
                                 cmd.Parameters.AddWithValue("@id", modelo.Id_Usuario);
 
-                                if (bAccesoARoles)
+                                if (modelo.Id_Rol > 0)
                                 {
                                     cmd.Parameters.AddWithValue("@rol", modelo.Id_Rol);
                                 }
@@ -156,7 +161,7 @@ namespace RedAJP.Controllers
 
                             // 3. BITÁCORA
                             string msg = $"Editó perfil de ID: {modelo.Id_Usuario} ({modelo.Nombre_Usuario})";
-                            if (cambioRol) msg += ". CAMBIO DE ROL: Sesión invalidada.";
+                            if (cambioRol) msg += $". CAMBIO DE ROL (de {idRolActual} a {modelo.Id_Rol}): Sesión invalidada.";
 
                             await Funciones.RegistrarBitacora(conexion, idAdmin, Modulo, Parametros.AccionesBitacora.Editar,
                                 msg, ip, transaccion);
