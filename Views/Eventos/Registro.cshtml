@@ -297,6 +297,25 @@
         100% { transform: scale(1); }
     }
 
+    /* Header de tabla Azul Claro */
+    .tabla-header-azul,
+    .responsive-table thead,
+    .table thead {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+        color: #0369a1 !important;
+    }
+
+    .tabla-header-azul th,
+    .responsive-table thead th,
+    .table thead th {
+        background: transparent !important;
+        color: #0369a1 !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #7dd3fc !important;
+        border-top: none !important;
+    }
+
     /* ========================================================= */
     /* TABLA RESPONSIVA A TARJETAS (TABLE-TO-CARDS)              */
     /* ========================================================= */
@@ -308,6 +327,8 @@
         
         .responsive-table {
             background-color: transparent !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
         }
 
         .responsive-table thead { 
@@ -318,8 +339,8 @@
             display: block;
             margin-bottom: 1.5rem !important; 
             border: 1px solid #ced4da !important;
-            border-radius: 0.75rem;
-            overflow: hidden;
+            border-radius: 0.75rem !important;
+            overflow: hidden !important;
             background-color: #ffffff !important; 
             box-shadow: 0 5px 15px rgba(0,0,0,0.08) !important;
         }
@@ -336,10 +357,26 @@
             padding: 1rem !important;
             text-align: right;
         }
+
+        .responsive-table tbody tr:not(.collapse) td:first-child {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+            border-bottom: 2px solid #7dd3fc !important;
+            border-top-left-radius: 0.75rem !important;
+            border-top-right-radius: 0.75rem !important;
+        }
+
+        .responsive-table tbody tr:not(.collapse) td:first-child::before {
+            color: #0369a1 !important;
+            font-weight: 800 !important;
+            font-size: 0.78rem !important;
+            letter-spacing: 0.5px;
+        }
         
-        .responsive-table tbody td:last-child { 
-            border-bottom: none;
-            background-color: #f8f9fa;
+        .responsive-table tbody tr:not(.collapse) td:last-child { 
+            border-bottom: none !important;
+            background-color: #f8f9fa !important;
+            border-bottom-left-radius: 0.75rem !important;
+            border-bottom-right-radius: 0.75rem !important;
         }
         
         .responsive-table tbody td::before {
@@ -692,16 +729,16 @@
                             }
                         </div>
 
-                        <div class="p-0 bg-light"> 
-                            <div class="table-responsive p-3 p-lg-0"> 
-                                <table class="table table-hover mb-0 align-middle responsive-table">
-                                    <thead class="bg-light text-uppercase small">
+                        <div class="p-0 bg-white"> 
+                            <div class="table-responsive"> 
+                                <table class="table table-hover mb-0 align-middle responsive-table border-0" style="border-radius: 0;">
+                                    <thead class="tabla-header-azul text-uppercase small">
                                         <tr>
                                             <th class="ps-4 py-3" style="width: 50px;">#</th>
-                                            <th>Nombre</th>
-                                            <th>Modalidad / Costo</th>
-                                            <th class="text-center">Estado</th>
-                                            <th class="text-end pe-4" style="min-width: 140px;">Acciones</th>
+                                            <th class="py-3">Nombre</th>
+                                            <th class="py-3">Modalidad / Costo</th>
+                                            <th class="text-center py-3">Estado</th>
+                                            <th class="text-end pe-4 py-3" style="min-width: 140px;">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>

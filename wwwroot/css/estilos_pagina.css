@@ -1180,3 +1180,23 @@ input:-webkit-autofill:active {
   color: var(--primary-dark) !important;
   border: 1px solid rgba(14, 165, 233, 0.3) !important;
 }
+
+/* Header de tabla en tono azul claro elegante */
+.tabla-header-azul,
+.responsive-table thead,
+.table thead {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+  color: #0369a1 !important;
+  border-bottom: 2px solid #7dd3fc !important;
+}
+
+.tabla-header-azul th,
+.responsive-table thead th,
+.table thead th {
+  background: transparent !important;
+  color: #0369a1 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #7dd3fc !important;
+  border-top: none !important;
+}
