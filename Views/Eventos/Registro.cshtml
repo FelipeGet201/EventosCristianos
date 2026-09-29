@@ -1,4 +1,4 @@
-﻿@using RedAJP.Models
+@using RedAJP.Models
 @using RedAJP.Globales
 @using Npgsql
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
@@ -147,15 +147,19 @@
         color: var(--color-primario, #0d6efd);
         border: 1px solid rgba(0,0,0,0.15);
         transition: all 0.2s ease;
+        text-decoration: none !important;
     }
 
     .btn-historial:hover, 
-    .btn-historial:focus {
+    .btn-historial:focus,
+    .btn-historial:active {
         transform: translateY(-2px);
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         background-color: #f8f9fa !important;
         color: var(--color-primario, #0d6efd) !important;
         opacity: 1 !important;
+        opacity: 1 !important;
+        text-decoration: none !important;
     }
 
     @@media (min-width: 768px) {
@@ -168,16 +172,19 @@
         font-size: 0.7rem;
         padding: 0.4em 0.8em;
         border-radius: 50px;
-        text-decoration: none;
+        text-decoration: none !important;
         display: inline-flex;
         align-items: center;
         gap: 5px;
         transition: all 0.2s;
     }
 
-        .badge-granular:hover {
+        .badge-granular:hover,
+        .badge-granular:focus,
+        .badge-granular:active {
             transform: translateY(-1px);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-decoration: none !important;
         }
 
     .btn-accion {
@@ -191,36 +198,70 @@
         background: white;
         color: #6c757d;
         transition: all 0.2s;
-        text-decoration: none;
+        text-decoration: none !important;
         margin-left: 2px;
     }
 
-        .btn-accion:hover {
+        .btn-accion:hover,
+        .btn-accion:focus,
+        .btn-accion:active {
             transform: scale(1.1);
+            text-decoration: none !important;
         }
 
         .btn-accion.ver:hover {
             color: #198754;
             border-color: #198754;
             background-color: #d1e7dd;
+            text-decoration: none !important;
         }
 
         .btn-accion.share:hover {
             color: #0d6efd;
             border-color: #0d6efd;
             background-color: #cfe2ff;
+            text-decoration: none !important;
         }
 
         .btn-accion.edit:hover {
             color: #fd7e14;
             border-color: #fd7e14;
             background-color: #ffe5d0;
+            text-decoration: none !important;
         }
 
         .btn-accion.del:hover {
             color: #dc3545;
             border-color: #dc3545;
             background-color: #f8d7da;
+            text-decoration: none !important;
+        }
+
+    .btn-accion i, .btn-accion:hover i,
+    .btn-historial i, .btn-historial:hover i,
+    .badge-granular i, .badge-granular:hover i,
+    a.btn-accion:hover i, a.btn-historial:hover i {
+        text-decoration: none !important;
+    }
+
+    .btn-ayuda-discreta {
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+        background: transparent;
+        border: none;
+    }
+        .btn-ayuda-discreta:hover,
+        .btn-ayuda-discreta:focus {
+            text-decoration: none !important;
+            opacity: 1;
+        }
+        .btn-ayuda-discreta:hover i {
+            transform: scale(1.15);
+            text-decoration: none !important;
+        }
+        .btn-ayuda-discreta:hover span {
+            color: var(--primary, #0d6efd) !important;
+            text-decoration: none !important;
         }
 
     /* --- CONTADOR FLOTANTE --- */
@@ -719,7 +760,13 @@
 
                     <div class="card border-0 shadow-lg rounded-4 mb-4 overflow-hidden">
                         <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check me-2 text-primary"></i>Tu Lista (@registrados.Count)</h6>
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check me-2 text-primary"></i>Tu Lista (@registrados.Count)</h6>
+                                <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 ms-1 text-muted d-inline-flex align-items-center gap-1 border-0 shadow-none btn-ayuda-discreta" data-bs-toggle="modal" data-bs-target="#modalGuiaBotones" title="Guía de Botones e Iconos">
+                                    <i class="fa-solid fa-circle-question text-primary opacity-75 fs-6"></i>
+                                    <span class="small text-muted fw-semibold" style="font-size: 0.8rem;">¿Qué hace cada botón?</span>
+                                </button>
+                            </div>
                             @if (permitirPago)
                             {
                                 <div class="form-check form-switch small m-0">
@@ -2220,6 +2267,182 @@
             </div>
             <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100">
                 <iframe id="pdfIframe" src="" class="w-100 h-100 border-0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Guía de Botones e Iconos Explicativos -->
+<div class="modal fade" id="modalGuiaBotones" tabindex="-1" aria-labelledby="modalGuiaBotonesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header tabla-header-azul py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-white rounded-circle p-2 d-flex align-items-center justify-content-center shadow-sm" style="width:36px; height:36px;">
+                        <i class="fa-solid fa-circle-question text-primary fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-primary mb-0" id="modalGuiaBotonesLabel">Guía Rápida de Botones y Funciones</h5>
+                        <p class="small text-muted mb-0">Conoce el propósito de cada opción e icono disponible en la plataforma</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light bg-opacity-25" style="max-height: 75vh; overflow-y: auto;">
+                
+                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center"><i class="fa-solid fa-sliders me-2 text-primary"></i> Acciones Directas por Asistente</h6>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="btn-accion ver flex-shrink-0" style="width:36px; height:36px; pointer-events: none;">
+                                    <i class="fa-solid fa-eye fs-6"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Ver Estado de Cuenta / Ficha</div>
+                                    <p class="small text-muted mb-0">Abre en una nueva pestaña el comprobante de registro, el desglose de costos y la ficha de pago del participante.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="btn-accion share flex-shrink-0" style="width:36px; height:36px; pointer-events: none;">
+                                    <i class="fa-solid fa-share-nodes fs-6"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Copiar Enlace de Pago</div>
+                                    <p class="small text-muted mb-0">Copia al portapapeles el link directo para compartirlo con la persona inscrita o un tercero para que realice su pago.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="btn-accion flex-shrink-0" style="width:36px; height:36px; color: #0d6efd; border-color: #0d6efd; pointer-events: none;">
+                                    <i class="fa-solid fa-qrcode fs-6"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Código QR de Acceso</div>
+                                    <p class="small text-muted mb-0">Genera y muestra en pantalla la tarjeta con el código QR digital listo para ser escaneado a la entrada del evento.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="btn-accion edit flex-shrink-0" style="width:36px; height:36px; pointer-events: none;">
+                                    <i class="fa-solid fa-pen-to-square fs-6"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Editar Registro</div>
+                                    <p class="small text-muted mb-0">Permite modificar los datos personales o respuestas del formulario del participante seleccionado.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="btn-accion del flex-shrink-0" style="width:36px; height:36px; pointer-events: none;">
+                                    <i class="fa-solid fa-trash fs-6"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Eliminar Registro</div>
+                                    <p class="small text-muted mb-0">Cancela y borra al participante de la lista (disponible sólo mientras no tenga pagos ni esté bloqueado/liquidado).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="btn-expandir flex-shrink-0 me-0 p-0" style="pointer-events: none;">
+                                    <i class="fa-solid fa-circle-plus fs-4 text-primary"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Desplegar Respuestas / Detalles</div>
+                                    <p class="small text-muted mb-0">Expande o colapsa las opciones adicionales y respuestas del formulario ingresadas para esa persona.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center"><i class="fa-solid fa-layer-group me-2 text-primary"></i> Gestión General y Transferencias</h6>
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="btn btn-historial rounded-pill btn-sm px-3 py-1 flex-shrink-0 fw-bold" style="pointer-events: none;">
+                                    <i class="fa-solid fa-list-ul me-1"></i> Transferencias
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Ver Mis Transferencias</div>
+                                    <p class="small text-muted mb-0">Accede al módulo donde puedes revisar tus comprobantes bancarios enviados y su estatus de validación.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="badge-granular bg-warning text-dark border-0 flex-shrink-0" style="pointer-events: none;">
+                                    <i class="fa-solid fa-upload me-1"></i> Subir Foto
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Subir / Corregir Comprobante</div>
+                                    <p class="small text-muted mb-0">Adjunta la fotografía o voucher de tu transferencia pendiente o corrige un comprobante rechazado.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="form-check form-switch m-0 flex-shrink-0 pt-1">
+                                    <input class="form-check-input" type="checkbox" checked style="pointer-events: none;">
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Selección Múltiple</div>
+                                    <p class="small text-muted mb-0">Marca varios participantes a la vez para realizar un único pago agrupado o gestionarlos en bloque.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-1 flex-shrink-0">
+                                    <i class="fa-solid fa-check-double me-1"></i> Completado
+                                </span>
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">Estatus de Inscripción</div>
+                                    <p class="small text-muted mb-0">Muestra si la inscripción está Completada, En Revisión de pago por administración o Por Pagar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer bg-white border-top py-2 px-4 justify-content-end">
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-dismiss="modal">
+                    Entendido
+                </button>
             </div>
         </div>
     </div>

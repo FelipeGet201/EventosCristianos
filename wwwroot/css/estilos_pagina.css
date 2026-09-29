@@ -1,4 +1,4 @@
-/* latin-ext */
+﻿/* latin-ext */
 @font-face {
   font-family: "Outfit";
   font-style: normal;
@@ -1200,3 +1200,22 @@ input:-webkit-autofill:active {
   border-bottom: 2px solid #7dd3fc !important;
   border-top: none !important;
 }
+
+/* Eliminación global de subrayados indeseados en botones y enlaces de acción */
+a.btn, a.btn-accion, a.btn-historial, a.badge-granular, a.btn-expandir,
+.btn, .btn-accion, .btn-historial, .badge-granular, .btn-expandir {
+  text-decoration: none !important;
+}
+
+a:hover i, a:focus i, a:active i,
+a:hover span.small, a:hover span.badge,
+.btn:hover, .btn:focus, .btn:active,
+.btn-accion:hover, .btn-accion:focus, .btn-accion:active,
+.btn-historial:hover, .btn-historial:focus, .btn-historial:active,
+.badge-granular:hover, .badge-granular:focus, .badge-granular:active,
+.btn-expandir:hover, .btn-expandir:focus, .btn-expandir:active,
+a.btn:hover, a.btn-accion:hover, a.btn-historial:hover, a.badge-granular:hover,
+a.btn:hover *, a.btn-accion:hover *, a.btn-historial:hover *, a.badge-granular:hover * {
+  text-decoration: none !important;
+}
+
