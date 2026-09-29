@@ -71,6 +71,7 @@
 }
 
 // TARJETA DESTACADA (Compacta & Hero con Brillo Disimulado)
+.contenedor-evento,
 .card-hero {
   background: var(--hero-gradient) !important;
   border: 1px solid rgba(255, 255, 255, 0.25);

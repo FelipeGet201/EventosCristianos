@@ -1,4 +1,4 @@
-﻿/* latin-ext */
+/* latin-ext */
 @font-face {
   font-family: "Outfit";
   font-style: normal;
@@ -126,7 +126,7 @@
   --texto-header: #FFFFFF;
   --acento-dorado: #D97706;
   --acento-coral: #CA8A04;
-  --hero-gradient: linear-gradient(135deg, #78350F 0%, #92400E 40%, #B45309 75%, #D97706 100%);
+  --hero-gradient: linear-gradient(135deg, #B84318 0%, #E05A2B 50%, #F97316 100%);
   --card-header-bg: linear-gradient(135deg, #0A3A35 0%, #134E48 100%);
 }
 
@@ -147,7 +147,7 @@
   --texto-muted: #6B7280;
   --texto-header: #FFFFFF;
   --acento-dorado: #D97706;
-  --hero-gradient: linear-gradient(135deg, #78350F 0%, #92400E 40%, #B45309 75%, #D97706 100%);
+  --hero-gradient: linear-gradient(135deg, #B84318 0%, #E05A2B 50%, #F97316 100%);
   --card-header-bg: linear-gradient(135deg, #0A3A35 0%, #134E48 100%);
 }
 
@@ -409,6 +409,7 @@ a:hover {
   border-top: 4px solid var(--secondary) !important;
 }
 
+.contenedor-evento,
 .card-hero {
   background: var(--hero-gradient) !important;
   border: 1px solid rgba(255, 255, 255, 0.25);
