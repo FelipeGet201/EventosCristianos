@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -300,6 +300,7 @@ namespace RedAJP.Models
         public int IdCalendario { get; set; }
         public int NumeroPago { get; set; }
         public string Concepto { get; set; }
+        public string Descripcion { get; set; }
         public decimal Monto { get; set; }
         public DateTime FechaLimite { get; set; }
         public bool EsVencido { get; set; }
@@ -321,6 +322,7 @@ namespace RedAJP.Models
         public string Asistente { get; set; }
         public string Modalidad { get; set; }
         public string Concepto { get; set; }
+        public string Descripcion { get; set; }
         public int NumeroPago { get; set; }
         public decimal Monto { get; set; }
         public DateTime FechaPago { get; set; }
@@ -525,6 +527,7 @@ namespace RedAJP.Models
     public class DetallePagoRecibo
     {
         public string Concepto { get; set; }
+        public string Descripcion { get; set; }
         public decimal Monto { get; set; }
         public DateTime Fecha { get; set; }
         public string Referencia { get; set; }

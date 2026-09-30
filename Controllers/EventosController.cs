@@ -3215,12 +3215,15 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                                             cal.""Nombre_Concepto"" || ' (Unidad ' || ROW_NUMBER() OVER(PARTITION BY c.""Id_Asistente"", c.""Id_Calendario"" ORDER BY c.""Id_Cuenta"") || ' de ' || pe.""Cantidad"" || ')'
                                         ELSE cal.""Nombre_Concepto"" 
                                     END AS ""Nombre_Concepto"", 
-                                    cal.""Numero_Pago"", cal.""Fecha_Limite"" 
+                                    cal.""Numero_Pago"", cal.""Fecha_Limite"",
+                                    cat.""Descripcion"" AS ""Descripcion_Extra""
                                     FROM ""Eventos_C_Cuentas_Cobrar"" c 
                                     JOIN ""Eventos_Calendario"" cal ON c.""Id_Calendario"" = cal.""Id_Calendario"" 
                                     LEFT JOIN ""Eventos_Asistentes_ProductosExtra"" pe 
                                            ON pe.""Id_Asistente"" = c.""Id_Asistente"" 
                                           AND cal.""Numero_Pago"" = -(10000 + pe.""Id_ProductoExtra"")
+                                    LEFT JOIN ""Eventos_Catalogo_ProductosExtra"" cat
+                                           ON cat.""Id_ProductoExtra"" = -(cal.""Numero_Pago"" + 10000)
                                     WHERE c.""Id_Asistente"" = @asis 
                                     ORDER BY CASE WHEN cal.""Numero_Pago"" > 0 THEN cal.""Numero_Pago"" ELSE 99999 + ABS(cal.""Numero_Pago"") END ASC";
 
@@ -3238,6 +3241,7 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                                         Monto = (decimal)r["Monto_Pagar"],
                                         FechaLimite = (DateTime)r["Fecha_Limite"],
                                         Concepto = r["Nombre_Concepto"]?.ToString() ?? $"Pago {r["Numero_Pago"]}",
+                                        Descripcion = r["Descripcion_Extra"] != DBNull.Value ? r["Descripcion_Extra"].ToString() : null,
                                         IdRegistro = p.IdRegistro,
                                         EsPagado = (bool)r["Pagado"],
                                         EsVencido = (int)r["Numero_Pago"] <= 0 || (DateTime)r["Fecha_Limite"] <= DateTime.Now.AddDays(30),
@@ -3859,7 +3863,8 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                     d.""Ref_Pasarela"",    
                     d.""Id_Transaccion"",
                     d.""Monto_Descuento"",       -- NUEVO
-                    d.""Codigo_Cupon_Aplicado""  -- NUEVO
+                    d.""Codigo_Cupon_Aplicado"", -- NUEVO
+                    cat.""Descripcion"" AS ""Descripcion_Extra""
                 FROM ""Eventos_C_Cuentas_Cobrar"" c
                 JOIN ""Eventos_Calendario"" cal ON c.""Id_Calendario"" = cal.""Id_Calendario""
                 JOIN ""Eventos_B_Asistentes"" b ON c.""Id_Asistente"" = b.""Id_Asistente""
@@ -3869,6 +3874,8 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                 LEFT JOIN ""Eventos_Asistentes_ProductosExtra"" pe 
                        ON pe.""Id_Asistente"" = c.""Id_Asistente"" 
                       AND cal.""Numero_Pago"" = -(10000 + pe.""Id_ProductoExtra"")
+                LEFT JOIN ""Eventos_Catalogo_ProductosExtra"" cat
+                       ON cat.""Id_ProductoExtra"" = -(cal.""Numero_Pago"" + 10000)
                 LEFT JOIN ""Eventos_E_Pagos_Aplicados"" pa ON c.""Id_Cuenta"" = pa.""Id_Cuenta""
                 LEFT JOIN ""Eventos_D_Transacciones"" d ON pa.""Id_Transaccion"" = d.""Id_Transaccion""
                 WHERE c.""Id_Cuenta"" = @idC 
@@ -3890,6 +3897,7 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                                 modelo.Asistente = r["Nombre_Completo"].ToString();
                                 modelo.Modalidad = r["Modalidad"] != DBNull.Value ? r["Modalidad"].ToString() : "Entrada General";
                                 modelo.Concepto = r["Nombre_Concepto"].ToString();
+                                modelo.Descripcion = r["Descripcion_Extra"] != DBNull.Value ? r["Descripcion_Extra"].ToString() : null;
                                 modelo.NumeroPago = (int)r["Numero_Pago"];
                                 modelo.Monto = (decimal)r["Monto_Pagar"];
                                 modelo.FechaPago = r["Fecha_Pagado"] != DBNull.Value ? (DateTime)r["Fecha_Pagado"] : DateTime.Now;
@@ -3991,12 +3999,15 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                     c.""Fecha_Pagado"",
                     MAX(d.""Ref_Pasarela"") as ""Ref_Pasarela"",
                     MAX(d.""Monto_Descuento"") as ""Descuento"",
-                    MAX(d.""Id_Transaccion"") as ""Id_Transaccion"" -- <--- NECESARIO PARA FILTRAR
+                    MAX(d.""Id_Transaccion"") as ""Id_Transaccion"", -- <--- NECESARIO PARA FILTRAR
+                    MAX(cat.""Descripcion"") as ""Descripcion_Extra""
                 FROM ""Eventos_C_Cuentas_Cobrar"" c
                 JOIN ""Eventos_Calendario"" cal ON c.""Id_Calendario"" = cal.""Id_Calendario""
                 LEFT JOIN ""Eventos_Asistentes_ProductosExtra"" pe 
                        ON pe.""Id_Asistente"" = c.""Id_Asistente"" 
                       AND cal.""Numero_Pago"" = -(10000 + pe.""Id_ProductoExtra"")
+                LEFT JOIN ""Eventos_Catalogo_ProductosExtra"" cat
+                       ON cat.""Id_ProductoExtra"" = -(cal.""Numero_Pago"" + 10000)
                 LEFT JOIN ""Eventos_E_Pagos_Aplicados"" pa ON c.""Id_Cuenta"" = pa.""Id_Cuenta""
                 LEFT JOIN ""Eventos_D_Transacciones"" d ON pa.""Id_Transaccion"" = d.""Id_Transaccion"" AND d.""Completado"" = TRUE
                 WHERE c.""Id_Asistente"" = @id AND c.""Pagado"" = TRUE
@@ -4015,6 +4026,7 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                             {
                                 string refPasarela = r["Ref_Pasarela"] != DBNull.Value ? r["Ref_Pasarela"].ToString() : "MANUAL/EFECTIVO";
                                 string concepto = r["Nombre_Concepto"].ToString();
+                                string descExtra = r["Descripcion_Extra"] != DBNull.Value ? r["Descripcion_Extra"].ToString() : null;
                                 if (string.IsNullOrEmpty(concepto)) concepto = $"Pago #{r["Numero_Pago"]}";
 
                                 int idTrx = r["Id_Transaccion"] != DBNull.Value ? (int)r["Id_Transaccion"] : 0;
@@ -4032,6 +4044,7 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                                 modelo.Desglose.Add(new DetallePagoRecibo
                                 {
                                     Concepto = concepto,
+                                    Descripcion = descExtra,
                                     Monto = (decimal)r["Monto_Pagar"], // Monto BRUTO del concepto
                                     Fecha = r["Fecha_Pagado"] != DBNull.Value ? (DateTime)r["Fecha_Pagado"] : DateTime.Now,
                                     Referencia = refPasarela
@@ -14241,7 +14254,7 @@ WHERE b.""Id_Asistente""=@idA AND r.""Id_Usuario""=@uid";
                     string sql = $@"
                         SELECT b.""Id_Asistente"", b.""Nombre_Completo"", COALESCE(s.""Nombre"", 'Entrada General') as ""Modalidad"",
                                {sqlAsistencia},
-                               (SELECT string_agg(c_pe.""Nombre_Producto"" || ' (x' || pe.""Cantidad"" || ')', ', ') 
+                               (SELECT string_agg(c_pe.""Nombre_Producto"" || ' (x' || pe.""Cantidad"" || ')' || CASE WHEN c_pe.""Descripcion"" IS NOT NULL AND c_pe.""Descripcion"" <> '' THEN ' - ' || c_pe.""Descripcion"" ELSE '' END, ', ') 
                                 FROM ""Eventos_Asistentes_ProductosExtra"" pe 
                                 JOIN ""Eventos_Catalogo_ProductosExtra"" c_pe ON pe.""Id_ProductoExtra"" = c_pe.""Id_ProductoExtra""
                                 WHERE pe.""Id_Asistente"" = b.""Id_Asistente"") as ""Extras"",

@@ -199,6 +199,12 @@
                                     <span class="badge bg-warning bg-opacity-25 text-dark border border-warning ms-1">Adicional</span>
                                 }
                             </div>
+                            @if (!string.IsNullOrEmpty(Model.Descripcion))
+                            {
+                                <div class="text-muted mt-1 text-break" style="font-size: 0.82rem; line-height: 1.35;">
+                                    <i class="fa-solid fa-circle-info me-1 text-secondary opacity-75"></i>@Model.Descripcion
+                                </div>
+                            }
                         </div>
                         <div class="dato-row">
                             <div class="label">Fecha y Hora de Emisión</div>

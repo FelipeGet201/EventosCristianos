@@ -210,7 +210,13 @@
                     @foreach (var item in Model.Desglose)
                     {
                         <tr>
-                            <td class="fw-bold text-dark">@item.Concepto</td>
+                            <td>
+                                <div class="fw-bold text-dark">@item.Concepto</div>
+                                @if (!string.IsNullOrEmpty(item.Descripcion))
+                                {
+                                    <div class="text-secondary text-break fw-normal mt-1" style="font-size: 0.76rem; line-height: 1.25;">@item.Descripcion</div>
+                                }
+                            </td>
                             <td class="small font-monospace text-muted text-truncate" style="max-width: 150px;">@item.Referencia</td>
                             <td class="small">@item.Fecha.ToString("dd/MM/yyyy")</td>
                             <td class="text-end fw-bold text-dark">$@item.Monto.ToString("N2")</td>

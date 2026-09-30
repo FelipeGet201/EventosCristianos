@@ -1098,7 +1098,7 @@
                 <div id="cardNuevoRegistro" class="card border-0 shadow-lg rounded-4 overflow-hidden mb-5 @(iniciarFormularioAbierto ? "" : "oculto")">
                     <div class="card-header bg-dark text-white p-3 ps-4 d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 fw-bold"><i class="fa-solid fa-user-plus me-2 text-warning"></i> Nuevo Registro</h6>
-                        @if (tieneHistorial)
+                        @if (tieneHistorial && esGrupal)
                         {
                             <button type="button" class="btn-close btn-close-white" onclick="cancelarNuevoRegistro()"></button>
                         }
@@ -1310,7 +1310,10 @@
         <div class="card-body p-3 p-md-4">
             <div class="d-flex justify-content-between mb-3">
                 <h6 class="fw-bold text-muted small text-uppercase mb-0">Datos Asistente</h6>
-                <button type="button" class="btn-close" onclick="eliminarFila(this)"></button>
+                @if (esGrupal)
+                {
+                    <button type="button" class="btn-close" onclick="eliminarFila(this)"></button>
+                }
             </div>
             <div class="row g-3">
                 @if (esGrupal)
@@ -1369,37 +1372,41 @@
                             foreach (var p in (List<RedAJP.Models.ProductoExtraItem>)ViewBag.ProductosExtra)
                             {
                                 string dataSub = p.Id_Subtipo.HasValue ? p.Id_Subtipo.Value.ToString() : "";
-                                <div class="col-md-4 col-lg-3 item-extra-registro" data-subtipo="@dataSub">
-                                    <div class="card shadow border-1 border-primary h-100 bg-light" style="border-radius: 10px;">
-                                        <div class="card-body p-2 text-center">
-                                            <div class="small fw-bold text-primary text-truncate" title="@p.Nombre_Producto">@p.Nombre_Producto</div>
-                                            @if (!string.IsNullOrEmpty(p.Descripcion))
-                                            {
-                                                <div class="small text-muted text-truncate mb-1" style="font-size: 0.75rem;" title="@p.Descripcion">@p.Descripcion</div>
-                                            }
-                                            <div class="d-flex justify-content-center align-items-center gap-1 mb-2">
-                                                <div class="badge bg-success">$@p.Precio.ToString("N2")</div>
-                                                <div class="badge bg-light text-dark border" style="font-size: 0.65rem;" title="M&iacute;nimos y M&aacute;ximos por persona">M&iacute;n: @p.Cantidad_Minima - M&aacute;x: @p.Cantidad_Maxima</div>
+                                <div class="col-12 col-md-6 item-extra-registro" data-subtipo="@dataSub">
+                                    <div class="card shadow-sm border border-primary border-opacity-25 h-100 bg-white" style="border-radius: 12px; transition: all 0.2s ease;">
+                                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                            <div>
+                                                <div class="fw-bold text-primary mb-1 text-break" style="font-size: 0.88rem; line-height: 1.35; white-space: normal;">@p.Nombre_Producto</div>
+                                                @if (!string.IsNullOrEmpty(p.Descripcion))
+                                                {
+                                                    <div class="text-secondary mb-2 text-break" style="font-size: 0.8rem; line-height: 1.35; white-space: normal;">@p.Descripcion</div>
+                                                }
                                             </div>
-                                            <input type="hidden" name="Asistentes[IDX].ProductosExtra[@idxProd].Id_ProductoExtra" value="@p.Id_ProductoExtra" />
-                                            @if (p.Cantidad_Minima == 0 && p.Cantidad_Maxima == 1)
-                                            {
-                                                <div class="btn-group btn-group-sm w-100 btn-group-extra" role="group">
-                                                    <button type="button" class="btn btn-secondary btn-no-extra">NO</button>
-                                                    <button type="button" class="btn btn-outline-success btn-si-extra">S&Iacute;</button>
+                                            <div class="pt-2 mt-auto border-top border-light">
+                                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success fw-bold px-2 py-1" style="font-size: 0.8rem;">$@p.Precio.ToString("N2")</span>
+                                                    <span class="badge bg-light text-dark border fw-normal" style="font-size: 0.72rem;" title="M&iacute;nimos y M&aacute;ximos por persona">M&iacute;n: @p.Cantidad_Minima - M&aacute;x: @p.Cantidad_Maxima</span>
                                                 </div>
-                                                <input type="hidden" name="Asistentes[IDX].ProductosExtra[@idxProd].Cantidad" class="inp-cant-extra" 
-                                                       value="0" min="@p.Cantidad_Minima" max="@p.Cantidad_Maxima" data-precio="@p.Precio" />
-                                            }
-                                            else
-                                            {
-                                                <div class="input-group input-group-sm">
-                                                    <button class="btn btn-outline-secondary btn-menos-extra" type="button"><i class="fa-solid fa-minus"></i></button>
-                                                    <input type="number" name="Asistentes[IDX].ProductosExtra[@idxProd].Cantidad" class="form-control text-center inp-cant-extra" 
-                                                           value="0" min="@p.Cantidad_Minima" max="@p.Cantidad_Maxima" data-precio="@p.Precio" readonly />
-                                                    <button class="btn btn-outline-secondary btn-mas-extra" type="button"><i class="fa-solid fa-plus"></i></button>
-                                                </div>
-                                            }
+                                                <input type="hidden" name="Asistentes[IDX].ProductosExtra[@idxProd].Id_ProductoExtra" value="@p.Id_ProductoExtra" />
+                                                @if (p.Cantidad_Minima == 0 && p.Cantidad_Maxima == 1)
+                                                {
+                                                    <div class="btn-group btn-group-sm w-100 btn-group-extra" role="group">
+                                                        <button type="button" class="btn btn-secondary btn-no-extra">NO</button>
+                                                        <button type="button" class="btn btn-outline-success btn-si-extra">S&Iacute;</button>
+                                                    </div>
+                                                    <input type="hidden" name="Asistentes[IDX].ProductosExtra[@idxProd].Cantidad" class="inp-cant-extra" 
+                                                           value="0" min="@p.Cantidad_Minima" max="@p.Cantidad_Maxima" data-precio="@p.Precio" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="input-group input-group-sm">
+                                                        <button class="btn btn-outline-secondary btn-menos-extra" type="button"><i class="fa-solid fa-minus"></i></button>
+                                                        <input type="number" name="Asistentes[IDX].ProductosExtra[@idxProd].Cantidad" class="form-control text-center inp-cant-extra" 
+                                                               value="0" min="@p.Cantidad_Minima" max="@p.Cantidad_Maxima" data-precio="@p.Precio" readonly />
+                                                        <button class="btn btn-outline-secondary btn-mas-extra" type="button"><i class="fa-solid fa-plus"></i></button>
+                                                    </div>
+                                                }
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1835,6 +1842,7 @@
                 var infoDiv = document.createElement('div');
                 infoDiv.innerHTML = `
                     <div class="fw-bold small text-dark">${ext.Nombre_Producto}</div>
+                    ${ext.Descripcion ? `<div class="text-secondary mb-1 text-break" style="font-size: 0.78rem; line-height: 1.35; white-space: normal;">${ext.Descripcion}</div>` : ''}
                     <div class="text-muted" style="font-size: 0.75rem;">
                         $${ext.Precio.toLocaleString('en-US', { minimumFractionDigits: 2 })} c/u
                         ${cantPagada > 0 ? `<span class="badge bg-success bg-opacity-10 text-success border border-success ms-1"><i class="fa-solid fa-lock me-1"></i>${cantPagada} pagada${cantPagada > 1 ? 's' : ''}</span>` : ''}

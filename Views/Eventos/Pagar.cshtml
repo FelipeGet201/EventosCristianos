@@ -312,11 +312,15 @@
                                                 <i class="fa-solid fa-circle-check text-success fs-5"></i>
                                                 <div>
                                                     <div class="fw-bold text-success text-decoration-line-through small">@pago.Concepto</div>
+                                                    @if (!string.IsNullOrEmpty(pago.Descripcion))
+                                                    {
+                                                        <div class="text-secondary text-break mb-1" style="font-size: 0.76rem; line-height: 1.25;">@pago.Descripcion</div>
+                                                    }
                                                     <span class="badge bg-success" style="font-size:0.6rem;">PAGADO</span>
                                                 </div>
                                             </div>
                                             
-                                            <div class="text-end">
+                                            <div class="text-end ms-2">
                                                 <div class="text-success fw-bold small mb-1">$@pago.Monto.ToString("N2")</div>
                                                 <a href="@Url.Action("Recibo", "Eventos", new { 
                                                             token = esInvitado ? token : usuario.TokenExterno, 
@@ -343,6 +347,10 @@
 
                                                 <div>
                                                     <div class="fw-bold text-dark small">@pago.Concepto</div>
+                                                    @if (!string.IsNullOrEmpty(pago.Descripcion))
+                                                    {
+                                                        <div class="text-secondary text-break mb-1" style="font-size: 0.76rem; line-height: 1.25;">@pago.Descripcion</div>
+                                                    }
                                                     @if (pago.EsVencido)
                                                     {
                                                         <div class="vencido-text"><i class="fa-solid fa-clock-rotate-left me-1" style="color: #b45309;"></i> Vence: @pago.FechaLimite.ToString("dd/MMM")</div>
@@ -353,7 +361,7 @@
                                                     }
                                                 </div>
                                             </div>
-                                            <div class="fs-6 fw-bold text-dark">$@pago.Monto.ToString("N2")</div>
+                                            <div class="fs-6 fw-bold text-dark ms-2">$@pago.Monto.ToString("N2")</div>
                                         </label>
                                     }
                                 }
