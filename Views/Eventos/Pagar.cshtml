@@ -133,6 +133,36 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         margin-bottom: 0.4rem;
     }
+
+    /* Responsividad para el desglose y botón de Total en móviles */
+    @@media (max-width: 767.98px) {
+        .total-bar {
+            padding: 1.25rem 1rem !important;
+            margin-top: 1.5rem !important;
+            margin-bottom: 2rem !important;
+        }
+
+        .total-bar .col-md-7 {
+            min-height: auto !important;
+        }
+
+        .total-bar .col-md-7 > .d-flex {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 1.25rem !important;
+        }
+
+        .total-bar .text-end.text-nowrap {
+            white-space: normal !important;
+            text-align: center !important;
+            width: 100% !important;
+        }
+
+        .total-bar .col-md-7 > .d-flex > div:last-child {
+            width: 100% !important;
+            flex-shrink: 1 !important;
+        }
+    }
 </style>
 
 <div class="container py-3 py-md-4 fade-in payment-container">
