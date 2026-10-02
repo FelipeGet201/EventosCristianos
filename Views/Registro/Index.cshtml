@@ -1,10 +1,11 @@
-@model RedAJP.Models.Registro
+﻿@model RedAJP.Models.Registro
 
 @{
     Layout = "Principal";
     ViewData["Title"] = "Nuevo Registro";
 }
 
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <script>
     window.addEventListener('load', function() {
         if(typeof activarMenu === 'function') {
@@ -120,6 +121,25 @@
                                        required />
                             </div>
                         </div>
+
+                        <!-- Campo Honeypot invisible -->
+                        <div style="display:none !important; visibility:hidden !important; position:absolute !important; left:-9999px !important;" aria-hidden="true">
+                            <input type="text" name="Website_Url_Hp" tabindex="-1" autocomplete="off" />
+                        </div>
+
+                        <!-- Google reCAPTCHA v2 (No soy un robot) -->
+                        @if (ViewData["BloqueoRegistro"] == null || (bool)ViewData["BloqueoRegistro"] == false)
+                        {
+                            <div class="mb-3 d-flex flex-column align-items-center justify-content-center">
+                                <div class="g-recaptcha" data-sitekey="@(ViewBag.RecaptchaSiteKey ?? "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI")"></div>
+                                @if (ViewData["ErrorCaptcha"] != null)
+                                {
+                                    <div class="text-danger small mt-2 fw-bold text-center">
+                                        <i class="fa-solid fa-circle-exclamation me-1"></i> @ViewData["ErrorCaptcha"]
+                                    </div>
+                                }
+                            </div>
+                        }
 
                         @if (TempData["Error"] != null)
                         {

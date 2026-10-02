@@ -1154,6 +1154,47 @@ namespace RedAJP.Globales
 
             return (urlTerminos, urlPrivacidad);
         }
+
+        /// <summary>
+        /// Valida la respuesta del token reCAPTCHA v2 con la API siteverify de Google.
+        /// </summary>
+        public static async Task<bool> ValidarRecaptchaAsync(string recaptchaResponse, string secretKey)
+        {
+            if (string.IsNullOrWhiteSpace(recaptchaResponse)) return false;
+
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var values = new Dictionary<string, string>
+                    {
+                        { "secret", secretKey },
+                        { "response", recaptchaResponse }
+                    };
+
+                    var content = new FormUrlEncodedContent(values);
+                    var response = await httpClient.PostAsync("https://www.google.com/recaptcha/api/siteverify", content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonString = await response.Content.ReadAsStringAsync();
+                        using (var doc = JsonDocument.Parse(jsonString))
+                        {
+                            if (doc.RootElement.TryGetProperty("success", out var successElement))
+                            {
+                                return successElement.GetBoolean();
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // En caso de falla de red o tiempo de espera alcanzado
+            }
+
+            return false;
+        }
     }
 
 }

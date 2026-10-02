@@ -23,6 +23,8 @@ namespace RedAJP.Controllers
         {
             if (User.Identity!.IsAuthenticated) return RedirectToAction("Index", "Home");
 
+            ViewBag.RecaptchaSiteKey = _config["ReCaptcha:SiteKey"] ?? "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+
             // CONSULTAR CRÉDITOS
             int restantes = await Funciones.ObtenerCreditosBrevo(_config);
 
@@ -51,12 +53,36 @@ namespace RedAJP.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(Registro modelo)
         {
+            string siteKey = _config["ReCaptcha:SiteKey"] ?? "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+            ViewBag.RecaptchaSiteKey = siteKey;
+
             // 0. CONTROL DE CUOTA (BREVO)
             int restantes = await Funciones.ObtenerCreditosBrevo(_config);
             if (restantes <= 100)
             {
                 MostrarMensaje("Cupo Lleno", "Lo sentimos, se han agotado los registros por el día de hoy. Intenta mañana.", TipoMensaje.Error);
                 ViewData["BloqueoRegistro"] = true;
+                return View(modelo);
+            }
+
+            // 0.1 PROTECCIÓN HONEYPOT ANTI-BOTS
+            string honeypot = Request.Form["Website_Url_Hp"].ToString();
+            if (!string.IsNullOrWhiteSpace(honeypot))
+            {
+                // Bot detectado por haber llenado el campo trampa invisible
+                MostrarMensaje("Acceso Denegado", "Se ha detectado una actividad automatizada no permitida.", TipoMensaje.Error);
+                return View(modelo);
+            }
+
+            // 0.2 VALIDACIÓN RECAPTCHA GOOGLE
+            string recaptchaResponse = Request.Form["g-recaptcha-response"].ToString();
+            string recaptchaSecret = _config["ReCaptcha:SecretKey"] ?? "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
+
+            bool captchaValido = await Funciones.ValidarRecaptchaAsync(recaptchaResponse, recaptchaSecret);
+            if (!captchaValido)
+            {
+                ViewData["ErrorCaptcha"] = "Debes completar la casilla de verificación 'No soy un robot'.";
+                MostrarMensaje("Verificación requerida", "Por favor marca la casilla 'No soy un robot' para verificar tu registro.", TipoMensaje.Alerta);
                 return View(modelo);
             }
 
