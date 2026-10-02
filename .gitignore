@@ -378,3 +378,4 @@ FodyWeavers.xsd
 # Ignorar configuraciones de Antigravity
 .agents/
 .editorconfig
+/appsettings.json
